@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+  <!-- LISTADO DE OFICINAS -->
+  <template id="website_office_list" name="Listado de oficinas">
+    <t t-call="website.layout">
+      <div class="container py-5">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+          <div>
+            <h1 class="mb-1">Oficinas disponibles</h1>
+            <p class="text-muted mb-0">Elige una oficina y reserva en segundos.</p>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <t t-foreach="offices" t-as="office">
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="card h-100 shadow-sm border-0 overflow-hidden">
+
+                <!-- Imagen -->
+                <t t-if="office.image_1920">
+                  <img t-att-src="'/web/image/spoot.office/%s/image_1920' % office.id"
+                       class="card-img-top"
+                       style="height: 210px; object-fit: cover;"
+                       alt="Office image"/>
+                </t>
+                <t t-else="">
+                  <div class="d-flex align-items-center justify-content-center bg-light"
+                       style="height: 210px;">
+                    <span class="text-muted">Sin imagen</span>
+                  </div>
+                </t>
+
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title mb-1">
+                    <t t-esc="office.name"/>
+                  </h5>
+
+                  <p class="text-muted mb-3">
+                    <t t-esc="office.short_description or office.location or ''"/>
+                  </p>
+
+                  <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                      <t t-if="office.capacity">
+                        Capacidad: <t t-esc="office.capacity"/>
+                      </t>
+                    </small>
+
+                    <a t-att-href="'/offices/%s' % office.id"
+                       class="btn btn-primary rounded-pill px-3">
+                      Ver y reservar
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </t>
+        </div>
+
+      </div>
+    </t>
+  </template>
+
+
+  <!-- DETALLE OFICINA + FORMULARIO -->
+  <template id="website_office_detail" name="Detalle oficina">
+    <t t-call="website.layout">
+      <div class="container py-5">
+
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <a href="/offices" class="btn btn-outline-secondary rounded-pill px-3">
+            &lt; Volver
+          </a>
+
+          <a href="/my/office-bookings" class="btn btn-outline-primary rounded-pill px-3">
+            Ver mis reservas
+          </a>
+        </div>
+
+        <div class="row g-4">
+
+          <!-- COLUMNA IZQUIERDA: fotos + info -->
+          <div class="col-12 col-lg-7">
+
+            <div class="card shadow-sm border-0 overflow-hidden">
+              <!-- Imagen principal -->
+              <t t-if="office.image_1920">
+                <img t-att-src="'/web/image/spoot.office/%s/image_1920' % office.id"
+                     class="w-100"
+                     style="height: 360px; object-fit: cover;"
+                     alt="Office image"/>
+              </t>
+              <t t-else="">
+                <div class="d-flex align-items-center justify-content-center bg-light"
+                     style="height: 360px;">
+                  <span class="text-muted">Sin imagen principal</span>
+                </div>
+              </t>
+
+              <!-- Galería (si existe image_ids) -->
+              <div class="card-body">
+                <t t-if="'image_ids' in office._fields and office.image_ids">
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                    <t t-foreach="office.image_ids" t-as="img">
+                      <a t-att-href="'/web/image/spoot.office.image/%s/image_1920' % img.id"
+                         target="_blank"
+                         class="text-decoration-none">
+                        <img t-att-src="'/web/image/spoot.office.image/%s/image_1920' % img.id"
+                             class="rounded-3 border"
+                             style="width: 96px; height: 72px; object-fit: cover;"
+                             alt="Gallery image"/>
+                      </a>
+                    </t>
+                  </div>
+                </t>
+
+                <h2 class="mb-1">
+                  <t t-esc="office.name"/>
+                </h2>
+
+                <p class="text-muted mb-3">
+                  <t t-esc="office.location or ''"/>
+                  <t t-if="office.capacity">
+                    · Capacidad <t t-esc="office.capacity"/>
+                  </t>
+                </p>
+
+                <t t-if="office.description">
+                  <div class="mb-3">
+                    <t t-raw="office.description.replace('\n','&lt;br/>')"/>
+                  </div>
+                </t>
+
+                <!-- Precios -->
+                <div class="bg-light rounded-4 p-3">
+                  <h6 class="mb-2">Precios</h6>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span>Mañana (8–12)</span>
+                    <strong>
+                      <t t-esc="office.price_morning or 0.0"/>
+                      <t t-esc="office.currency_id.symbol or ''"/>
+                    </strong>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span>Tarde (14–18)</span>
+                    <strong>
+                      <t t-esc="office.price_afternoon or 0.0"/>
+                      <t t-esc="office.currency_id.symbol or ''"/>
+                    </strong>
+                  </div>
+
+                  <div class="d-flex justify-content-between py-1">
+                    <span>Día completo</span>
+                    <strong>
+                      <t t-esc="office.price_full_day or 0.0"/>
+                      <t t-esc="office.currency_id.symbol or ''"/>
+                    </strong>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+
+          <!-- COLUMNA DERECHA: reserva + agenda -->
+          <div class="col-12 col-lg-5">
+
+            <!-- Agenda / ocupación (placeholder visual) -->
+
+
+            <!-- Formulario de reserva -->
+            <div class="card shadow-sm border-0">
+              <div class="card-body">
+
+                <h4 class="mb-3">Reservar esta oficina</h4>
+
+                <t t-if="error">
+                  <div class="alert alert-danger rounded-4" role="alert">
+                    <t t-esc="error"/>
+                  </div>
+                </t>
+                <div class="js_spoot_office_detail" t-att-data-office-id="office.id">
+
+
+                <form method="post" class="oe_website_form">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
+
+                  <div class="mb-3">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" name="date" class="form-control rounded-4" required="required"/>
+                  </div>
+
+                  <div class="mb-3">
+
+<select name="slot_type" id="spoot_slot" class="form-control" required="required">
+  <option value="" selected="selected" disabled="disabled">Elige una franja</option>
+  <option value="morning">Mañana (8-12)</option>
+  <option value="afternoon">Tarde (14-18)</option>
+  <option value="full_day">Todo el día</option>
+</select>
+
+<div id="spoot_slot_hint" class="form-text"></div>
+
+                  </div>
+
+                  <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="need_payment" id="need_payment"/>
+                    <label class="form-check-label" for="need_payment">
+                      Requiere pago online
+                    </label>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary w-100 rounded-pill py-2">
+                    Confirmar reserva
+                  </button>
+
+                  <p class="text-muted mt-3 mb-0">
+                    Debes iniciar sesión para reservar.
+                  </p>
+                </form>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </t>
+  </template>
+
+
+  <!-- GRACIAS -->
+  <template id="website_booking_thanks" name="Reserva confirmada">
+    <t t-call="website.layout">
+      <div class="container py-5">
+        <div class="mx-auto text-center" style="max-width: 720px;">
+          <h1 class="mb-2">¡Reserva registrada!</h1>
+          <p class="text-muted mb-4">
+            Registramos tu reserva para <b><t t-esc="booking.office_id.name"/></b>
+            el <b><t t-esc="booking.date"/></b>
+            (<b><t t-esc="booking.slot_type"/></b>).
+          </p>
+
+          <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <a href="/my/office-bookings" class="btn btn-primary rounded-pill px-4">
+              Ver mis reservas
+            </a>
+            <a href="/offices" class="btn btn-outline-secondary rounded-pill px-4">
+              Reservar otra
+            </a>
+          </div>
+
+          <p class="text-muted mt-4 mb-0">
+            Si configuramos correo/calendario, aquí también confirmaremos el envío automático.
+          </p>
+        </div>
+      </div>
+    </t>
+  </template>
+
+</odoo>

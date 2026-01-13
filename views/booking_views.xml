@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Lista -->
+    <record id="view_spoot_office_booking_tree" model="ir.ui.view">
+        <field name="name">spoot.office.booking.tree</field>
+        <field name="model">spoot.office.booking</field>
+        <field name="arch" type="xml">
+<list>
+    <field name="name"/>
+    <field name="office_id"/>
+    <field name="partner_id"/>
+    <field name="date"/>
+    <field name="slot_type"/>
+    <field name="state"/>
+    <field name="need_payment"/>
+    <field name="paid"/>
+</list>
+
+        </field>
+    </record>
+
+    <!-- Formulario -->
+    <record id="view_spoot_office_booking_form" model="ir.ui.view">
+        <field name="name">spoot.office.booking.form</field>
+        <field name="model">spoot.office.booking</field>
+        <field name="arch" type="xml">
+            <form string="Reserva de oficina">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="state"/>
+                    </group>
+                    <group>
+                        <field name="office_id"/>
+                        <field name="partner_id"/>
+                    </group>
+                    <group>
+                        <field name="date"/>
+                        <field name="slot_type"/>
+                    </group>
+                    <group string="Pago">
+                        <field name="need_payment"/>
+                        <field name="paid"/>
+                    </group>
+                    <group string="Calendario">
+                        <field name="start_datetime"/>
+                        <field name="end_datetime"/>
+                    </group>
+                    <group>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista calendario -->
+    <record id="view_spoot_office_booking_calendar" model="ir.ui.view">
+        <field name="name">spoot.office.booking.calendar</field>
+        <field name="model">spoot.office.booking</field>
+        <field name="arch" type="xml">
+            <calendar string="Reservas de oficina"
+                      date_start="start_datetime"
+                      date_stop="end_datetime"
+                      color="office_id">
+                <field name="name"/>
+                <field name="office_id"/>
+                <field name="partner_id"/>
+                <field name="slot_type"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+</odoo>

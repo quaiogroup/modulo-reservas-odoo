@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_spoot_office_user,access_spoot_office_user,model_spoot_office,base.group_user,1,1,1,1
+access_spoot_office_booking_user,access_spoot_office_booking_user,model_spoot_office_booking,base.group_user,1,1,1,1
+access_spoot_office_image,access_spoot_office_image,model_spoot_office_image,base.group_system,1,1,1,1

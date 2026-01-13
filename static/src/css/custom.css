@@ -1,0 +1,50 @@
+/* === Botones redondeados globales === */
+.btn,
+a.btn,
+button.btn {
+    border-radius: 999px !important;   /* súper redondo */
+    padding-inline: 1.25rem;           /* un poco más de ancho */
+}
+
+/* Tamaño pequeño también redondo */
+.btn-sm {
+    border-radius: 999px !important;
+}
+
+/* Botones outline en tu tabla del portal */
+.o_portal_my_doc .table .btn {
+    border-radius: 999px !important;
+}
+
+/* Opcional: colores un poco más bonitos para estos dos */
+.btn-outline-secondary {
+    border-radius: 999px !important;
+    border-width: 1.5px;
+}
+
+.btn-outline-danger {
+    border-radius: 999px !important;
+    border-width: 1.5px;
+}
+
+/* Botones redondos */
+.btn, .badge, .form-control, .form-select {
+  border-radius: 999px !important;
+}
+
+/* Card de reserva más pro */
+.spoot-booking-card {
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,.06);
+}
+
+/* Títulos */
+.spoot-office-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+/* Lista precios */
+.spoot-price-list li {
+  margin-bottom: .25rem;
+}
