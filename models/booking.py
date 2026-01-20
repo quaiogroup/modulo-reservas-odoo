@@ -1,8 +1,9 @@
 import base64
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
+
 
 class SpootOfficeBooking(models.Model):
     _name = "spoot.office.booking"
@@ -84,6 +85,9 @@ class SpootOfficeBooking(models.Model):
 
     notes = fields.Text(string="Notas internas")
 
+    # -------------------------------------------------------------------------
+    # Datetimes
+    # -------------------------------------------------------------------------
     @api.depends("date", "slot_type")
     def _compute_datetimes(self):
         for rec in self:
@@ -102,36 +106,36 @@ class SpootOfficeBooking(models.Model):
             rec.start_datetime = datetime.combine(rec.date, start_t)
             rec.end_datetime = datetime.combine(rec.date, end_t)
 
+    # -------------------------------------------------------------------------
+    # Disponibilidad (para frontend/admin)
+    # -------------------------------------------------------------------------
     @api.model
     def get_availability(self, office_id, date_str):
         """
         Retorna franjas disponibles para una oficina y fecha.
         date_str: 'YYYY-MM-DD'
+        Reglas:
+          - si full_day existe (cualquier estado != cancelled) => nada disponible
+          - si morning+afternoon tomados => full_day no disponible
+          - pending_payment también bloquea (amarillo)
         """
         if not office_id or not date_str:
             return {"available": [], "taken": []}
 
-        # normaliza date
         date = fields.Date.from_string(date_str)
 
-        taken = self.search([
+        taken = self.sudo().search([
             ("office_id", "=", int(office_id)),
             ("date", "=", date),
             ("state", "!=", "cancelled"),
         ]).mapped("slot_type")
 
-        all_slots = ["morning", "afternoon", "full_day"]
-
-        # Reglas: si full_day está tomado → nada disponible
-        # si morning y afternoon están tomados → full_day tampoco
         taken_set = set(taken)
         available = []
 
         if "full_day" in taken_set:
             available = []
         else:
-            # si está tomado morning o afternoon, igual puede existir el otro,
-            # pero full_day solo si ambos libres.
             if "morning" not in taken_set:
                 available.append("morning")
             if "afternoon" not in taken_set:
@@ -140,23 +144,132 @@ class SpootOfficeBooking(models.Model):
                 available.append("full_day")
 
         return {"available": available, "taken": list(taken_set)}
-    @api.constrains("office_id", "start_datetime", "end_datetime", "state")
-    def _check_no_overlap(self):
-            for rec in self:
-                if not rec.office_id or not rec.date or not rec.slot_type:
-                    continue
-                if rec.state == "cancelled":
-                    continue
 
-                domain = [
-                    ("id", "!=", rec.id),
-                    ("office_id", "=", rec.office_id.id),
-                    ("date", "=", rec.date),
-                    ("slot_type", "=", rec.slot_type),
-                    ("state", "!=", "cancelled"),
-                ]
-                if self.search_count(domain):
-                    raise ValidationError(_("Esa franja ya está reservada. Elige otra."))
+    # -------------------------------------------------------------------------
+    # Anti-overlap (bloquea doble reserva)
+    # -------------------------------------------------------------------------
+    @api.constrains("office_id", "date", "slot_type", "state")
+    def _check_no_overlap(self):
+        """
+        Evita reservas duplicadas por oficina+fecha+franja si no está cancelada.
+        (pending_payment y confirmed bloquean)
+        """
+        for rec in self:
+            if not rec.office_id or not rec.date or not rec.slot_type:
+                continue
+            if rec.state == "cancelled":
+                continue
+
+            domain = [
+                ("id", "!=", rec.id),
+                ("office_id", "=", rec.office_id.id),
+                ("date", "=", rec.date),
+                ("slot_type", "=", rec.slot_type),
+                ("state", "!=", "cancelled"),
+            ]
+            if self.sudo().search_count(domain):
+                raise ValidationError(_("Esa franja ya está reservada. Elige otra."))
+
+    # -------------------------------------------------------------------------
+    # MATRIZ PARA DASHBOARD ADMIN (píldoras por día)
+    # -------------------------------------------------------------------------
+    @api.model
+    def get_admin_availability_matrix(self, date_start, date_end, office_ids=None):
+        """
+        Devuelve estructura lista para pintar tabla admin:
+        - days: lista de días (YYYY-MM-DD)
+        - rows: lista de oficinas con celdas por día
+          cada celda tiene segments: morning/afternoon con status y booking_id
+
+        status:
+          - free: disponible (verde)
+          - pending: pendiente de pago (amarillo)  -> state=pending_payment
+          - busy: ocupada (rojo)                   -> state=confirmed
+        """
+        # Normaliza fechas (pueden venir como string)
+        if isinstance(date_start, str):
+            date_start = fields.Date.from_string(date_start)
+        if isinstance(date_end, str):
+            date_end = fields.Date.from_string(date_end)
+
+        # Oficinas a evaluar
+        if office_ids:
+            offices = self.env["spoot.office"].sudo().browse(office_ids)
+        else:
+            offices = self.env["spoot.office"].sudo().search(
+                [("active", "=", True)],
+                order="name asc",
+            )
+
+        # Lista de días
+        days = []
+        cur = date_start
+        while cur <= date_end:
+            days.append(cur)
+            cur += timedelta(days=1)
+
+        # Trae todas las reservas en el rango (1 query)
+        bookings = self.sudo().search([
+            ("office_id", "in", offices.ids),
+            ("date", ">=", date_start),
+            ("date", "<=", date_end),
+            ("state", "!=", "cancelled"),
+        ])
+
+        # Index por (office_id, date) -> {slot_type: booking}
+        index = {}
+        for b in bookings:
+            key = (b.office_id.id, b.date)
+            index.setdefault(key, {})
+            index[key][b.slot_type] = b
+
+        def seg_status(booking):
+            if not booking:
+                return {"status": "free", "booking_id": False}
+
+            if booking.state == "pending_payment":
+                return {"status": "pending", "booking_id": booking.id}
+
+            if booking.state == "confirmed":
+                return {"status": "busy", "booking_id": booking.id}
+
+            # fallback para cualquier otro estado no cancelado
+            return {"status": "pending", "booking_id": booking.id}
+
+        rows = []
+        for office in offices:
+            row_days = []
+            for d in days:
+                day_key = (office.id, d)
+                day_bookings = index.get(day_key, {})
+
+                # Si hay full_day, bloquea morning+afternoon con el mismo booking
+                full = day_bookings.get("full_day")
+                if full:
+                    seg_m = seg_status(full)
+                    seg_a = seg_status(full)
+                else:
+                    seg_m = seg_status(day_bookings.get("morning"))
+                    seg_a = seg_status(day_bookings.get("afternoon"))
+
+                row_days.append({
+                    "date": fields.Date.to_string(d),
+                    "segments": {
+                        "morning": seg_m,
+                        "afternoon": seg_a,
+                    }
+                })
+
+            rows.append({
+                "office_id": office.id,
+                "office_name": office.name,
+                "days": row_days,
+            })
+
+        return {
+            "days": [fields.Date.to_string(d) for d in days],
+            "rows": rows,
+        }
 
     # -------------------------------------------------------------------------
     # Correo + ICS (para Google Calendar, Outlook, etc.)
@@ -176,7 +289,6 @@ class SpootOfficeBooking(models.Model):
             return ""
 
         def dt_to_ics(dt):
-            # Formato: YYYYMMDDTHHMMSSZ (UTC)
             dt_utc = fields.Datetime.to_datetime(dt)
             return dt_utc.strftime("%Y%m%dT%H%M%SZ")
 

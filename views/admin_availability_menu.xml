@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_spoot_availability_dashboard" model="ir.actions.client">
+        <field name="name">Disponibilidad</field>
+        <field name="tag">spoot_availability_dashboard</field>
+    </record>
+
+    <menuitem id="menu_spoot_root" name="Reservas" sequence="10"/>
+
+    <menuitem id="menu_spoot_availability"
+              name="Disponibilidad"
+              parent="menu_spoot_root"
+              action="action_spoot_availability_dashboard"
+              sequence="10"/>
+
+    <menuitem id="menu_spoot_offices"
+              name="Oficinas"
+              parent="menu_spoot_root"
+              action="action_spoot_office"
+              sequence="20"/>
+
+    <menuitem id="menu_spoot_bookings"
+              name="Reservas"
+              parent="menu_spoot_root"
+              action="action_spoot_office_booking"
+              sequence="30"/>
+</odoo>

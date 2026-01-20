@@ -1,0 +1,41 @@
+.o_spoot_availability_dashboard .spoot-btn-round {
+  border-radius: 999px !important;
+}
+
+.spoot-availability-table th,
+.spoot-availability-table td {
+  vertical-align: middle;
+}
+
+.spoot-pill {
+  width: 56px;
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: inline-flex;
+  border: 1px solid rgba(0,0,0,.08);
+}
+
+.spoot-pill-seg {
+  flex: 1;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.spoot-pill-seg:hover {
+  transform: scaleY(1.08);
+}
+
+.spoot-pill-left { border-right: 1px solid rgba(0,0,0,.08); }
+
+.spoot-pill-free { background: #24c26a; }
+.spoot-pill-pending { background: #f6c343; }
+.spoot-pill-busy { background: #e74c3c; }
+
+.spoot-legend {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
