@@ -2,84 +2,121 @@
 <templates id="template" xml:space="preserve">
 
   <t t-name="spoot_office_booking.SpootAvailabilityDashboard">
-    <div class="o_spoot_availability_dashboard">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2 class="mb-0">Disponibilidad por oficina</h2>
-          <small class="text-muted">
-            <t t-esc="state.dateStart"/> → <t t-esc="state.dateEnd"/>
-          </small>
+    <div class="spootDash">
+
+      <!-- Sidebar -->
+      <aside class="spootDash__sidebar">
+        <div class="spootCard">
+          <div class="spootTitle">
+            <div class="spootTitle__h">Disponibilidad por oficina</div>
+            <div class="spootTitle__sub">
+              <t t-esc="state.dateStart"/> → <t t-esc="state.dateEnd"/>
+            </div>
+          </div>
+
+          <div class="spootControls">
+            <div class="spootControls__nav">
+              <button class="spootBtn spootBtn--ghost" t-on-click="() => shift(-7)" title="Anterior">‹</button>
+              <button class="spootBtn spootBtn--ghost" t-on-click="() => shift(7)" title="Siguiente">›</button>
+            </div>
+
+            <div class="spootControls__modes">
+              <button class="spootBtn spootBtn--pill"
+                      t-att-class="state.mode === 'day' ? 'is-active' : ''"
+                      t-on-click="() => setMode('day')">Día</button>
+
+              <button class="spootBtn spootBtn--pill"
+                      t-att-class="state.mode === 'week' ? 'is-active' : ''"
+                      t-on-click="() => setMode('week')">Semana</button>
+
+              <button class="spootBtn spootBtn--pill"
+                      t-att-class="state.mode === 'month' ? 'is-active' : ''"
+                      t-on-click="() => setMode('month')">Mes</button>
+            </div>
+          </div>
+
+          <div class="spootLegend">
+            <div class="spootLegend__row">
+              <span class="spootDot spoot-pill-free"/> <span>Disponible</span>
+            </div>
+            <div class="spootLegend__row">
+              <span class="spootDot spoot-pill-pending"/> <span>Pendiente pago</span>
+            </div>
+            <div class="spootLegend__row">
+              <span class="spootDot spoot-pill-busy"/> <span>Ocupado</span>
+            </div>
+
+            <div class="spootHint">
+              Click en verde = crear reserva.<br/>
+              Click en rojo/amarillo = ver reserva.
+            </div>
+          </div>
         </div>
+      </aside>
 
-<div class="d-flex gap-2">
-  <button class="btn btn-outline-secondary spoot-btn-round" t-on-click="() => shift(-7)">‹</button>
-  <button class="btn btn-outline-secondary spoot-btn-round" t-on-click="() => shift(7)">›</button>
+      <!-- Main -->
+      <main class="spootDash__main">
+        <t t-if="state.loading">
+          <div class="spootLoading">
+            <div class="spootLoading__bar"></div>
+            <div class="spootLoading__text">Cargando disponibilidad…</div>
+          </div>
+        </t>
 
-  <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('day')">Día</button>
-  <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('week')">Semana</button>
-  <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('month')">Mes</button>
-</div>
+        <t t-else="">
+          <div class="spootCard spootTableCard">
+            <div class="spootTableWrap">
+              <table class="spootTable">
+                <thead>
+                  <tr>
+                    <th class="spootTable__officeCol">Oficina</th>
+                    <t t-foreach="state.data.days" t-as="d" t-key="d.date">
+                      <th class="spootTable__dayCol">
+                        <div class="spootDayHead">
+                          <div class="spootDayHead__label"><t t-esc="d.label or d.date"/></div>
+                          <div class="spootDayHead__date"><t t-esc="d.date"/></div>
+                        </div>
+                      </th>
+                    </t>
+                  </tr>
+                </thead>
 
+                <tbody>
+                  <t t-foreach="state.data.rows" t-as="row" t-key="row.office_id">
+                    <tr>
+                      <td class="spootOfficeCell">
+                        <div class="spootOfficeCell__name"><t t-esc="row.office_name"/></div>
+                      </td>
 
-
-      <t t-if="state.loading">
-        <div class="alert alert-info">Cargando disponibilidad…</div>
-      </t>
-
-      <t t-else="">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle spoot-availability-table">
-            <thead>
-              <tr>
-                <th style="min-width: 220px;">Oficina</th>
-<t t-foreach="state.data.days" t-as="d" t-key="d.date">
-                  <th class="text-center" style="min-width: 70px;">
-<t t-esc="d.label or d.date"/>
-                  </th>
-                </t>
-              </tr>
-            </thead>
-
-            <tbody>
-<t t-foreach="state.data.rows" t-as="row" t-key="row.office_id">
-                <tr>
-                  <td class="fw-semibold">
-                    <t t-esc="row.office_name"/>
-                  </td>
-
-<t t-foreach="row.days" t-as="cell" t-key="cell.date">
-                    <td class="text-center">
-                      <!-- Píldora doble: morning + afternoon -->
-                      <div class="spoot-pill">
-                        <div
-                          class="spoot-pill-seg spoot-pill-left"
-                          t-att-class="segClass(cell.segments.morning.status)"
-                          t-on-click="() => onSegmentClick(row.office_id, cell.date, 'morning', cell.segments.morning)"
-                          t-att-title="cell.segments.morning.status"
-                        />
-                        <div
-                          class="spoot-pill-seg spoot-pill-right"
-                          t-att-class="segClass(cell.segments.afternoon.status)"
-                          t-on-click="() => onSegmentClick(row.office_id, cell.date, 'afternoon', cell.segments.afternoon)"
-                          t-att-title="cell.segments.afternoon.status"
-                        />
-                      </div>
-                    </td>
+                      <t t-foreach="row.days" t-as="cell" t-key="cell.date">
+                        <td class="spootCell">
+                          <div class="spootPill" title="Mañana / Tarde">
+                            <button
+                              type="button"
+                              class="spootPill__seg spootPill__seg--left"
+                              t-att-class="segClass(cell.segments.morning.status)"
+                              t-on-click="() => onSegmentClick(row.office_id, cell.date, 'morning', cell.segments.morning)"
+                              t-att-title="'Mañana: ' + (cell.segments.morning.status)"
+                            />
+                            <button
+                              type="button"
+                              class="spootPill__seg spootPill__seg--right"
+                              t-att-class="segClass(cell.segments.afternoon.status)"
+                              t-on-click="() => onSegmentClick(row.office_id, cell.date, 'afternoon', cell.segments.afternoon)"
+                              t-att-title="'Tarde: ' + (cell.segments.afternoon.status)"
+                            />
+                          </div>
+                        </td>
+                      </t>
+                    </tr>
                   </t>
-                </tr>
-              </t>
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </t>
+      </main>
 
-        <div class="d-flex gap-3 mt-3 small text-muted">
-          <span><span class="spoot-legend spoot-pill-free"/> Disponible</span>
-          <span><span class="spoot-legend spoot-pill-pending"/> Pendiente pago</span>
-          <span><span class="spoot-legend spoot-pill-busy"/> Ocupado</span>
-          <span class="ms-auto">Click en verde = crear reserva. Click en rojo/amarillo = ver reserva.</span>
-        </div>
-      </t>
-    </div>
     </div>
   </t>
 
