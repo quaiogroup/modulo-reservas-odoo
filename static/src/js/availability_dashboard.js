@@ -5,18 +5,23 @@ import { Component, onWillStart, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
 console.log("SPPOT dashboard loaded ✅");
+
 class SpootAvailabilityDashboard extends Component {
   setup() {
     this.orm = useService("orm");
-this.actionService = useService("action");
+    this.actionService = useService("action");
+    this.setMode = this.setMode.bind(this);
+this.shift = this.shift.bind(this);
+this.onSegmentClick = this.onSegmentClick.bind(this);
+
 
     const today = new Date();
     const start = new Date(today);
     start.setDate(today.getDate() - today.getDay() + 1); // lunes (aprox)
     const end = new Date(start);
     end.setDate(start.getDate() + 6); // domingo
-    console.log("actionService:", this.actionService);
 
+    console.log("actionService:", this.actionService);
 
     this.state = useState({
       mode: "week", // day | week | month
@@ -32,7 +37,6 @@ this.actionService = useService("action");
   }
 
   _toISODate(d) {
-    // YYYY-MM-DD en local
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
@@ -53,6 +57,7 @@ this.actionService = useService("action");
     this.state.mode = mode;
 
     const base = new Date(this.state.dateStart);
+
     if (mode === "day") {
       this.state.dateEnd = this.state.dateStart;
     } else if (mode === "week") {
@@ -60,8 +65,10 @@ this.actionService = useService("action");
       const day = monday.getDay();
       const diff = (day === 0 ? -6 : 1) - day;
       monday.setDate(monday.getDate() + diff);
+
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
+
       this.state.dateStart = this._toISODate(monday);
       this.state.dateEnd = this._toISODate(sunday);
     } else if (mode === "month") {
@@ -83,38 +90,36 @@ this.actionService = useService("action");
 
     this.state.dateStart = this._toISODate(s);
     this.state.dateEnd = this._toISODate(e);
+
     await this.load();
   }
 
   // Click en segmento: si hay booking_id abre form, si no abre wizard
   async onSegmentClick(officeId, dateStr, slotType, seg) {
     if (seg.booking_id) {
-await this.actionService.doAction({
-  type: "ir.actions.act_window",
-  name: "Reserva",
-  res_model: "spoot.office.booking",
-  res_id: seg.booking_id,
-  views: [[false, "form"]],
-  target: "current",
-});
-
+      await this.actionService.doAction({
+        type: "ir.actions.act_window",
+        name: "Reserva",
+        res_model: "spoot.office.booking",
+        res_id: seg.booking_id,
+        views: [[false, "form"]],
+        target: "current",
+      });
       return;
     }
 
-    // Crear wizard (reserva rápida)
-await this.actionService.doAction({
-  type: "ir.actions.act_window",
-  name: "Crear reserva",
-  res_model: "spoot.booking.quick.create.wizard",
-  views: [[false, "form"]],
-  target: "new",
-  context: {
-    default_office_id: officeId,
-    default_date: dateStr,
-    default_slot_type: slotType,
-  },
-});
-
+    await this.actionService.doAction({
+      type: "ir.actions.act_window",
+      name: "Crear reserva",
+      res_model: "spoot.booking.quick.create.wizard",
+      views: [[false, "form"]],
+      target: "new",
+      context: {
+        default_office_id: officeId,
+        default_date: dateStr,
+        default_slot_type: slotType,
+      },
+    });
   }
 
   // Helpers de clase CSS por estado
@@ -125,6 +130,10 @@ await this.actionService.doAction({
   }
 }
 
-SpootAvailabilityDashboard.template = "spoot_office_booking.SpootAvailabilityDashboard";
+SpootAvailabilityDashboard.template =
+  "spoot_office_booking.SpootAvailabilityDashboard";
 
-registry.category("actions").add("spoot_office_booking.availability_dashboard", SpootAvailabilityDashboard);
+// OJO: esta key debe coincidir con <field name="tag"> en tu ir.actions.client
+registry
+  .category("actions")
+  .add("spoot_office_booking.availability_dashboard", SpootAvailabilityDashboard);

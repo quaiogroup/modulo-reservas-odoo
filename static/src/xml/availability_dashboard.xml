@@ -11,15 +11,16 @@
           </small>
         </div>
 
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary spoot-btn-round" t-on-click="() => shift(-7)">‹</button>
-          <button class="btn btn-outline-secondary spoot-btn-round" t-on-click="() => shift(7)">›</button>
+<div class="d-flex gap-2">
+  <button class="btn btn-outline-secondary spoot-btn-round" t-on-click="() => shift(-7)">‹</button>
+  <button class="btn btn-outline-secondary spoot-btn-round" t-on-click="() => shift(7)">›</button>
 
-          <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('day')">Día</button>
-          <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('week')">Semana</button>
-          <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('month')">Mes</button>
-        </div>
-      </div>
+  <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('day')">Día</button>
+  <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('week')">Semana</button>
+  <button class="btn btn-outline-primary spoot-btn-round" t-on-click="() => setMode('month')">Mes</button>
+</div>
+
+
 
       <t t-if="state.loading">
         <div class="alert alert-info">Cargando disponibilidad…</div>
@@ -53,13 +54,13 @@
                         <div
                           class="spoot-pill-seg spoot-pill-left"
                           t-att-class="segClass(cell.segments.morning.status)"
-                          t-on-click="() => this.onSegmentClick(row.office_id, cell.date, 'morning', cell.segments.morning)"
+                          t-on-click="() => onSegmentClick(row.office_id, cell.date, 'morning', cell.segments.morning)"
                           t-att-title="cell.segments.morning.status"
                         />
                         <div
                           class="spoot-pill-seg spoot-pill-right"
                           t-att-class="segClass(cell.segments.afternoon.status)"
-                          t-on-click="() => this.onSegmentClick(row.office_id, cell.date, 'afternoon', cell.segments.afternoon)"
+                          t-on-click="() => onSegmentClick(row.office_id, cell.date, 'afternoon', cell.segments.afternoon)"
                           t-att-title="cell.segments.afternoon.status"
                         />
                       </div>
@@ -78,6 +79,7 @@
           <span class="ms-auto">Click en verde = crear reserva. Click en rojo/amarillo = ver reserva.</span>
         </div>
       </t>
+    </div>
     </div>
   </t>
 
