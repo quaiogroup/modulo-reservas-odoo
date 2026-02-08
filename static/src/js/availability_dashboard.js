@@ -53,17 +53,21 @@ async load() {
   );
 
   // res.days llega como ["2026-02-09", ...]
-  const days = (res.days || []).map((dateStr) => {
-    const day = Number(dateStr.slice(8, 10)); // 9, 10, 11...
-    const dow = new Date(dateStr + "T00:00:00").toLocaleDateString("es-CO", {
+const days = (res.days || []).map((dateStr) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+
+  const dateObj = new Date(y, m - 1, d); // ← ESTA es la clave
+
+  return {
+    date: dateStr,
+    day: d,
+    dow: dateObj.toLocaleDateString("es-CO", {
       weekday: "short",
-    });
-    return {
-      date: dateStr,
-      day,
-      dow,
-    };
-  });
+    }),
+  };
+});
+console.log("[SPPOT] days objects =>", days);
+
 
   this.state.data = {
     ...res,
