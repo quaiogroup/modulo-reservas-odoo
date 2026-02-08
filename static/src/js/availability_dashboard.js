@@ -43,15 +43,37 @@ this.onSegmentClick = this.onSegmentClick.bind(this);
     return `${yyyy}-${mm}-${dd}`;
   }
 
-  async load() {
-    this.state.loading = true;
-    this.state.data = await this.orm.call(
-      "spoot.office.booking",
-      "get_admin_availability_matrix",
-      [this.state.dateStart, this.state.dateEnd, null]
-    );
-    this.state.loading = false;
-  }
+async load() {
+  this.state.loading = true;
+
+  const res = await this.orm.call(
+    "spoot.office.booking",
+    "get_admin_availability_matrix",
+    [this.state.dateStart, this.state.dateEnd, null]
+  );
+
+  // res.days llega como ["2026-02-09", ...]
+  const days = (res.days || []).map((dateStr) => {
+    const day = Number(dateStr.slice(8, 10)); // 9, 10, 11...
+    const dow = new Date(dateStr + "T00:00:00").toLocaleDateString("es-CO", {
+      weekday: "short",
+    });
+    return {
+      date: dateStr,
+      day,
+      dow,
+    };
+  });
+
+  this.state.data = {
+    ...res,
+    days, // ahora es array de objetos
+  };
+
+  this.state.loading = false;
+}
+
+
 
   async setMode(mode) {
     this.state.mode = mode;

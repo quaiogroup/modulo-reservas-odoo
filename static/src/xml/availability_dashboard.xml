@@ -70,14 +70,18 @@
                 <thead>
                   <tr>
                     <th class="spootTable__officeCol">Oficina</th>
-                    <t t-foreach="state.data.days" t-as="d" t-key="d.date">
-                      <th class="spootTable__dayCol">
-                        <div class="spootDayHead">
-                          <div class="spootDayHead__label"><t t-esc="d.label or d.date"/></div>
-                          <div class="spootDayHead__date"><t t-esc="d.date"/></div>
-                        </div>
-                      </th>
-                    </t>
+  <t t-foreach="state.data.days" t-as="d" t-key="d">
+  <th class="text-center spoot-day-head">
+<div class="spoot-day-num">
+  <t t-esc="d.day"/>
+</div>
+
+    <div class="spoot-day-dow">
+      <t t-esc="(new Date(d + 'T00:00:00')).toLocaleDateString('es-CO', { weekday: 'short' })"/>
+    </div>
+  </th>
+</t>
+
                   </tr>
                 </thead>
 
