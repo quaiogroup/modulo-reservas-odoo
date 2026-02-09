@@ -10,14 +10,20 @@
           <div class="spootTitle">
             <div class="spootTitle__h">Disponibilidad por oficina</div>
 
-            <div class="spootTitle__sub">
-              <t t-if="state.mode === 'month'">
-                <t t-esc="state.monthLabel"/>
-              </t>
-              <t t-else="">
-                <t t-esc="state.dateStart"/> → <t t-esc="state.dateEnd"/>
-              </t>
-            </div>
+<div class="spootTitle__sub">
+
+  <div class="spootTitle__month">
+    <t t-esc="state.monthLabel"/>
+  </div>
+
+  <t t-if="state.mode !== 'month'">
+    <div class="spootTitle__range">
+      <t t-esc="state.dateStart"/> → <t t-esc="state.dateEnd"/>
+    </div>
+  </t>
+
+</div>
+
           </div>
 
           <div class="spootControls">
@@ -78,6 +84,20 @@
 
         <t t-else="">
           <div class="spootCard spootTableCard">
+            <div class="spootTableHeader">
+  <t t-if="state.mode === 'month'">
+    <span class="spootTableHeader__title">
+      <t t-esc="state.monthLabel"/>
+    </span>
+  </t>
+
+  <t t-else="">
+    <span class="spootTableHeader__title">
+      <t t-esc="state.periodLabel"/>
+    </span>
+  </t>
+</div>
+
 
    <!-- ====== MODO MES (GRID) ====== -->
 <t t-if="state.mode === 'month'">

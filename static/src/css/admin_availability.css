@@ -455,3 +455,15 @@
 .spootMonth__gridScroller::-webkit-scrollbar-track{
   background: transparent;
 }
+.spootTableHeader {
+  padding: 14px 18px 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.spootTableHeader__title {
+  opacity: 0.85;
+    font-size: 15px;
+  font-weight: 700;
+}
