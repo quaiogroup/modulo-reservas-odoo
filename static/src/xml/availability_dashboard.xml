@@ -9,16 +9,28 @@
         <div class="spootCard">
           <div class="spootTitle">
             <div class="spootTitle__h">Disponibilidad por oficina</div>
+
             <div class="spootTitle__sub">
-              <t t-esc="state.dateStart"/> → <t t-esc="state.dateEnd"/>
+              <t t-if="state.mode === 'month'">
+                <t t-esc="state.monthLabel"/>
+              </t>
+              <t t-else="">
+                <t t-esc="state.dateStart"/> → <t t-esc="state.dateEnd"/>
+              </t>
             </div>
           </div>
 
           <div class="spootControls">
-            <div class="spootControls__nav">
-              <button class="spootBtn spootBtn--ghost" t-on-click="() => shift(-7)" title="Anterior">‹</button>
-              <button class="spootBtn spootBtn--ghost" t-on-click="() => shift(7)" title="Siguiente">›</button>
-            </div>
+<div class="spootControls__nav">
+  <button class="spootBtn spootBtn--ghost" t-on-click="() => shift(-1)" title="Anterior">‹</button>
+
+  <button class="spootBtn spootBtn--primary" t-on-click="() => goToday()" title="Ir a hoy">
+    Hoy
+  </button>
+
+  <button class="spootBtn spootBtn--ghost" t-on-click="() => shift(1)" title="Siguiente">›</button>
+</div>
+
 
             <div class="spootControls__modes">
               <button class="spootBtn spootBtn--pill"
@@ -56,6 +68,7 @@
 
       <!-- Main -->
       <main class="spootDash__main">
+
         <t t-if="state.loading">
           <div class="spootLoading">
             <div class="spootLoading__bar"></div>
@@ -65,62 +78,120 @@
 
         <t t-else="">
           <div class="spootCard spootTableCard">
-            <div class="spootTableWrap">
-              <table class="spootTable">
-                <thead>
-                  <tr>
-                    <th class="spootTable__officeCol">Oficina</th>
-<t t-foreach="state.data.days" t-as="d" t-key="d.date">
-  <th class="text-center spoot-day-head">
-    <div class="spoot-day-num">
-      <t t-esc="d.day"/>
+
+   <!-- ====== MODO MES (GRID) ====== -->
+<t t-if="state.mode === 'month'">
+  <div class="spootMonth">
+
+    <!-- Header -->
+    <div class="spootMonth__head">
+      <div class="spootMonth__corner">Oficina</div>
+      <div class="spootMonth__dow">L</div>
+      <div class="spootMonth__dow">M</div>
+      <div class="spootMonth__dow">X</div>
+      <div class="spootMonth__dow">J</div>
+      <div class="spootMonth__dow">V</div>
+      <div class="spootMonth__dow">S</div>
+      <div class="spootMonth__dow">D</div>
     </div>
 
-    <div class="spoot-day-dow">
-      <t t-esc="d.dow"/>
-    </div>
-  </th>
+    <!-- Oficinas -->
+    <t t-foreach="state.data.rows" t-as="row" t-key="row.office_id">
+      <div class="spootMonth__row">
+        <div class="spootMonth__office">
+          <t t-esc="row.office_name"/>
+        </div>
+
+        <!-- Grid 7x6 (aplanamos monthWeeks) -->
+<div class="spootMonth__gridScroller">
+  <div class="spootMonth__grid">
+    <t t-foreach="state.monthWeeks" t-as="w" t-key="w[0].date">
+      <t t-foreach="w" t-as="d" t-key="d.date">
+        <t t-set="cell" t-value="(row.days_by_date or {})[d.date]"/>
+
+        <div class="spootMonth__cell" t-att-class="d.isInMonth ? '' : 'is-out'">
+          <div class="spootMonth__num"><t t-esc="d.day"/></div>
+
+          <t t-if="cell">
+            <div class="spootPill spootPill--sm">
+              <button type="button"
+                class="spootPill__seg spootPill__seg--left"
+                t-att-class="segClass(cell.segments.morning.status)"
+                t-on-click="() => onSegmentClick(row.office_id, d.date, 'morning', cell.segments.morning)"/>
+              <button type="button"
+                class="spootPill__seg spootPill__seg--right"
+                t-att-class="segClass(cell.segments.afternoon.status)"
+                t-on-click="() => onSegmentClick(row.office_id, d.date, 'afternoon', cell.segments.afternoon)"/>
+            </div>
+          </t>
+        </div>
+      </t>
+    </t>
+  </div>
+</div>
+
+      </div>
+    </t>
+
+  </div>
 </t>
 
 
+            <!-- ====== MODO DÍA/SEMANA (TABLA) ====== -->
+            <t t-else="">
+              <div class="spootTableWrap">
+                <table class="spootTable">
 
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <t t-foreach="state.data.rows" t-as="row" t-key="row.office_id">
+                  <thead>
                     <tr>
-                      <td class="spootOfficeCell">
-                        <div class="spootOfficeCell__name"><t t-esc="row.office_name"/></div>
-                      </td>
+                      <th class="spootTable__officeCol">Oficina</th>
 
-                      <t t-foreach="row.days" t-as="cell" t-key="cell.date">
-                        <td class="spootCell">
-                          <div class="spootPill" title="Mañana / Tarde">
-                            <button
-                              type="button"
-                              class="spootPill__seg spootPill__seg--left"
-                              t-att-class="segClass(cell.segments.morning.status)"
-                              t-on-click="() => onSegmentClick(row.office_id, cell.date, 'morning', cell.segments.morning)"
-                              t-att-title="'Mañana: ' + (cell.segments.morning.status)"
-                            />
-                            <button
-                              type="button"
-                              class="spootPill__seg spootPill__seg--right"
-                              t-att-class="segClass(cell.segments.afternoon.status)"
-                              t-on-click="() => onSegmentClick(row.office_id, cell.date, 'afternoon', cell.segments.afternoon)"
-                              t-att-title="'Tarde: ' + (cell.segments.afternoon.status)"
-                            />
-                          </div>
-                        </td>
+                      <t t-foreach="state.data.days" t-as="d" t-key="d.date">
+                        <th class="text-center spoot-day-head">
+                          <div class="spoot-day-num"><t t-esc="d.day"/></div>
+                          <div class="spoot-day-dow"><t t-esc="d.dow"/></div>
+                        </th>
                       </t>
                     </tr>
-                  </t>
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+
+                  <tbody>
+                    <t t-foreach="state.data.rows" t-as="row" t-key="row.office_id">
+                      <tr>
+                        <td class="spootOfficeCell">
+                          <div class="spootOfficeCell__name"><t t-esc="row.office_name"/></div>
+                        </td>
+
+                        <t t-foreach="row.days" t-as="cell" t-key="cell.date">
+                          <td class="spootCell">
+                            <div class="spootPill" title="Mañana / Tarde">
+
+                              <button type="button"
+                                      class="spootPill__seg spootPill__seg--left"
+                                      t-att-class="segClass(cell.segments.morning.status)"
+                                      t-on-click="() => onSegmentClick(row.office_id, cell.date, 'morning', cell.segments.morning)"
+                                      t-att-title="'Mañana: ' + cell.segments.morning.status"/>
+
+                              <button type="button"
+                                      class="spootPill__seg spootPill__seg--right"
+                                      t-att-class="segClass(cell.segments.afternoon.status)"
+                                      t-on-click="() => onSegmentClick(row.office_id, cell.date, 'afternoon', cell.segments.afternoon)"
+                                      t-att-title="'Tarde: ' + cell.segments.afternoon.status"/>
+
+                            </div>
+                          </td>
+                        </t>
+                      </tr>
+                    </t>
+                  </tbody>
+
+                </table>
+              </div>
+            </t>
+
           </div>
         </t>
+
       </main>
 
     </div>

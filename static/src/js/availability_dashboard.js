@@ -13,6 +13,8 @@ class SpootAvailabilityDashboard extends Component {
     this.setMode = this.setMode.bind(this);
 this.shift = this.shift.bind(this);
 this.onSegmentClick = this.onSegmentClick.bind(this);
+this.goToday = this.goToday.bind(this);
+
 
 
     const today = new Date();
@@ -29,6 +31,9 @@ this.onSegmentClick = this.onSegmentClick.bind(this);
       dateEnd: this._toISODate(end),
       data: null,
       loading: true,
+      monthLabel: "",
+monthWeeks: [], // array de semanas, cada semana array de 7 celdas {date, day, dow, isInMonth}
+
     });
 
     onWillStart(async () => {
@@ -42,6 +47,11 @@ this.onSegmentClick = this.onSegmentClick.bind(this);
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   }
+  _fromISODate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d); // LOCAL ✅
+}
+
 
 async load() {
   this.state.loading = true;
@@ -52,37 +62,91 @@ async load() {
     [this.state.dateStart, this.state.dateEnd, null]
   );
 
-  // res.days llega como ["2026-02-09", ...]
-const days = (res.days || []).map((dateStr) => {
-  const [y, m, d] = dateStr.split("-").map(Number);
+  // days -> objetos {date, day, dow}
+  const days = (res.days || []).map((dateStr) => {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    return {
+      date: dateStr,
+      day: d,
+      dow: dateObj.toLocaleDateString("es-CO", { weekday: "short" }),
+    };
+  });
 
-  const dateObj = new Date(y, m - 1, d); // ← ESTA es la clave
+  // rows -> asegurar days_by_date SIEMPRE
+  const rows = (res.rows || []).map((row) => {
+    const days_by_date = {};
+    (row.days || []).forEach((cell) => {
+      days_by_date[cell.date] = cell;
+    });
+    return { ...row, days_by_date };
+  });
 
-  return {
-    date: dateStr,
-    day: d,
-    dow: dateObj.toLocaleDateString("es-CO", {
-      weekday: "short",
-    }),
-  };
-});
-console.log("[SPPOT] days objects =>", days);
+  this.state.data = { ...res, days, rows };
 
+  // Label del mes
+  const baseStart = new Date(this.state.dateStart.split("-").map(Number)[0],
+                             this.state.dateStart.split("-").map(Number)[1] - 1,
+                             this.state.dateStart.split("-").map(Number)[2]);
+  this.state.monthLabel = baseStart.toLocaleDateString("es-CO", {
+    month: "long",
+    year: "numeric",
+  });
 
-  this.state.data = {
-    ...res,
-    days, // ahora es array de objetos
-  };
+  // Grid del mes (solo en modo month)
+  if (this.state.mode === "month") {
+    const firstOfMonth = new Date(baseStart.getFullYear(), baseStart.getMonth(), 1);
+    const lastOfMonth = new Date(baseStart.getFullYear(), baseStart.getMonth() + 1, 0);
+
+    // empezar lunes
+    const firstDow = firstOfMonth.getDay(); // 0..6
+    const diffToMonday = (firstDow === 0 ? -6 : 1) - firstDow;
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(firstOfMonth.getDate() + diffToMonday);
+
+    // terminar domingo
+    const lastDow = lastOfMonth.getDay();
+    const diffToSunday = (lastDow === 0 ? 0 : 7 - lastDow);
+    const gridEnd = new Date(lastOfMonth);
+    gridEnd.setDate(lastOfMonth.getDate() + diffToSunday);
+
+    const weeks = [];
+    let cursor = new Date(gridStart);
+
+    while (cursor <= gridEnd) {
+      const week = [];
+      for (let i = 0; i < 7; i++) {
+        const y = cursor.getFullYear();
+        const m = cursor.getMonth() + 1;
+        const d = cursor.getDate();
+        const dateStr = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+        week.push({
+          date: dateStr,
+          day: d,
+          isInMonth: cursor.getMonth() === baseStart.getMonth(),
+        });
+
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      weeks.push(week);
+    }
+
+    this.state.monthWeeks = weeks;
+  } else {
+    this.state.monthWeeks = [];
+  }
 
   this.state.loading = false;
 }
 
 
 
+
   async setMode(mode) {
     this.state.mode = mode;
 
-    const base = new Date(this.state.dateStart);
+const base = this._fromISODate(this.state.dateStart);
 
     if (mode === "day") {
       this.state.dateEnd = this.state.dateStart;
@@ -107,18 +171,65 @@ console.log("[SPPOT] days objects =>", days);
     await this.load();
   }
 
-  async shift(deltaDays) {
-    const s = new Date(this.state.dateStart);
-    const e = new Date(this.state.dateEnd);
+  async goToday() {
+  const today = new Date();
+  const iso = this._toISODate(today);
 
-    s.setDate(s.getDate() + deltaDays);
-    e.setDate(e.getDate() + deltaDays);
-
-    this.state.dateStart = this._toISODate(s);
-    this.state.dateEnd = this._toISODate(e);
-
-    await this.load();
+  if (this.state.mode === "day") {
+    this.state.dateStart = iso;
+    this.state.dateEnd = iso;
   }
+
+  if (this.state.mode === "week") {
+    const monday = new Date(today);
+    const day = monday.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
+    monday.setDate(monday.getDate() + diff);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    this.state.dateStart = this._toISODate(monday);
+    this.state.dateEnd = this._toISODate(sunday);
+  }
+
+  if (this.state.mode === "month") {
+    const first = new Date(today.getFullYear(), today.getMonth(), 1);
+    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    this.state.dateStart = this._toISODate(first);
+    this.state.dateEnd = this._toISODate(last);
+  }
+
+  await this.load();
+}
+
+
+async shift(step) {
+  let start = this._fromISODate(this.state.dateStart);
+  let end = this._fromISODate(this.state.dateEnd);
+
+  if (this.state.mode === "day") {
+    start.setDate(start.getDate() + step);
+    end.setDate(end.getDate() + step);
+    this.state.dateStart = this._toISODate(start);
+    this.state.dateEnd = this._toISODate(end);
+  } else if (this.state.mode === "week") {
+    start.setDate(start.getDate() + 7 * step);
+    end.setDate(end.getDate() + 7 * step);
+    this.state.dateStart = this._toISODate(start);
+    this.state.dateEnd = this._toISODate(end);
+  } else if (this.state.mode === "month") {
+    const base = this._fromISODate(this.state.dateStart);
+    const first = new Date(base.getFullYear(), base.getMonth() + step, 1);
+    const last = new Date(base.getFullYear(), base.getMonth() + step + 1, 0);
+    this.state.dateStart = this._toISODate(first);
+    this.state.dateEnd = this._toISODate(last);
+  }
+
+  await this.load();
+}
+
+
 
   // Click en segmento: si hay booking_id abre form, si no abre wizard
   async onSegmentClick(officeId, dateStr, slotType, seg) {

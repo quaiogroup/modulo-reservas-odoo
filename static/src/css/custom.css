@@ -48,3 +48,76 @@ button.btn {
 .spoot-price-list li {
   margin-bottom: .25rem;
 }
+
+.spootMonth {
+  padding: 12px;
+}
+
+.spootMonth__head {
+  display: grid;
+  grid-template-columns: 220px repeat(7, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px 8px 12px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  margin-bottom: 10px;
+}
+
+.spootMonth__corner {
+  font-weight: 600;
+  color: rgba(0,0,0,.65);
+}
+
+.spootMonth__dow {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0,0,0,.55);
+}
+
+.spootMonth__row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 8px;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+.spootMonth__office {
+  font-weight: 600;
+  padding-top: 6px;
+}
+
+.spootMonth__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.spootMonth__cell {
+  background: rgba(0,0,0,.02);
+  border: 1px solid rgba(0,0,0,.06);
+  border-radius: 10px;
+  padding: 6px;
+  min-height: 54px;
+  position: relative;
+}
+
+.spootMonth__cell.is-out {
+  opacity: .45;
+}
+
+.spootMonth__num {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(0,0,0,.55);
+  position: absolute;
+  top: 6px;
+  right: 8px;
+}
+
+.spootPill--sm {
+  margin-top: 18px;
+  transform: scale(.92);
+  transform-origin: left top;
+}

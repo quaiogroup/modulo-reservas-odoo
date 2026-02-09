@@ -302,3 +302,156 @@
   .spootDash__sidebar{ position: static; }
   .spootTable{ min-width: 900px; }
 }
+
+/* ====== MONTH VIEW ====== */
+.spootMonth {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spootMonth__head {
+  display: grid;
+  grid-template-columns: 240px repeat(7, minmax(110px, 1fr));
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 5;
+}
+
+.spootMonth__corner {
+  font-weight: 600;
+  color: #111;
+}
+
+.spootMonth__dow {
+  text-align: center;
+  font-weight: 600;
+  color: #444;
+  font-size: 13px;
+}
+
+.spootMonth__row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 12px;
+}
+
+.spootMonth__office {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 4;
+  font-weight: 600;
+  color: #111;
+  padding: 10px 8px;
+  border-right: 1px solid #f0f0f0;
+  border-radius: 10px;
+}
+
+.spootMonth__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.spootMonth__cell {
+  height: 64px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fff;
+  position: relative;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spootMonth__cell:hover {
+  border-color: #ddd;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+
+.spootMonth__cell.is-out {
+  background: #fafafa;
+  opacity: 0.65;
+}
+
+.spootMonth__num {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+}
+
+/* pill mini para mes */
+.spootPill--sm {
+  width: 52px;
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/* por si tus segs no tenían altura */
+.spootPill__seg {
+  height: 100%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.spootTableCard {
+  overflow: auto;
+}
+/* Botón Hoy */
+.spootBtn--primary{
+  background:#111;
+  color:#fff;
+  border:1px solid #111;
+}
+.spootBtn--primary:hover{
+  filter: brightness(0.95);
+}
+
+/* ===== Month: scroller por fila ===== */
+.spootMonth__row{
+  display:grid;
+  grid-template-columns: 240px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 12px;
+}
+
+/* el scroller vive aquí */
+.spootMonth__gridScroller{
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+}
+
+/* ancho mínimo para forzar scroll si no cabe */
+.spootMonth__grid{
+  display:grid;
+  grid-template-columns: repeat(7, 110px);
+  gap: 8px;
+  min-width: calc(7 * 110px + 6 * 8px);
+}
+
+/* opcional: scrollbar más discreta */
+.spootMonth__gridScroller::-webkit-scrollbar{
+  height: 10px;
+}
+.spootMonth__gridScroller::-webkit-scrollbar-thumb{
+  background: #ddd;
+  border-radius: 999px;
+}
+.spootMonth__gridScroller::-webkit-scrollbar-track{
+  background: transparent;
+}
