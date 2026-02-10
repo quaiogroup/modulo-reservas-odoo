@@ -21,7 +21,9 @@
     # 1) Vistas/acciones primero (aquí se crean los XML IDs)
     "views/office_views.xml",
     "views/booking_views.xml",
-    "views/availability_views.xml",          # <-- si lo tienes, ponlo aquí
+    "views/availability_views.xml", 
+    # <-- si lo tienes, ponlo aquí
+    "data/office_services_data.xml",
 
     # 2) Menús al final (porque referencian acciones ya creadas)
     "views/menu_views.xml",

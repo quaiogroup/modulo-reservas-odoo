@@ -121,3 +121,34 @@ button.btn {
   transform: scale(.92);
   transform-origin: left top;
 }
+
+.spootServices { margin-top: 18px; }
+.spootServices__title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+
+.spootServices__grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.spootServices__item{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.spootServices__icon{
+  font-size: 18px;
+  margin-top: 2px;
+  opacity: .8;
+}
+
+.spootServices__name{ font-weight: 600; }
+.spootServices__desc{ font-size: 12px; opacity: .7; }
+@media (max-width: 768px){
+  .spootServices__grid{ grid-template-columns: 1fr; }
+}

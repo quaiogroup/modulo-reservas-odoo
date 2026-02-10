@@ -174,6 +174,28 @@
           <div class="col-12 col-lg-5">
 
             <!-- Agenda / ocupación (placeholder visual) -->
+             <t t-if="office.service_ids">
+  <div class="spootServices">
+    <h4 class="spootServices__title">Servicios incluidos</h4>
+
+    <div class="spootServices__grid">
+      <t t-foreach="office.service_ids" t-as="srv" t-key="srv.id">
+        <div class="spootServices__item">
+          <t t-if="srv.icon">
+            <i t-att-class="'fa ' + srv.icon + ' spootServices__icon'"/>
+          </t>
+          <div class="spootServices__text">
+            <div class="spootServices__name"><t t-esc="srv.name"/></div>
+            <t t-if="srv.description">
+              <div class="spootServices__desc"><t t-esc="srv.description"/></div>
+            </t>
+          </div>
+        </div>
+      </t>
+    </div>
+  </div>
+</t>
+
 
 
             <!-- Formulario de reserva -->

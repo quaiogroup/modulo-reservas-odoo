@@ -59,6 +59,39 @@
           </list>
         </field>
       </page>
+        <page string="Servicios">
+    <group>
+      <field name="service_ids" widget="many2many_tags"
+             options="{'no_create_edit': False}"
+             placeholder="Selecciona los servicios..."/>
+    </group>
+
+    <group string="Vista previa (web)">
+      <field name="service_ids" nolabel="1">
+        <kanban class="o_kanban_small_column">
+<templates>
+  <t t-name="card">
+
+              <div class="oe_kanban_card">
+                <div class="d-flex align-items-center gap-2">
+<t t-if="record.icon &amp;&amp; (record.icon.value || record.icon.raw_value)">
+  <i t-att-class="'fa ' + (record.icon.value || record.icon.raw_value)"/>
+</t>
+
+                  <div>
+                    <div><strong><field name="name"/></strong></div>
+                    <div class="text-muted" style="font-size:12px;">
+                      <field name="description"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </t>
+          </templates>
+        </kanban>
+      </field>
+    </group>
+  </page>
     </notebook>
 
   </sheet>
