@@ -3,6 +3,10 @@ from odoo import http, _
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
 from odoo.http import request
 from odoo.fields import Datetime
+from odoo.addons.payment import utils as payment_utils
+from werkzeug.utils import redirect
+from urllib.parse import urlencode
+
 
 
 class SpootOfficeWebsite(http.Controller):
@@ -142,27 +146,39 @@ class SpootOfficeWebsite(http.Controller):
                 )
 
             # 3) Crear reserva
-            try:
-                booking = request.env["spoot.office.booking"].sudo().create({
-                    "office_id": office.id,
-                    "partner_id": partner.id,
-                    "date": date,
-                    "slot_type": slot_type,
-                    "need_payment": need_payment,
-                    "state": "pending_payment" if need_payment else "confirmed",
-                })
-            except Exception:
-                return request.render(
-                    "spoot_office_booking.website_office_detail",
-                    {
-                        "office": office,
-                        "error": _("Ocurrió un problema al crear la reserva. Intenta nuevamente."),
-                    },
-                )
+            booking = request.env["spoot.office.booking"].sudo().create({
+                "office_id": office.id,
+                "partner_id": partner.id,
+                "date": date,
+                "slot_type": slot_type,
+                "need_payment": need_payment,
+                "state": "pending_payment" if need_payment else "confirmed",
+            })
 
-            booking.sudo().action_send_emails()
+            # Si NO requiere pago: confirmas y envías correos
+            if not need_payment:
+                booking.sudo().action_send_emails()
+                return request.render("spoot_office_booking.website_booking_thanks", {"booking": booking})
 
-            return request.render("spoot_office_booking.website_booking_thanks", {"booking": booking})
+            # Si SÍ requiere pago: rediriges a /payment/pay
+            amount = booking.sudo()._get_amount_to_pay()   # (lo creamos abajo en el modelo)
+            currency = booking.sudo()._get_currency()
+
+            access_token = payment_utils.generate_access_token(partner.id, amount, currency.id)
+
+            params = {
+                # Ojo: "reference" aquí es un PREFIJO, Odoo genera la referencia final.
+                # Lo usamos para poder identificar la reserva después.
+                "reference": f"BKG{booking.id}",
+                "amount": amount,
+                "currency_id": currency.id,
+                "partner_id": partner.id,
+                "company_id": (office.company_id.id if hasattr(office, "company_id") and office.company_id else request.env.company.id),
+                "access_token": access_token,
+            }
+
+            return redirect("/payment/pay?" + urlencode(params))
+
 
         # GET
         return request.render("spoot_office_booking.website_office_detail", {"office": office})
@@ -248,3 +264,24 @@ class SpootOfficePortal(CustomerPortal):
             if booking.state != "cancelled" and not booking.paid:
                 booking.write({"state": "cancelled"})
         return request.redirect("/my/office-bookings")
+    
+    @http.route(
+        "/my/office-bookings/<int:booking_id>/pay",
+        type="http",
+        auth="user",
+        website=True,
+        methods=["GET"],
+        csrf=False,
+    )
+    def portal_booking_pay(self, booking_id, **kw):
+        booking = request.env["spoot.office.booking"].sudo().browse(booking_id)
+        if not booking.exists() or booking.partner_id.id != request.env.user.partner_id.id:
+            return request.redirect("/my/office-bookings")
+        
+        if booking.paid or booking.state == "cancelled":
+            return request.redirect("/my/office-bookings/{booking.id}")
+        
+        tx = booking._create_payment_transaction()
+        
+        processing_values= tx._get_processing_values()
+        return request.render("payment.payment_process", processing_values)

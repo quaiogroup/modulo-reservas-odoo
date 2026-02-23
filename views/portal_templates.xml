@@ -98,6 +98,13 @@
                                                    class="btn btn-sm btn-outline-secondary">
                                                     Ver
                                                 </a>
+                                                <t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled'">
+  <a t-att-href="'/my/office-bookings/%s/pay' % booking.id"
+     class="btn btn-sm btn-primary ms-1">
+      Pagar
+  </a>
+</t>
+
 
                                                 <!-- Mostrar botón de cancelar solo si no está cancelada ni pagada -->
                                                 <t t-if="booking.state != 'cancelled' and not booking.paid">
@@ -225,9 +232,11 @@
 
                         <div>
                             <t t-if="booking.need_payment and not booking.paid">
-                                <button class="btn btn-primary me-2" disabled="disabled">
-                                    Pagar ahora (placeholder)
-                                </button>
+<a t-att-href="'/my/office-bookings/%s/pay' % booking.id"
+   class="btn btn-primary me-2">
+    Pagar ahora
+</a>
+
                             </t>
 
                             <t t-if="booking.state != 'cancelled' and not booking.paid">
