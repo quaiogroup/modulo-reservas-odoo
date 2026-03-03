@@ -231,13 +231,11 @@
                         </a>
 
                         <div>
-                            <t t-if="booking.need_payment and not booking.paid">
-<a t-att-href="'/my/office-bookings/%s/pay' % booking.id"
-   class="btn btn-primary me-2">
+<t t-if="booking.need_payment and not booking.paid">
+  <a t-att-href="'/my/office-bookings/%s/pay' % booking.id" class="btn btn-primary me-2">
     Pagar ahora
-</a>
-
-                            </t>
+  </a>
+</t>
 
                             <t t-if="booking.state != 'cancelled' and not booking.paid">
                                 <a t-att-href="'/my/office-bookings/%s/cancel' % booking.id"

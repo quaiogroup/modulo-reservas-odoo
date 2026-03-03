@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 from datetime import datetime, time, timedelta
+import hashlib
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
@@ -11,6 +12,7 @@ class SpootOfficeBooking(models.Model):
     _inherit = ["mail.thread"]
     _description = "Reserva de oficina"
     _order = "date, office_id, slot_type"
+    
 
     name = fields.Char(
         string="Referencia",
@@ -104,6 +106,47 @@ class SpootOfficeBooking(models.Model):
     )
 
     notes = fields.Text(string="Notas internas")
+    # ---------------------------
+    # BOLD (checkout externo)
+    # ---------------------------
+    bold_order_id = fields.Char(string="Bold Order ID", copy=False, readonly=True)
+    bold_tx_id = fields.Char(string="Bold Transaction ID", copy=False, readonly=True)
+    
+    bold_order_id = fields.Char(
+    string="Bold Order ID",
+    copy=False,
+    index=True,
+)
+
+    def _get_bold_currency_code(self):
+        """Bold normalmente espera código ISO: COP, USD, etc."""
+        self.ensure_one()
+        return (self.currency_id and self.currency_id.name) or self.env.company.currency_id.name or "COP"
+
+    def _get_bold_amount(self):
+        """Monto según franja (usa tu lógica)."""
+        self.ensure_one()
+        return float(self._get_amount_to_pay() or 0.0)
+
+    def _ensure_bold_order_id(self):
+        """Crea un order_id estable por reserva."""
+        self.ensure_one()
+        if not self.bold_order_id:
+            # Debe ser único. Puedes cambiar el prefijo.
+            self.bold_order_id = f"SPPOT-BOOK-{self.id}"
+        return self.bold_order_id
+
+    def action_mark_paid(self, tx_id=None):
+        """Marca la reserva pagada y confirmada (la llama el webhook)."""
+        for rec in self:
+            if rec.state == "cancelled":
+                continue
+            rec.write({
+                "paid": True,
+                "state": "confirmed",
+                "bold_tx_id": tx_id or rec.bold_tx_id,
+            })
+    
     def _get_booking_amount(self):
         """Calcula el monto según la franja."""
         self.ensure_one()

@@ -17,6 +17,7 @@
     ],
 "data": [
     "security/ir.model.access.csv",
+    "views/bold_checkout_templates.xml",
 
     # 1) Vistas/acciones primero (aquí se crean los XML IDs)
     "views/office_views.xml",
