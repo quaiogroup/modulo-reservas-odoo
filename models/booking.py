@@ -90,13 +90,6 @@ class SpootOfficeBooking(models.Model):
         store=True,
     )
 
-    payment_tx_id = fields.Many2one(
-        "payment.transaction",
-        string="Transacción de pago",
-        copy=False,
-        readonly=True,
-    )
-
     start_datetime = fields.Datetime(string="Inicio", compute="_compute_datetimes", store=True)
     end_datetime = fields.Datetime(string="Fin", compute="_compute_datetimes", store=True)
 
@@ -112,11 +105,6 @@ class SpootOfficeBooking(models.Model):
     bold_order_id = fields.Char(string="Bold Order ID", copy=False, readonly=True)
     bold_tx_id = fields.Char(string="Bold Transaction ID", copy=False, readonly=True)
     
-    bold_order_id = fields.Char(
-    string="Bold Order ID",
-    copy=False,
-    index=True,
-)
 
     def _get_bold_currency_code(self):
         """Bold normalmente espera código ISO: COP, USD, etc."""
@@ -157,178 +145,23 @@ class SpootOfficeBooking(models.Model):
         if self.slot_type == "afternoon":
             return office.price_afternoon
         return office.price_full_day
-
-    def _create_payment_transaction(self):
-        """Crea la transacción para esta reserva (referencia = booking.name)."""
-        self.ensure_one()
-
-        if not self.need_payment:
-            raise ValidationError(_("Esta reserva no requiere pago."))
-        if self.state == "cancelled":
-            raise ValidationError(_("No puedes pagar una reserva cancelada."))
-        if self.paid:
-            raise ValidationError(_("Esta reserva ya está pagada."))
-
-        provider = self.env["payment.provider"].sudo().search(
-            [("code", "=", "epayco_spoot"), ("state", "=", "enabled")],
-            limit=1,
-        )
-        if not provider:
-            raise ValidationError(_("No hay un proveedor ePayco activo. Ve a Pagos y actívalo."))
-
-        amount = self._get_booking_amount()
-        if not amount or amount <= 0:
-            raise ValidationError(_("El precio de la reserva es inválido. Revisa precios en la oficina."))
-
-        # Opcional: reutilizar tx existente "pending" para no crear mil transacciones
-        existing_tx = self.env["payment.transaction"].sudo().search([
-            ("reference", "=", self.name),
-            ("state", "in", ["draft", "pending", "authorized"]),
-        ], limit=1)
-        if existing_tx:
-            return existing_tx
-
-        tx = self.env["payment.transaction"].sudo().create({
-            "provider_id": provider.id,
-            "reference": self.name,  # 🔥 CLAVE para poder encontrar la reserva en el notify/return
-            "amount": amount,
-            "currency_id": self.currency_id.id if hasattr(self, "currency_id") else self.env.company.currency_id.id,
-            "partner_id": self.partner_id.id,
-            "operation": "online",
-        })
-
-        # Asegura estado pendiente de pago
-        if self.state == "draft":
-            self.write({"state": "pending_payment"})
-
-        return tx
-
-    # -------------------------------------------------------------------------
-    # Compute: datetimes
-    # -------------------------------------------------------------------------
-    @api.depends("date", "slot_type")
-    def _compute_datetimes(self):
-        for rec in self:
-            if not rec.date or not rec.slot_type:
-                rec.start_datetime = False
-                rec.end_datetime = False
-                continue
-
-            if rec.slot_type == "morning":
-                start_t, end_t = time(8, 0), time(12, 0)
-            elif rec.slot_type == "afternoon":
-                start_t, end_t = time(14, 0), time(18, 0)
-            else:
-                start_t, end_t = time(8, 0), time(18, 0)
-
-            rec.start_datetime = datetime.combine(rec.date, start_t)
-            rec.end_datetime = datetime.combine(rec.date, end_t)
-
-    # -------------------------------------------------------------------------
-    # Compute: amount
-    # -------------------------------------------------------------------------
-    @api.depends("office_id", "slot_type", "currency_id")
-    def _compute_amount_total(self):
-        for rec in self:
-            rec.amount_total = rec._get_amount_to_pay()
-
+    
     def _get_amount_to_pay(self):
-        """Calcula el valor según la franja."""
+        """Monto que debe pagar la reserva."""
         self.ensure_one()
-        if not self.office_id:
-            return 0.0
-        if self.slot_type == "morning":
-            return float(self.office_id.price_morning or 0.0)
-        if self.slot_type == "afternoon":
-            return float(self.office_id.price_afternoon or 0.0)
-        return float(self.office_id.price_full_day or 0.0)
-
-    # -------------------------------------------------------------------------
-    # Anti-overlap
-    # -------------------------------------------------------------------------
-    @api.constrains("office_id", "date", "slot_type", "state")
-    def _check_no_overlap(self):
-        for rec in self:
-            if not rec.office_id or not rec.date or not rec.slot_type:
-                continue
-            if rec.state == "cancelled":
-                continue
-            domain = [
-                ("id", "!=", rec.id),
-                ("office_id", "=", rec.office_id.id),
-                ("date", "=", rec.date),
-                ("slot_type", "=", rec.slot_type),
-                ("state", "!=", "cancelled"),
-            ]
-            if self.sudo().search_count(domain):
-                raise ValidationError(_("Esa franja ya está reservada. Elige otra."))
-
-    # -------------------------------------------------------------------------
-    # PAYMENT: referencia y creación de transacción
-    # -------------------------------------------------------------------------
-    def _get_payment_reference(self):
-        """Referencia única de pago para enlazar reserva ↔ transacción."""
-        self.ensure_one()
-        # Ej: SPPOT-BOOK-15
-        return f"SPPOT-BOOK-{self.id}"
-
-    def _get_epayco_provider(self):
-        """Obtiene provider ePayco habilitado para la compañía."""
-        self.ensure_one()
-        provider = self.env["payment.provider"].sudo().search(
-            [
-                ("code", "=", "epayco_spoot"),
-                ("state", "=", "enabled"),
-                ("company_id", "=", self.env.company.id),
-            ],
-            limit=1,
-        )
-        if not provider:
-            raise UserError(_("No hay un proveedor ePayco habilitado para esta compañía."))
-        return provider
-
-    def _create_payment_transaction(self):
-        """Crea (o reutiliza) la transacción asociada a la reserva."""
+        return float(self._get_booking_amount() or 0.0)
+    
+    def action_pay_now(self):
         self.ensure_one()
 
         if self.state == "cancelled":
-            raise UserError(_("Esta reserva está cancelada."))
+            raise ValidationError("Esta reserva está cancelada.")
 
-        if not self.need_payment:
-            raise UserError(_("Esta reserva no requiere pago."))
+        if self.paid:
+            raise ValidationError("Esta reserva ya está pagada.")
 
-        amount = self._get_amount_to_pay()
-        if amount <= 0:
-            raise UserError(_("El valor a pagar es 0. Revisa precios de la oficina."))
+        self._ensure_bold_order_id()
 
-        # Si ya existe una tx activa, reúsala (evita duplicar pagos)
-        if self.payment_tx_id and self.payment_tx_id.state in ("draft", "pending", "authorized"):
-            return self.payment_tx_id
-
-        provider = self._get_epayco_provider()
-
-        # payment_method_id: tomamos el primero del provider (si tu provider define métodos)
-        payment_method = provider.payment_method_ids[:1]
-        if not payment_method:
-            # No siempre es obligatorio dependiendo del flujo, pero en muchos casos sí.
-            raise UserError(_("El proveedor ePayco no tiene métodos de pago configurados."))
-
-        tx = self.env["payment.transaction"].sudo().create(
-            {
-                "provider_id": provider.id,
-                "payment_method_id": payment_method.id,
-                "amount": amount,
-                "currency_id": self.currency_id.id,
-                "partner_id": self.partner_id.id,
-                "reference": self._get_payment_reference(),
-                # Esto ayuda a volver a tu web después del pago (ajústalo a tu ruta real)
-                "landing_route": "/payment/status",
-            }
-        )
-
-        self.payment_tx_id = tx.id
-        self.state = "pending_payment"
-        return tx
     def _get_currency(self):
         self.ensure_one()
         # Si tu oficina no tiene company_id, usa la company actual
@@ -344,47 +177,8 @@ class SpootOfficeBooking(models.Model):
             return float(office.price_afternoon or 0.0)
         return float(office.price_full_day or 0.0)
 
-    # -------------------------------------------------------------------------
-    # PAYMENT: acción para iniciar pago (backend)
-    # -------------------------------------------------------------------------
-    def action_pay_now(self):
-        """
-        Acción backend: crea transacción y devuelve un action URL
-        (útil si agregas un botón en el formulario de la reserva).
-        """
-        self.ensure_one()
-        tx = self._create_payment_transaction()
-
-        # En Odoo, normalmente el “render/redirect” se hace desde controladores web.
-        # Pero para backend podemos mandar al usuario a un endpoint nuestro que inicie el pago.
-        return {
-            "type": "ir.actions.act_url",
-            "url": f"/spoot/booking/{self.id}/pay",
-            "target": "self",
-        }
-    def action_pay(self):
-        self.ensure_one()
-
-        provider = self.env["payment.provider"].sudo().search(
-            [("code", "=", "epayco_spoot"), ("state", "=", "enabled")],
-            limit=1,
-        )
-
-        if not provider:
-            raise ValidationError("No hay proveedor ePayco activo.")
-
-        tx = self.env["payment.transaction"].sudo().create({
-            "amount": self._get_price(),
-            "currency_id": self.env.company.currency_id.id,
-            "provider_id": provider.id,
-            "reference": self.name,  # 🔥 CLAVE
-            "partner_id": self.partner_id.id,
-            "operation": "online",
-        })
-
-        return provider._get_redirect_form(tx)
-
-
+    
+    
     # -------------------------------------------------------------------------
     # DISPONIBILIDAD (igual a tu código)
     # -------------------------------------------------------------------------
