@@ -84,7 +84,7 @@ class SpootOfficeWebsite(http.Controller):
             slot_type = post.get("slot_type")
 
             # Checkbox correcto
-            need_payment = post.get("need_payment") in ("1", "true", "True", "on", "yes")
+            need_payment = True
 
             if not date or not slot_type:
                 return request.render(

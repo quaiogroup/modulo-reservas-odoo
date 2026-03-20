@@ -177,7 +177,7 @@ class SpootOfficeBooking(models.Model):
     
     
     # -------------------------------------------------------------------------
-    # DISPONIBILIDAD (igual a tu código)
+    # DISPONIBILIDAD 
     # -------------------------------------------------------------------------
     @api.model
     def get_availability(self, office_id, date_str):

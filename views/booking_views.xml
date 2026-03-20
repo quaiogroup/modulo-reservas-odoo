@@ -12,7 +12,6 @@
     <field name="date"/>
     <field name="slot_type"/>
     <field name="state"/>
-    <field name="need_payment"/>
     <field name="paid"/>
 </list>
 
@@ -37,10 +36,6 @@
                     <group>
                         <field name="date"/>
                         <field name="slot_type"/>
-                    </group>
-                    <group string="Pago">
-                        <field name="need_payment"/>
-                        <field name="paid"/>
                     </group>
                     <group string="Calendario">
                         <field name="start_datetime"/>
