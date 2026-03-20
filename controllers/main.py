@@ -4,7 +4,11 @@ from odoo.addons.portal.controllers.portal import CustomerPortal, pager as porta
 from odoo.http import request
 from odoo.fields import Datetime
 from werkzeug.utils import redirect
+from odoo.http import Response
+import base64
+import hmac
 import hashlib
+import json
 
 
 class SpootOfficeWebsite(http.Controller):
@@ -225,7 +229,8 @@ class SpootOfficePortal(CustomerPortal):
                 order_id = booking._ensure_bold_order_id()
                 integrity = hashlib.sha256(f"{order_id}{amount_int}{currency}{secret_key}".encode("utf-8")).hexdigest()
 
-                base_url = ICP.get_param("web.base.url")
+                base_url = (ICP.get_param("web.base.url") or "").strip()
+                base_url = base_url.replace("http://", "https://")
                 redirection_url = f"{base_url}/bold/retorno"
 
                 values.update({
@@ -252,4 +257,70 @@ class SpootOfficePortal(CustomerPortal):
             if booking.state != "cancelled" and not booking.paid:
                 booking.write({"state": "cancelled"})
         return request.redirect("/my/office-bookings")
+    
+    @http.route("/bold/webhook", type="http", auth="public", csrf=False, methods=["POST"], sitemap=False)
+    def bold_webhook(self, **kw):
+        ICP = request.env["ir.config_parameter"].sudo()
+        secret_key = (ICP.get_param("bold.secret_key") or "").strip()
 
+        raw = request.httprequest.get_data() or b""
+        received_sig = request.httprequest.headers.get("x-bold-signature", "")
+        print("BOLD_HEADERS_KEYS", list(request.httprequest.headers.keys()))
+        print("BOLD_SIGNATURE_HEADER", request.httprequest.headers.get("x-bold-signature"))
+        print("BOLD_RAW", (request.httprequest.get_data() or b"")[:200])
+
+        # 1) Firma requerida
+        if not secret_key or not received_sig:
+            return Response("Missing signature", status=400, content_type="text/plain")
+        # 2) Validación firma: HMAC-SHA256(secret_key, base64(body)) => hex
+        encoded = base64.b64encode(raw)
+        expected = hmac.new(secret_key.encode("utf-8"), encoded, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, (received_sig or "").strip()):
+            return Response("Invalid signature", status=400, content_type="text/plain")
+
+        # 3) JSON válido
+        try:
+            payload = json.loads(raw.decode("utf-8") or "{}")
+        except Exception:
+            return Response("Invalid JSON", status=400, content_type="text/plain")
+
+        event_type = payload.get("type") or ""
+        print("BOLD_WEBHOOK_EVENT", event_type, "REF", reference, "PAY", payment_id, "PAYLOAD", payload)
+        data = payload.get("data") or {}
+        reference = (data.get("metadata") or {}).get("reference")
+        payment_id = data.get("payment_id")
+
+        if not event_type or not reference:
+            return Response("Missing type/reference", status=400, content_type="text/plain")
+
+        booking = request.env["spoot.office.booking"].sudo().search([("bold_order_id", "=", reference)], limit=1)
+        if not booking:
+            return Response("Booking not found", status=404, content_type="text/plain")
+        
+
+        # 4) Actualizaciones seguras (sin depender de bold_payment_status si no existe)
+        vals_common = {}
+        if payment_id:
+            vals_common["bold_tx_id"] = payment_id
+
+        if event_type == "SALE_APPROVED":
+            booking.action_mark_paid(tx_id=payment_id)
+            # opcional: si existe el campo, lo escribimos
+            if "bold_payment_status" in booking._fields:
+                booking.sudo().write({"bold_payment_status": "APPROVED", **vals_common})
+            elif vals_common:
+                booking.sudo().write(vals_common)
+
+        elif event_type == "SALE_REJECTED":
+            if "bold_payment_status" in booking._fields:
+                booking.sudo().write({"bold_payment_status": "REJECTED", **vals_common})
+            elif vals_common:
+                booking.sudo().write(vals_common)
+
+        else:
+            if "bold_payment_status" in booking._fields:
+                booking.sudo().write({"bold_payment_status": event_type, **vals_common})
+            elif vals_common:
+                booking.sudo().write(vals_common)
+
+        return Response("ok", status=200, content_type="text/plain")

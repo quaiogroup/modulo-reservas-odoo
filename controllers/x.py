@@ -93,6 +93,7 @@ class SpootBoldController(http.Controller):
                 "bold_payment_status": tx_status or "PROCESSING",
             })
 
+
         return request.render("spoot_office_booking.bold_return_page", {
             "booking": booking,
             "order_id": order_id,

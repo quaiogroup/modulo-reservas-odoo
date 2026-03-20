@@ -18,16 +18,6 @@
                             + Reservar una oficina
                         </a>
                     </div>
-                    <div class="alert alert-light py-1 small">
-  db=<t t-esc="request.session.db"/> | map=<t t-esc="len(bold_ui_map or {})"/>
-</div>
-                    <t t-set="bold_ui_map" t-value="bold_ui_map or {}"/>
-<div class="alert alert-light py-1 small">
-  bold_ui_map_size=<t t-esc="len(bold_ui_map)"/>
-</div>
-<div class="alert alert-light py-1 small">
-  map=<t t-esc="len(bold_ui_map)"/> api_len=<t t-esc="dbg_api_len"/> sec_len=<t t-esc="dbg_sec_len"/>
-</div>
 
                     <!-- Si hay reservas -->
                     <t t-if="bookings">
@@ -112,37 +102,20 @@
                                                    class="btn btn-sm btn-outline-secondary">
                                                     Ver
                                                 </a>
-                                                <span class="ms-2 small text-muted">
-  need=<t t-esc="booking.need_payment"/> |
-  paid=<t t-esc="booking.paid"/> |
-  state=<t t-esc="booking.state"/>
-</span>
-<t t-set="bold_ui" t-value="bold_ui_map.get(booking.id)"/>
-<span class="ms-2 small text-muted">
-  ui=<t t-esc="'YES' if bold_ui else 'NO'"/>
-</span>
-<t t-set="bold_ui_map" t-value="bold_ui_map or {}"/>
-<t t-set="bold_ui" t-value="bold_ui_map.get(booking.id)"/>
-
-<t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled' and bold_ui">
+                                               
+<t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled' and bold_api_key">
   <script
-    data-bold-button="dark-S"
-    t-att-data-api-key="bold_ui.get('api_key')"
-    t-att-data-order-id="bold_ui.get('order_id')"
-    t-att-data-amount="str(bold_ui.get('amount'))"
-    t-att-data-currency="bold_ui.get('currency')"
-    t-att-data-integrity-signature="bold_ui.get('integrity')"
-    t-att-data-redirection-url="bold_ui.get('redirection_url')"
-    t-att-data-description="bold_ui.get('description')"
+    data-bold-button="dark-L"
+    t-att-data-api-key="bold_api_key"
+    t-att-data-order-id="bold_order_id"
+    t-att-data-amount="str(bold_amount)"
+    t-att-data-currency="bold_currency"
+    t-att-data-integrity-signature="bold_integrity"
+    t-att-data-redirection-url="bold_redirection_url"
+    t-att-data-description="bold_description"
     data-render-mode="embedded"
   ></script>
 </t>
-<t t-set="bold_ui_map" t-value="bold_ui_map or {}"/>
-<t t-set="bold_ui" t-value="bold_ui_map.get(booking.id)"/>
-<span class="ms-1 small text-muted">
-  <t t-if="bold_ui">BOLD_OK</t>
-  <t t-else="">NO_UI</t>
-</span>
 
 
                                                 <!-- Mostrar botón de cancelar solo si no está cancelada ni pagada -->
@@ -269,30 +242,21 @@
                         <a href="/my/office-bookings" class="btn btn-outline-secondary">
                             &lt; Volver a mis reservas
                         </a>
-
-                        <div>
-<t t-set="bold_ui_map" t-value="bold_ui_map or {}"/>
-<t t-set="bold_ui" t-value="bold_ui_map.get(booking.id)"/>
-
-<t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled' and bold_ui">
+                    <t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled' and bold_api_key">
   <script
-    data-bold-button="dark-S"
-    t-att-data-api-key="bold_ui.get('api_key')"
-    t-att-data-order-id="bold_ui.get('order_id')"
-    t-att-data-amount="str(bold_ui.get('amount'))"
-    t-att-data-currency="bold_ui.get('currency')"
-    t-att-data-integrity-signature="bold_ui.get('integrity')"
-    t-att-data-redirection-url="bold_ui.get('redirection_url')"
-    t-att-data-description="bold_ui.get('description')"
+    data-bold-button="dark-L"
+    t-att-data-api-key="bold_api_key"
+    t-att-data-order-id="bold_order_id"
+    t-att-data-amount="str(bold_amount)"
+    t-att-data-currency="bold_currency"
+    t-att-data-integrity-signature="bold_integrity"
+    t-att-data-redirection-url="bold_redirection_url"
+    t-att-data-description="bold_description"
     data-render-mode="embedded"
   ></script>
-  <script
-    data-bold-button="dark-S"
-  data-api-key="bold_ui.get('api_key')"
-  data-description="Pago de mi reserva dinámica"
-  data-redirection-url="https://micomercio.com/pagos/resultado"
-></script>
 </t>
+
+                        <div>
 
                             <t t-if="booking.state != 'cancelled' and not booking.paid">
                                 <a t-att-href="'/my/office-bookings/%s/cancel' % booking.id"

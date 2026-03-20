@@ -2,6 +2,7 @@
 import base64
 from datetime import datetime, time, timedelta
 import hashlib
+import uuid
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
@@ -12,6 +13,7 @@ class SpootOfficeBooking(models.Model):
     _inherit = ["mail.thread"]
     _description = "Reserva de oficina"
     _order = "date, office_id, slot_type"
+
     
 
     name = fields.Char(
@@ -104,6 +106,7 @@ class SpootOfficeBooking(models.Model):
     # ---------------------------
     bold_order_id = fields.Char(string="Bold Order ID", copy=False, readonly=True)
     bold_tx_id = fields.Char(string="Bold Transaction ID", copy=False, readonly=True)
+    bold_payment_status = fields.Char(string="Bold Payment Status", copy=False, readonly=True)
     
 
     def _get_bold_currency_code(self):
@@ -117,11 +120,9 @@ class SpootOfficeBooking(models.Model):
         return float(self._get_amount_to_pay() or 0.0)
 
     def _ensure_bold_order_id(self):
-        """Crea un order_id estable por reserva."""
         self.ensure_one()
         if not self.bold_order_id:
-            # Debe ser único. Puedes cambiar el prefijo.
-            self.bold_order_id = f"SPPOT-BOOK-{self.id}"
+            self.bold_order_id = f"SPPOT-BOOK-{self.id}-{uuid.uuid4().hex[:10]}"
         return self.bold_order_id
 
     def action_mark_paid(self, tx_id=None):
@@ -145,11 +146,7 @@ class SpootOfficeBooking(models.Model):
         if self.slot_type == "afternoon":
             return office.price_afternoon
         return office.price_full_day
-    
-    def _get_amount_to_pay(self):
-        """Monto que debe pagar la reserva."""
-        self.ensure_one()
-        return float(self._get_booking_amount() or 0.0)
+
     
     def action_pay_now(self):
         self.ensure_one()
