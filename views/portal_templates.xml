@@ -119,13 +119,18 @@
 
 
                                                 <!-- Mostrar botón de cancelar solo si no está cancelada ni pagada -->
-                                                <t t-if="booking.state != 'cancelled' and not booking.paid">
-                                                    <a t-att-href="'/my/office-bookings/%s/cancel' % booking.id"
-                                                       class="btn btn-sm btn-outline-danger ms-1"
-                                                       t-att-data-confirm="'¿Seguro que quieres cancelar esta reserva?'">
-                                                        Cancelar
-                                                    </a>
-                                                </t>
+<t t-if="booking.state != 'cancelled' and not booking.paid">
+    <form t-att-action="'/my/office-bookings/%s/cancel' % booking.id"
+          method="post"
+          style="display:inline;">
+        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+        <button type="submit"
+                class="btn btn-sm btn-outline-danger ms-1"
+                onclick="return confirm('¿Seguro que quieres cancelar esta reserva?');">
+            Cancelar reserva
+        </button>
+    </form>
+</t>
                                             </td>
                                         </tr>
                                     </t>
@@ -153,60 +158,72 @@
         </t>
     </template>
         <!-- DETALLE DE RESERVA EN PORTAL (MEJORADO) -->
-    <template id="portal_booking_detail" name="Detalle reserva oficina">
-        <t t-call="portal.portal_layout">
-            <t t-set="title">Detalle de la reserva</t>
-            <script type="text/javascript" src="https://checkout.bold.co/library/boldPaymentButton.js"></script>
-            <div class="o_portal_wrap">
-                <div class="o_portal_my_doc">
+  <template id="portal_booking_detail" name="Detalle reserva oficina">
+    <t t-call="portal.portal_layout">
+        <t t-set="title">Detalle de la reserva</t>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0">
+        <script type="text/javascript"
+                src="https://checkout.bold.co/library/boldPaymentButton.js"></script>
+
+        <div class="o_portal_wrap">
+            <div class="o_portal_my_doc">
+
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">
                             Reserva
                             <t t-esc="booking.name or ('#%s' % booking.id)"/>
                         </h2>
-
-                        <a href="/my/office-bookings" class="btn btn-link btn-sm">
-                            &lt; Volver a mis reservas
-                        </a>
+                        <small class="text-muted">
+                            Creada el <t t-esc="booking.create_date"/>
+                        </small>
                     </div>
 
-                    <div class="card mb-3">
-                        <div class="card-body">
+                    <a href="/my/office-bookings"
+                       class="btn btn-outline-secondary btn-sm">
+                        ← Volver
+                    </a>
+                </div>
 
-                            <!-- Estado -->
-                            <p class="mb-3">
-                                <strong>Estado:</strong>
-                                <t t-if="booking.state == 'confirmed'">
-                                    <span class="badge bg-success">Confirmada</span>
-                                </t>
-                                <t t-elif="booking.state == 'pending_payment'">
-                                    <span class="badge bg-warning text-dark">Pendiente de pago</span>
-                                </t>
-                                <t t-elif="booking.state == 'cancelled'">
-                                    <span class="badge bg-secondary">Cancelada</span>
-                                </t>
-                                <t t-else="">
-                                    <span class="badge bg-light text-dark">
-                                        <t t-esc="booking.state or 'Borrador'"/>
-                                    </span>
-                                </t>
-                            </p>
+                <!-- Card principal -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
 
-                            <!-- Datos principales -->
-                            <dl class="row mb-0">
-                                <dt class="col-sm-3">Oficina</dt>
-                                <dd class="col-sm-9">
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <strong>Estado:</strong>
+
+                            <t t-if="booking.state == 'confirmed'">
+                                <span class="badge bg-success ms-2">Confirmada</span>
+                            </t>
+                            <t t-elif="booking.state == 'pending_payment'">
+                                <span class="badge bg-warning text-dark ms-2">
+                                    Pendiente de pago
+                                </span>
+                            </t>
+                            <t t-elif="booking.state == 'cancelled'">
+                                <span class="badge bg-secondary ms-2">Cancelada</span>
+                            </t>
+                            <t t-else="">
+                                <span class="badge bg-light text-dark ms-2">
+                                    Borrador
+                                </span>
+                            </t>
+                        </div>
+
+                        <hr/>
+
+                        <!-- Información -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>Oficina:</strong>
                                     <t t-esc="booking.office_id.name"/>
-                                </dd>
-
-                                <dt class="col-sm-3">Fecha</dt>
-                                <dd class="col-sm-9">
+                                </p>
+                                <p><strong>Fecha:</strong>
                                     <t t-esc="booking.date"/>
-                                </dd>
-
-                                <dt class="col-sm-3">Franja</dt>
-                                <dd class="col-sm-9">
+                                </p>
+                                <p><strong>Franja:</strong>
                                     <t t-if="booking.slot_type == 'morning'">
                                         Mañana (8:00 – 12:00)
                                     </t>
@@ -214,64 +231,78 @@
                                         Tarde (14:00 – 18:00)
                                     </t>
                                     <t t-else="">
-                                        Día completo
+                                        Día completo (8:00 – 18:00)
                                     </t>
-                                </dd>
+                                </p>
+                            </div>
 
-                                <dt class="col-sm-3">Pagado</dt>
-                                <dd class="col-sm-9">
-                                    <t t-if="booking.paid">Sí</t>
-                                    <t t-else="">No</t>
-                                </dd>
-
-                                <dt class="col-sm-3">Desde</dt>
-                                <dd class="col-sm-9">
+                            <div class="col-md-6">
+                                <p><strong>Desde:</strong>
                                     <t t-esc="booking.start_datetime"/>
-                                </dd>
-
-                                <dt class="col-sm-3">Hasta</dt>
-                                <dd class="col-sm-9">
+                                </p>
+                                <p><strong>Hasta:</strong>
                                     <t t-esc="booking.end_datetime"/>
-                                </dd>
-                            </dl>
+                                </p>
+                                <p>
+                                    <strong>Pagado:</strong>
+                                    <t t-if="booking.paid">
+                                        <span class="text-success">Sí</span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="text-danger">No</span>
+                                    </t>
+                                </p>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Acciones -->
-                    <div class="d-flex justify-content-between">
-                        <a href="/my/office-bookings" class="btn btn-outline-secondary">
-                            &lt; Volver a mis reservas
-                        </a>
-                    <t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled' and bold_api_key">
-  <script
-    data-bold-button="dark-L"
-    t-att-data-api-key="bold_api_key"
-    t-att-data-order-id="bold_order_id"
-    t-att-data-amount="str(bold_amount)"
-    t-att-data-currency="bold_currency"
-    t-att-data-integrity-signature="bold_integrity"
-    t-att-data-redirection-url="bold_redirection_url"
-    t-att-data-description="bold_description"
-    data-render-mode="embedded"
-  ></script>
+                        <!-- Total -->
+                        <t t-if="booking.need_payment and booking.state != 'cancelled'">
+<div class="alert alert-light border mt-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Total a pagar:</span>
+        <span class="fs-4 fw-bold text-primary">
+<t t-esc="booking.currency_id.symbol"/>
+<t t-esc="'{:,.0f}'.format(bold_amount).replace(',', '.')"/>
+        </span>
+    </div>
+</div>
+                        </t>
+
+                    </div>
+                    <script
+                                data-bold-button="dark-L"
+                                t-att-data-api-key="bold_api_key"
+                                t-att-data-order-id="bold_order_id"
+                                t-att-data-amount="str(bold_amount)"
+                                t-att-data-currency="bold_currency"
+                                t-att-data-integrity-signature="bold_integrity"
+                                t-att-data-redirection-url="bold_redirection_url"
+                                t-att-data-description="bold_description"
+                                data-render-mode="embedded"
+                            ></script>
+  <!-- Cancelación -->
+<t t-if="booking.state != 'cancelled' and not booking.paid">
+    <form t-att-action="'/my/office-bookings/%s/cancel' % booking.id"
+          method="post"
+          style="display:inline;">
+        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+        <button type="submit"
+                class="btn btn-sm btn-outline-danger ms-1"
+                onclick="return confirm('¿Seguro que quieres cancelar esta reserva?');">
+            Cancelar reserva
+        </button>
+    </form>
 </t>
 
-                        <div>
-
-                            <t t-if="booking.state != 'cancelled' and not booking.paid">
-                                <a t-att-href="'/my/office-bookings/%s/cancel' % booking.id"
-                                   class="btn btn-outline-danger"
-                                   t-att-data-confirm="'¿Seguro que quieres cancelar esta reserva?'">
-                                    Cancelar reserva
-                                </a>
-                            </t>
-                        </div>
-                    </div>
-
                 </div>
+
+
+
+              
             </div>
-        </t>
-    </template>
+        </div>
+    </t>
+</template>
 
 </data>
 </odoo>

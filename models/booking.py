@@ -92,6 +92,11 @@ class SpootOfficeBooking(models.Model):
         store=True,
     )
 
+    @api.depends("slot_type", "office_id")
+    def _compute_amount_total(self):
+        for rec in self:
+            rec.amount_total = rec._get_amount_to_pay()
+
     start_datetime = fields.Datetime(string="Inicio", compute="_compute_datetimes", store=True)
     end_datetime = fields.Datetime(string="Fin", compute="_compute_datetimes", store=True)
 

@@ -11,9 +11,10 @@ import hashlib
 import json
 
 
+
 class SpootOfficeWebsite(http.Controller):
 
-    # FullCalendar normalmente llama por GET -> type="http"
+    #GET -> type="http"
     @http.route(
         "/offices/<int:office_id>/events",
         type="http",
@@ -245,12 +246,7 @@ class SpootOfficePortal(CustomerPortal):
 
         return request.render("spoot_office_booking.portal_booking_detail", values)
 
-    @http.route(
-        "/my/office-bookings/<int:booking_id>/cancel",
-        type="http",
-        auth="user",
-        website=True,
-    )
+    @http.route('/my/office-bookings/<int:booking_id>/cancel', type='http', auth='user', methods=['POST'], website=True)
     def portal_booking_cancel(self, booking_id, **kw):
         booking = request.env["spoot.office.booking"].sudo().browse(booking_id)
         if booking and booking.partner_id == request.env.user.partner_id:
@@ -258,69 +254,69 @@ class SpootOfficePortal(CustomerPortal):
                 booking.write({"state": "cancelled"})
         return request.redirect("/my/office-bookings")
     
+    print("==== HEADERS ====")
+    print(dict(request.httprequest.headers))
+    print("=================")
+    
     @http.route("/bold/webhook", type="http", auth="public", csrf=False, methods=["POST"], sitemap=False)
     def bold_webhook(self, **kw):
+
         ICP = request.env["ir.config_parameter"].sudo()
-        secret_key = (ICP.get_param("bold.secret_key") or "").strip()
+        secret_key = ""
+        #(ICP.get_param("bold.secret_key") or "").strip()
 
         raw = request.httprequest.get_data() or b""
-        received_sig = request.httprequest.headers.get("x-bold-signature", "")
-        print("BOLD_HEADERS_KEYS", list(request.httprequest.headers.keys()))
-        print("BOLD_SIGNATURE_HEADER", request.httprequest.headers.get("x-bold-signature"))
-        print("BOLD_RAW", (request.httprequest.get_data() or b"")[:200])
+        headers = request.httprequest.headers
+        signature = headers.get("X-Bold-Signature") or headers.get("x-bold-signature")
 
-        # 1) Firma requerida
-        if not secret_key or not received_sig:
-            return Response("Missing signature", status=400, content_type="text/plain")
-        # 2) Validación firma: HMAC-SHA256(secret_key, base64(body)) => hex
-        encoded = base64.b64encode(raw)
-        expected = hmac.new(secret_key.encode("utf-8"), encoded, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected, (received_sig or "").strip()):
-            return Response("Invalid signature", status=400, content_type="text/plain")
+        print("==== WEBHOOK DEBUG ====")
+        print("SECRET_KEY:", repr(secret_key))
+        print("RECEIVED_SIGNATURE:", repr(signature))
+        print("RAW_BODY:", raw.decode("utf-8"))
+        print("BASE64_BODY:", base64.b64encode(raw))
+        print("=======================")
 
-        # 3) JSON válido
-        try:
-            payload = json.loads(raw.decode("utf-8") or "{}")
-        except Exception:
-            return Response("Invalid JSON", status=400, content_type="text/plain")
+        #if not secret_key or not signature:
+        if not signature:
+            return Response("Missing signature", status=400)
 
-        event_type = payload.get("type") or ""
-        print("BOLD_WEBHOOK_EVENT", event_type, "REF", reference, "PAY", payment_id, "PAYLOAD", payload)
+        # EXACTAMENTE como Bold lo hace
+        str_message = raw.decode("utf-8")
+        encoded = base64.b64encode(str_message.encode("utf-8"))
+
+        expected = hmac.new(
+            key=secret_key.encode(),
+            msg=encoded,
+            digestmod=hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected, signature):
+            return Response("Invalid signature", status=400)
+
+        # Firma válida → ahora sí procesamos
+        payload = json.loads(str_message)
+
+        event_type = payload.get("type")
         data = payload.get("data") or {}
         reference = (data.get("metadata") or {}).get("reference")
         payment_id = data.get("payment_id")
 
-        if not event_type or not reference:
-            return Response("Missing type/reference", status=400, content_type="text/plain")
+        if not reference:
+            return Response("Missing reference", status=400)
 
-        booking = request.env["spoot.office.booking"].sudo().search([("bold_order_id", "=", reference)], limit=1)
+        booking = request.env["spoot.office.booking"].sudo().search(
+            [("bold_order_id", "=", reference)],
+            limit=1
+        )
+
         if not booking:
-            return Response("Booking not found", status=404, content_type="text/plain")
-        
-
-        # 4) Actualizaciones seguras (sin depender de bold_payment_status si no existe)
-        vals_common = {}
-        if payment_id:
-            vals_common["bold_tx_id"] = payment_id
+            return Response("Booking not found", status=404)
 
         if event_type == "SALE_APPROVED":
             booking.action_mark_paid(tx_id=payment_id)
-            # opcional: si existe el campo, lo escribimos
-            if "bold_payment_status" in booking._fields:
-                booking.sudo().write({"bold_payment_status": "APPROVED", **vals_common})
-            elif vals_common:
-                booking.sudo().write(vals_common)
-
-        elif event_type == "SALE_REJECTED":
-            if "bold_payment_status" in booking._fields:
-                booking.sudo().write({"bold_payment_status": "REJECTED", **vals_common})
-            elif vals_common:
-                booking.sudo().write(vals_common)
-
         else:
-            if "bold_payment_status" in booking._fields:
-                booking.sudo().write({"bold_payment_status": event_type, **vals_common})
-            elif vals_common:
-                booking.sudo().write(vals_common)
+            booking.sudo().write({
+                "bold_payment_status": event_type
+            })
 
-        return Response("ok", status=200, content_type="text/plain")
+        return Response("ok", status=200)
