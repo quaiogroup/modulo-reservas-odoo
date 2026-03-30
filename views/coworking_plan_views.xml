@@ -22,6 +22,7 @@
                 <sheet>
                     <group>
                         <field name="name"/>
+                        <field name="description"/>
                         <field name="days_included"/>
                         <field name="price"/>
                         <field name="currency_id"/>

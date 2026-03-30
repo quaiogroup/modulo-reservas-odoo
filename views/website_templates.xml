@@ -282,28 +282,57 @@
       </div>
     </t>
   </template>
-  <template id="coworking_plans_page" name="Planes Coworking">
+<template id="coworking_plans_page" name="Planes Coworking">
     <t t-call="website.layout">
-        <div class="container mt-5">
-            <h2>Planes disponibles</h2>
+        <div class="container py-5">
 
-            <div class="row mt-4">
+            <div class="text-center mb-5">
+                <h1 class="fw-bold">Planes de Coworking</h1>
+                <p class="text-muted">Elige el plan que mejor se adapte a tu ritmo de trabajo.</p>
+            </div>
+
+            <div class="row g-4 justify-content-center">
                 <t t-foreach="plans" t-as="plan">
-                    <div class="col-md-4">
-                        <div class="card p-3 shadow-sm">
-                            <h4><t t-esc="plan.name"/></h4>
-                            <p>Días incluidos: <t t-esc="plan.days_included"/></p>
-                            <p>Vigencia: <t t-esc="plan.validity_days"/> días</p>
-                            <h5><t t-esc="plan.price"/> <t t-esc="plan.currency_id.symbol"/></h5>
+
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-lg h-100 rounded-4 p-4 text-center">
+
+                            <h4 class="fw-bold mb-2">
+                                <t t-esc="plan.name"/>
+                            </h4>
+
+                            <div class="display-6 fw-bold text-primary mb-3">
+                                <t t-esc="plan.price"/>
+                                <small class="fs-6 text-muted">
+                                    <t t-esc="plan.currency_id.symbol"/>
+                                </small>
+                            </div>
+
+                            <p class="mb-2">
+                                <strong><t t-esc="plan.days_included"/></strong> días incluidos
+                            </p>
+
+                            <p class="text-muted small mb-3">
+                                Vigencia de <t t-esc="plan.validity_days"/> días
+                            </p>
+
+                            <t t-if="plan.description">
+                                <div class="mb-4 text-muted small">
+                                    <t t-esc="plan.description"/>
+                                </div>
+                            </t>
 
                             <a t-att-href="'/coworking/checkout/%s' % plan.id"
-                               class="btn btn-primary mt-2">
+                               class="btn btn-primary w-100 rounded-pill py-2">
                                 Elegir plan
                             </a>
+
                         </div>
                     </div>
+
                 </t>
             </div>
+
         </div>
     </t>
 </template>

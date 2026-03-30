@@ -7,6 +7,8 @@ class SpootCoworkingPlan(models.Model):
     _order = "price asc"
 
     name = fields.Char(string="Nombre del plan", required=True)
+    description = fields.Text(string="Descripción")
+
 
     days_included = fields.Integer(
         string="Días incluidos",
@@ -29,5 +31,6 @@ class SpootCoworkingPlan(models.Model):
         string="Duración (días)",
         help="Cantidad de días desde la activación hasta el vencimiento."
     )
+
 
     active = fields.Boolean(default=True)
