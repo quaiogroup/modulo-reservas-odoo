@@ -254,9 +254,7 @@ class SpootOfficePortal(CustomerPortal):
                 booking.write({"state": "cancelled"})
         return request.redirect("/my/office-bookings")
     
-    print("==== HEADERS ====")
-    print(dict(request.httprequest.headers))
-    print("=================")
+
     
     @http.route("/bold/webhook", type="http", auth="public", csrf=False, methods=["POST"], sitemap=False)
     def bold_webhook(self, **kw):

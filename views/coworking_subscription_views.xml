@@ -1,0 +1,42 @@
+<odoo>
+
+    <record id="view_coworking_subscription_list" model="ir.ui.view">
+        <field name="name">spoot.coworking.subscription.list</field>
+        <field name="model">spoot.coworking.subscription</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="partner_id"/>
+                <field name="plan_id"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="remaining_days"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_coworking_subscription_form" model="ir.ui.view">
+        <field name="name">spoot.coworking.subscription.form</field>
+        <field name="model">spoot.coworking.subscription</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="plan_id"/>
+                        <field name="start_date"/>
+                        <field name="end_date"/>
+                        <field name="total_days"/>
+                        <field name="remaining_days"/>
+                        <field name="state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    
+
+
+
+</odoo>

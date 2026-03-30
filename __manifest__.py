@@ -15,25 +15,18 @@
         "calendar",
         "payment",  # preparado para pagos
     ],
-"data": [
-    "security/ir.model.access.csv",
+'data': [
+    'security/ir.model.access.csv',
 
-    # 1) Vistas/acciones primero (aquí se crean los XML IDs)
-    "views/office_views.xml",
-    "views/booking_views.xml",
-    "views/availability_views.xml", 
-    # <-- si lo tienes, ponlo aquí
-    "data/office_services_data.xml",
+    # VISTAS PRIMERO
+    'views/office_views.xml',
+    'views/booking_views.xml',
+    'views/coworking_plan_views.xml',
+    'views/coworking_subscription_views.xml',
+    'views/availability_views.xml',
 
-    # 2) Menús al final (porque referencian acciones ya creadas)
-    "views/menu_views.xml",
-
-    # 3) Plantillas web/portal (no suelen ser problema, pero ok aquí)
-    "views/portal_templates.xml",
-    "views/website_templates.xml",
-
-    # 4) Wizards
-    "wizards/booking_quick_create_wizard_views.xml",
+    # MENÚS AL FINAL
+    'views/menu_views.xml',
 ],
 
     "assets": {
