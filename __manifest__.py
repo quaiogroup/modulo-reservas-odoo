@@ -24,6 +24,8 @@
     'views/coworking_plan_views.xml',
     'views/coworking_subscription_views.xml',
     'views/availability_views.xml',
+        'views/website_templates.xml',
+
 
     # MENÚS AL FINAL
     'views/menu_views.xml',
