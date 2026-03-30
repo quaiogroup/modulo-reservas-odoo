@@ -57,10 +57,16 @@
     <!-- SUBMENÚ SUSCRIPCIONES -->
 <!-- SUBMENÚ SUSCRIPCIONES -->
 <menuitem id="menu_spoot_coworking_subscription"
-          name="Suscripciones."
+          name="Suscripciones"
           parent="menu_spoot_office_root"
           action="spoot_office_booking.action_spoot_coworking_subscription"
           sequence="40"/>
+
+<menuitem id="menu_spoot_coworking_plan"
+          name="Planes"
+          parent="menu_spoot_office_root"
+          action="spoot_office_booking.action_coworking_plan"
+          sequence="15"/>
 
 
 </odoo>

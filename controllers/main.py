@@ -318,3 +318,30 @@ class SpootOfficePortal(CustomerPortal):
             })
 
         return Response("ok", status=200)
+    
+    @http.route("/coworking/plans", type="http", auth="user", website=True)
+    def coworking_plans(self, **kwargs):
+        plans = request.env["spoot.coworking.plan"].sudo().search([("active", "=", True)])
+        return request.render("spoot_office_booking.coworking_plans_page", {
+            "plans": plans
+        })
+    
+    @http.route("/coworking/checkout/<int:plan_id>", type="http", auth="user", website=True)
+    def coworking_checkout(self, plan_id, **kwargs):
+        plan = request.env["spoot.coworking.plan"].sudo().browse(plan_id)
+
+        return request.render("spoot_office_booking.coworking_checkout_page", {
+            "plan": plan
+        })
+    @http.route("/my/coworking", type="http", auth="user", website=True)
+    def my_coworking_dashboard(self, **kwargs):
+        partner = request.env.user.partner_id
+
+        subscription = request.env["spoot.coworking.subscription"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("state", "=", "active")
+        ], limit=1)
+
+        return request.render("spoot_office_booking.my_coworking_dashboard", {
+            "subscription": subscription
+        })

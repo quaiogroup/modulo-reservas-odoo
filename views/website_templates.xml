@@ -282,5 +282,70 @@
       </div>
     </t>
   </template>
+  <template id="coworking_plans_page" name="Planes Coworking">
+    <t t-call="website.layout">
+        <div class="container mt-5">
+            <h2>Planes disponibles</h2>
+
+            <div class="row mt-4">
+                <t t-foreach="plans" t-as="plan">
+                    <div class="col-md-4">
+                        <div class="card p-3 shadow-sm">
+                            <h4><t t-esc="plan.name"/></h4>
+                            <p>Días incluidos: <t t-esc="plan.days_included"/></p>
+                            <p>Vigencia: <t t-esc="plan.validity_days"/> días</p>
+                            <h5><t t-esc="plan.price"/> <t t-esc="plan.currency_id.symbol"/></h5>
+
+                            <a t-att-href="'/coworking/checkout/%s' % plan.id"
+                               class="btn btn-primary mt-2">
+                                Elegir plan
+                            </a>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</template>
+<template id="coworking_checkout_page" name="Checkout Coworking">
+    <t t-call="website.layout">
+        <div class="container mt-5">
+            <h3>Confirmar plan</h3>
+
+            <div class="card p-4">
+                <h4><t t-esc="plan.name"/></h4>
+                <p>Días: <t t-esc="plan.days_included"/></p>
+                <p>Precio: <t t-esc="plan.price"/> <t t-esc="plan.currency_id.symbol"/></p>
+
+                <!-- Aquí luego irá botón Bold -->
+                <button class="btn btn-success mt-3">
+                    Pagar
+                </button>
+            </div>
+        </div>
+    </t>
+</template>
+<template id="my_coworking_dashboard" name="Mi Coworking">
+    <t t-call="website.layout">
+        <div class="container mt-5">
+            <h2>Mi Plan</h2>
+
+            <t t-if="subscription">
+                <div class="card p-4">
+                    <h4><t t-esc="subscription.plan_id.name"/></h4>
+                    <p>Días restantes: <t t-esc="subscription.remaining_days"/></p>
+                    <p>Vence: <t t-esc="subscription.end_date"/></p>
+                </div>
+            </t>
+
+            <t t-else="">
+                <p>No tienes plan activo.</p>
+                <a href="/coworking/plans" class="btn btn-primary">
+                    Ver planes
+                </a>
+            </t>
+        </div>
+    </t>
+</template>
 
 </odoo>

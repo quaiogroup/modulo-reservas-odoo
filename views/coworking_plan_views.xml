@@ -36,7 +36,7 @@
     <record id="action_coworking_plan" model="ir.actions.act_window">
         <field name="name">Planes de Coworking</field>
         <field name="res_model">spoot.coworking.plan</field>
-        <field name="view_mode">tree,form</field>
-    </record>
+<field name="view_mode">list,form</field>    
+</record>
 
 </odoo>
