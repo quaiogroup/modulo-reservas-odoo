@@ -337,73 +337,88 @@
     </t>
 </template>
 <template id="coworking_checkout_page" name="Checkout Coworking">
-    <t t-call="website.layout">
-        <div class="container py-5">
+  <t t-call="website.layout">
+    <!-- Bold checkout library — required for the payment button -->
+    <script type="text/javascript"
+            src="https://checkout.bold.co/library/boldPaymentButton.js"/>
 
-            <div class="row justify-content-center">
-                <div class="col-12 col-lg-6">
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-12 col-lg-6">
 
-                    <div class="card border-0 shadow-lg rounded-4 p-4">
+          <!-- Back link -->
+          <div class="mb-3">
+            <a href="/coworking/plans" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+              &#8592; Ver todos los planes
+            </a>
+          </div>
 
-                        <div class="text-center mb-4">
-                            <h2 class="fw-bold mb-1">Confirmar tu plan</h2>
-                            <p class="text-muted mb-0">
-                                Estás a un paso de activar tu acceso.
-                            </p>
-                        </div>
+          <div class="card border-0 shadow-lg rounded-4 p-4">
 
-                        <!-- Plan name -->
-                        <div class="text-center mb-3">
-                            <h3 class="fw-bold">
-                                <t t-esc="plan.name"/>
-                            </h3>
-                        </div>
-
-                        <!-- Precio destacado -->
-<div class="display-5 fw-bold text-primary">
-<t t-esc="plan.price"
-   t-options='{"widget": "monetary", "display_currency": plan.currency_id}'/>
-</div>
-                        
-
-                        <!-- Info del plan -->
-                        <div class="bg-light rounded-4 p-3 mb-4">
-
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Días incluidos</span>
-                                <strong><t t-esc="plan.days_included"/></strong>
-                            </div>
-
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Vigencia</span>
-                                <strong><t t-esc="plan.validity_days"/> días</strong>
-                            </div>
-
-                            <t t-if="plan.description">
-                                <hr/>
-                                <p class="small text-muted mb-0">
-                                    <t t-esc="plan.description"/>
-                                </p>
-                            </t>
-
-                        </div>
-
-                        <!-- Botón -->
-                        <button class="btn btn-success w-100 rounded-pill py-3 fw-semibold">
-                            Pagar ahora
-                        </button>
-
-                        <p class="text-center text-muted small mt-3 mb-0">
-                            Pago seguro · Activación inmediata
-                        </p>
-
-                    </div>
-
-                </div>
+            <!-- Header -->
+            <div class="text-center mb-4">
+              <h2 class="fw-bold mb-1">Confirmar tu plan</h2>
+              <p class="text-muted mb-0">Estás a un paso de activar tu acceso.</p>
             </div>
 
+            <!-- Plan name + price -->
+            <div class="text-center mb-3">
+              <h3 class="fw-bold mb-1"><t t-esc="plan.name"/></h3>
+              <div class="display-5 fw-bold text-primary">
+                <t t-esc="plan.price"
+                   t-options='{"widget": "monetary", "display_currency": plan.currency_id}'/>
+              </div>
+            </div>
+
+            <!-- Plan details -->
+            <div class="bg-light rounded-4 p-3 mb-4">
+              <div class="d-flex justify-content-between py-1">
+                <span class="text-muted">Días incluidos</span>
+                <strong><t t-esc="plan.days_included"/></strong>
+              </div>
+              <div class="d-flex justify-content-between py-1">
+                <span class="text-muted">Vigencia</span>
+                <strong><t t-esc="plan.validity_days"/> días</strong>
+              </div>
+              <t t-if="plan.description">
+                <hr class="my-2"/>
+                <p class="small text-muted mb-0"><t t-esc="plan.description"/></p>
+              </t>
+            </div>
+
+            <!-- ── BOLD PAYMENT BUTTON ──────────────────────────────── -->
+            <t t-if="bold_api_key">
+              <script
+                data-bold-button="dark-L"
+                t-att-data-api-key="bold_api_key"
+                t-att-data-order-id="bold_order_id"
+                t-att-data-amount="str(bold_amount)"
+                t-att-data-currency="bold_currency"
+                t-att-data-integrity-signature="bold_integrity"
+                t-att-data-redirection-url="bold_redirection_url"
+                t-att-data-description="bold_description"
+                data-render-mode="embedded"
+              />
+            </t>
+
+            <!-- Shown when Bold keys are not yet configured in Settings -->
+            <t t-else="">
+              <div class="alert alert-warning rounded-3 text-center small mb-0">
+                El sistema de pago no está configurado todavía.
+                Contacta al administrador.
+              </div>
+            </t>
+            <!-- ─────────────────────────────────────────────────────── -->
+
+            <p class="text-center text-muted small mt-3 mb-0">
+              Pago seguro &#183; Activación inmediata
+            </p>
+
+          </div>
         </div>
-    </t>
+      </div>
+    </div>
+  </t>
 </template>
 <template id="my_coworking_dashboard" name="Mi Coworking">
   <t t-call="portal.portal_layout">
@@ -486,12 +501,12 @@
                     <span><t t-esc="days_pct"/>%</span>
                   </div>
                   <div class="progress rounded-pill" style="height:8px; background:#e5e7eb;">
-                    <div class="progress-bar rounded-pill"
-                         role="progressbar"
-                         t-att-style="'width:%s%%; background:#3b82f6;' % days_pct"
-                         t-att-aria-valuenow="days_pct"
-                         aria-valuemin="0"
-                         aria-valuemax="100"/>
+<div class="progress-bar rounded-pill"
+     role="progressbar"
+     t-att-style="'width:' + str(days_pct) + '%; background:#3b82f6;'"
+     t-att-aria-valuenow="days_pct"
+     aria-valuemin="0"
+     aria-valuemax="100"/>
                   </div>
                 </div>
 

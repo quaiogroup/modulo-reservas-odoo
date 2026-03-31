@@ -1,5 +1,10 @@
-from odoo import models, fields
+import uuid
 from datetime import timedelta
+
+from odoo import models, fields
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class SpootCoworkingSubscription(models.Model):
@@ -10,17 +15,17 @@ class SpootCoworkingSubscription(models.Model):
     partner_id = fields.Many2one(
         "res.partner",
         required=True,
-        ondelete="cascade"
+        ondelete="cascade",
     )
 
     plan_id = fields.Many2one(
         "spoot.coworking.plan",
-        required=True
+        required=True,
     )
 
     start_date = fields.Date(
         required=True,
-        default=fields.Date.today
+        default=fields.Date.today,
     )
 
     end_date = fields.Date(required=True)
@@ -30,11 +35,77 @@ class SpootCoworkingSubscription(models.Model):
 
     state = fields.Selection(
         [
+            ("pending_payment", "Pendiente de pago"),
             ("active", "Activa"),
             ("expired", "Vencida"),
+            ("cancelled", "Cancelada"),
         ],
-        default="active",
+        default="pending_payment",
     )
+
+    # ── Bold payment fields ────────────────────────────────────────────────
+    bold_order_id = fields.Char(
+        string="Bold Order ID",
+        copy=False,
+        readonly=True,
+        index=True,
+    )
+    bold_tx_id = fields.Char(
+        string="Bold Transaction ID",
+        copy=False,
+        readonly=True,
+    )
+    bold_payment_status = fields.Char(
+        string="Bold Payment Status",
+        copy=False,
+        readonly=True,
+    )
+
+    # ── Bold helpers ───────────────────────────────────────────────────────
+
+    def _ensure_bold_order_id(self):
+        """Return existing Bold order ID or generate a new one."""
+        self.ensure_one()
+        if not self.bold_order_id:
+            self.sudo().write({
+                "bold_order_id": f"SPPOT-PLAN-{self.id}-{uuid.uuid4().hex[:10]}"
+            })
+        return self.bold_order_id
+
+    def action_mark_paid(self, tx_id=None):
+        """
+        Activate the subscription after successful Bold payment.
+        Idempotent: already-active subscriptions are skipped.
+        """
+        for rec in self:
+            if rec.state in ("active", "expired"):
+                _logger.info(
+                    "[BOLD PLAN] action_mark_paid skipped — already %s (subscription id=%s)",
+                    rec.state, rec.id,
+                )
+                continue
+
+            start = fields.Date.today()
+            end = start + timedelta(days=rec.plan_id.validity_days)
+
+            rec.write({
+                "state": "active",
+                "start_date": start,
+                "end_date": end,
+                "total_days": rec.plan_id.days_included,
+                "remaining_days": rec.plan_id.days_included,
+                "bold_tx_id": tx_id or rec.bold_tx_id,
+                "bold_payment_status": "APPROVED",
+            })
+
+            _logger.info(
+                "[BOLD PLAN] subscription id=%s activated for partner=%s plan=%s "
+                "start=%s end=%s days=%s",
+                rec.id, rec.partner_id.id, rec.plan_id.name,
+                start, end, rec.plan_id.days_included,
+            )
+
+    # ── Legacy helpers (kept for backward compat) ─────────────────────────
 
     def consume_day(self):
         for rec in self:
@@ -44,6 +115,7 @@ class SpootCoworkingSubscription(models.Model):
             return True
 
     def create_from_plan(self, partner, plan):
+        """Create an already-active subscription (used without payment flow)."""
         start = fields.Date.today()
         end = start + timedelta(days=plan.validity_days)
 
@@ -54,4 +126,5 @@ class SpootCoworkingSubscription(models.Model):
             "end_date": end,
             "total_days": plan.days_included,
             "remaining_days": plan.days_included,
+            "state": "active",
         })

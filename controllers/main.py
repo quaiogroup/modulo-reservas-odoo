@@ -9,7 +9,7 @@ from werkzeug.utils import redirect
 
 from odoo import http, _
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
-from odoo.fields import Datetime
+from odoo.fields import Date, Datetime
 from odoo.http import request, Response
 
 _logger = logging.getLogger(__name__)
@@ -136,9 +136,49 @@ class SpootOfficeWebsite(http.Controller):
 
 class SpootOfficePortal(CustomerPortal):
 
-
     # Status values Bold sends as bold-tx-status in the browser redirect
     _BOLD_APPROVED_STATUSES = {"APPROVED", "SALE_APPROVED", "PAID", "SUCCESS", "COMPLETED"}
+
+    # ── internal helper ────────────────────────────────────────────────────
+
+    def _find_bold_record(self, order_id):
+        """
+        Given a Bold order_id, return (record, record_type) where record_type
+        is 'booking' or 'subscription'.  Uses the SPPOT-BOOK-/SPPOT-PLAN- prefix
+        to route to the correct model; falls back to searching both.
+        Returns (None, None) if nothing is found.
+        """
+        if not order_id:
+            return None, None
+
+        if order_id.startswith("SPPOT-BOOK-"):
+            rec = request.env["spoot.office.booking"].sudo().search(
+                [("bold_order_id", "=", order_id)], limit=1
+            )
+            return (rec or None), "booking"
+
+        if order_id.startswith("SPPOT-PLAN-"):
+            rec = request.env["spoot.coworking.subscription"].sudo().search(
+                [("bold_order_id", "=", order_id)], limit=1
+            )
+            return (rec or None), "subscription"
+
+        # No recognized prefix — try both models
+        rec = request.env["spoot.office.booking"].sudo().search(
+            [("bold_order_id", "=", order_id)], limit=1
+        )
+        if rec:
+            return rec, "booking"
+
+        rec = request.env["spoot.coworking.subscription"].sudo().search(
+            [("bold_order_id", "=", order_id)], limit=1
+        )
+        if rec:
+            return rec, "subscription"
+
+        return None, None
+
+    # ── browser redirect from Bold after checkout ──────────────────────────
 
     @http.route("/bold/retorno", type="http", auth="public", website=True, sitemap=False)
     def bold_return(self, **kw):
@@ -151,29 +191,33 @@ class SpootOfficePortal(CustomerPortal):
             order_id, tx_status, tx_id, dict(kw),
         )
 
-        booking = (
-            request.env["spoot.office.booking"].sudo()
-            .search([("bold_order_id", "=", order_id)], limit=1)
-            if order_id else None
-        )
+        record, record_type = self._find_bold_record(order_id)
 
-        if not booking:
-            _logger.warning("[BOLD RETORNO] booking not found for order_id=%s", order_id)
-            return redirect("/my/office-bookings")
+        if not record:
+            _logger.warning("[BOLD RETORNO] no record found for order_id=%s", order_id)
+            return redirect("/my")
 
         _logger.info(
-            "[BOLD RETORNO] booking found id=%s current state=%s paid=%s",
-            booking.id, booking.state, booking.paid,
+            "[BOLD RETORNO] found %s id=%s",
+            record_type, record.id,
         )
 
         if tx_status in self._BOLD_APPROVED_STATUSES:
-            booking.action_mark_paid(tx_id=tx_id)
-            _logger.info("[BOLD RETORNO] action_mark_paid called — booking id=%s", booking.id)
+            record.action_mark_paid(tx_id=tx_id)
+            _logger.info(
+                "[BOLD RETORNO] action_mark_paid called — %s id=%s",
+                record_type, record.id,
+            )
         else:
-            booking.sudo().write({"bold_payment_status": tx_status or "PROCESSING"})
-            _logger.info("[BOLD RETORNO] non-approved status=%s written to booking id=%s", tx_status, booking.id)
+            record.sudo().write({"bold_payment_status": tx_status or "PROCESSING"})
+            _logger.info(
+                "[BOLD RETORNO] non-approved status=%s written to %s id=%s",
+                tx_status, record_type, record.id,
+            )
 
-        return redirect(f"/my/office-bookings/{booking.id}")
+        if record_type == "booking":
+            return redirect(f"/my/office-bookings/{record.id}")
+        return redirect("/my/coworking")
 
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
@@ -366,28 +410,29 @@ class SpootOfficePortal(CustomerPortal):
             _logger.error("[BOLD WEBHOOK] could not extract order reference from payload")
             return Response("Missing reference", status=400)
 
-        booking = request.env["spoot.office.booking"].sudo().search(
-            [("bold_order_id", "=", reference)], limit=1
-        )
+        record, record_type = self._find_bold_record(reference)
 
-        if not booking:
-            _logger.error("[BOLD WEBHOOK] no booking found for bold_order_id=%s", reference)
-            return Response("Booking not found", status=404)
+        if not record:
+            _logger.error("[BOLD WEBHOOK] no record found for bold_order_id=%s", reference)
+            return Response("Record not found", status=404)
 
         _logger.info(
-            "[BOLD WEBHOOK] booking found id=%s state=%s paid=%s",
-            booking.id, booking.state, booking.paid,
+            "[BOLD WEBHOOK] found %s id=%s",
+            record_type, record.id,
         )
 
         approved_events = {"SALE_APPROVED", "APPROVED", "PAYMENT_APPROVED"}
         if event_type.upper() in approved_events:
-            booking.action_mark_paid(tx_id=payment_id)
-            _logger.info("[BOLD WEBHOOK] action_mark_paid executed for booking id=%s", booking.id)
-        else:
-            booking.sudo().write({"bold_payment_status": event_type})
+            record.action_mark_paid(tx_id=payment_id)
             _logger.info(
-                "[BOLD WEBHOOK] non-approval event=%s written to booking id=%s",
-                event_type, booking.id,
+                "[BOLD WEBHOOK] action_mark_paid executed — %s id=%s",
+                record_type, record.id,
+            )
+        else:
+            record.sudo().write({"bold_payment_status": event_type})
+            _logger.info(
+                "[BOLD WEBHOOK] non-approval event=%s written to %s id=%s",
+                event_type, record_type, record.id,
             )
 
         return Response("ok", status=200)
@@ -402,10 +447,82 @@ class SpootOfficePortal(CustomerPortal):
     @http.route("/coworking/checkout/<int:plan_id>", type="http", auth="user", website=True)
     def coworking_checkout(self, plan_id, **kwargs):
         plan = request.env["spoot.coworking.plan"].sudo().browse(plan_id)
+        if not plan.exists() or not plan.active:
+            return redirect("/coworking/plans")
 
-        return request.render("spoot_office_booking.coworking_checkout_page", {
-            "plan": plan
-        })
+        partner = request.env.user.partner_id
+
+        # Find an existing pending subscription for this partner+plan, or create one.
+        # This prevents duplicate pending records if the user refreshes the page.
+        Subscription = request.env["spoot.coworking.subscription"].sudo()
+        subscription = Subscription.search([
+            ("partner_id", "=", partner.id),
+            ("plan_id", "=", plan.id),
+            ("state", "=", "pending_payment"),
+        ], limit=1)
+
+        if not subscription:
+            # Placeholder dates — will be set properly in action_mark_paid()
+            today = Date.today()
+            subscription = Subscription.create({
+                "partner_id": partner.id,
+                "plan_id": plan.id,
+                "state": "pending_payment",
+                "start_date": today,
+                "end_date": today,
+                "total_days": plan.days_included,
+                "remaining_days": plan.days_included,
+            })
+            _logger.info(
+                "[BOLD PLAN CHECKOUT] created pending subscription id=%s "
+                "partner=%s plan=%s",
+                subscription.id, partner.id, plan.name,
+            )
+        else:
+            _logger.info(
+                "[BOLD PLAN CHECKOUT] reusing existing pending subscription id=%s "
+                "partner=%s plan=%s",
+                subscription.id, partner.id, plan.name,
+            )
+
+        values = {"plan": plan, "subscription": subscription}
+
+        ICP = request.env["ir.config_parameter"].sudo()
+        api_key = (ICP.get_param("bold.api_key") or "").strip()
+        secret_key = (ICP.get_param("bold.secret_key") or "").strip()
+
+        if api_key and secret_key:
+            amount_int = int(round(float(plan.price)))
+            currency = (plan.currency_id.name or "COP").upper()
+            order_id = subscription._ensure_bold_order_id()
+            integrity = hashlib.sha256(
+                f"{order_id}{amount_int}{currency}{secret_key}".encode("utf-8")
+            ).hexdigest()
+
+            base_url = (ICP.get_param("web.base.url") or "").strip().replace("http://", "https://")
+
+            values.update({
+                "bold_api_key": api_key,
+                "bold_order_id": order_id,
+                "bold_amount": amount_int,
+                "bold_currency": currency,
+                "bold_integrity": integrity,
+                "bold_redirection_url": f"{base_url}/bold/retorno",
+                "bold_description": f"Plan coworking: {plan.name}",
+            })
+
+            _logger.info(
+                "[BOLD PLAN CHECKOUT] Bold data ready — subscription_id=%s "
+                "order_id=%s amount=%s currency=%s",
+                subscription.id, order_id, amount_int, currency,
+            )
+        else:
+            _logger.warning(
+                "[BOLD PLAN CHECKOUT] Bold API key / secret not configured — "
+                "payment button will not render"
+            )
+
+        return request.render("spoot_office_booking.coworking_checkout_page", values)
 
     @http.route(['/my/coworking'], type='http', auth="user", website=True)
     def my_coworking_dashboard(self, **kwargs):
