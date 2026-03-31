@@ -406,99 +406,316 @@
     </t>
 </template>
 <template id="my_coworking_dashboard" name="Mi Coworking">
-    <t t-call="website.layout">
-        <div class="container mt-5">
-            <h2>Mi Plan</h2>
+  <t t-call="portal.portal_layout">
+    <t t-set="title">Mi Coworking</t>
 
-            <t t-if="subscription">
-                <div class="card p-4">
-                    <h4><t t-esc="subscription.plan_id.name"/></h4>
-                    <p>Días restantes: <t t-esc="subscription.remaining_days"/></p>
-                    <p>Vence: <t t-esc="subscription.end_date"/></p>
-                </div>
-            </t>
+    <div class="container py-5">
 
-            <t t-else="">
-                <p>No tienes plan activo.</p>
-                <a href="/coworking/plans" class="btn btn-primary">
-                    Ver planes
-                </a>
-            </t>
+      <!-- ── PAGE HEADER ─────────────────────────────────────────── -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-5">
+        <div>
+          <h2 class="fw-bold mb-1">Mi Coworking</h2>
+          <p class="text-muted mb-0">
+            Bienvenido, <strong><t t-esc="request.env.user.name"/></strong>
+          </p>
         </div>
-    </t>
-</template>
-<template id="my_coworking_dashboard" name="Mi Coworking">
-<t t-call="website.layout">
-
-<div class="container py-5">
-    <h1>Mi Coworking</h1>
-
-    <h4>Usuario:</h4>
-    <p><t t-esc="user.name"/></p>
-
-    <hr/>
-
-    <t t-if="subscription">
-        <h4>Plan activo:</h4>
-        <p><t t-esc="subscription.plan_id.name"/></p>
-        <p>Días restantes: <t t-esc="subscription.remaining_days"/></p>
-        <p>Vence: <t t-esc="subscription.end_date"/></p>
-    </t>
-
-    <t t-else="">
-        <p>No tienes plan activo.</p>
-        <a href="/coworking/plans" class="btn btn-primary">
-            Ver planes
+        <a href="/offices" class="btn btn-primary rounded-pill px-4">
+          Reservar espacio
         </a>
-    </t>
+      </div>
 
-    <hr/>
+      <!-- ── PLAN + STATS ROW ────────────────────────────────────── -->
+      <div class="row g-4 mb-5">
 
-<h4 class="fw-bold mb-3">Mis reservas</h4>
+        <t t-if="subscription">
 
-<t t-if="bookings">
+          <!-- Plan card -->
+          <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+              <div class="card-body p-4">
 
-<div class="row g-3">
-<t t-foreach="bookings" t-as="b">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm border-0 rounded-4 h-100">
-            <div class="card-body">
-
-                <div class="d-flex justify-content-between mb-2">
-                    <div>
-                        <h6 class="fw-bold mb-1">
-                            <t t-esc="b.office_id.name"/>
-                        </h6>
-                        <small class="text-muted">
-                            <t t-esc="b.slot_type or ''"/>
-                        </small>
-                    </div>
-
-                    <span class="badge bg-primary">
-                        <t t-esc="b.date"/>
-                    </span>
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div>
+                    <p class="text-uppercase fw-semibold text-muted small mb-1" style="letter-spacing:.06em;">
+                      Plan activo
+                    </p>
+                    <h4 class="fw-bold mb-0">
+                      <t t-esc="subscription.plan_id.name"/>
+                    </h4>
+                  </div>
+                  <span class="badge rounded-pill px-3 py-2"
+                        style="background:#d1fae5; color:#065f46; font-size:.75rem;">
+                    Activo
+                  </span>
                 </div>
+
+                <hr class="my-3"/>
+
+                <!-- Days breakdown -->
+                <div class="row g-2 text-center mb-3">
+                  <div class="col-4">
+                    <div class="bg-light rounded-3 py-2 px-1">
+                      <p class="fw-bold fs-5 mb-0">
+                        <t t-esc="subscription.total_days"/>
+                      </p>
+                      <p class="text-muted small mb-0">Incluidos</p>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="rounded-3 py-2 px-1" style="background:#eff6ff;">
+                      <p class="fw-bold fs-5 mb-0 text-primary">
+                        <t t-esc="days_used"/>
+                      </p>
+                      <p class="text-muted small mb-0">Usados</p>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="rounded-3 py-2 px-1" style="background:#f0fdf4;">
+                      <p class="fw-bold fs-5 mb-0 text-success">
+                        <t t-esc="subscription.remaining_days"/>
+                      </p>
+                      <p class="text-muted small mb-0">Restantes</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>Uso del plan</span>
+                    <span><t t-esc="days_pct"/>%</span>
+                  </div>
+                  <div class="progress rounded-pill" style="height:8px; background:#e5e7eb;">
+                    <div class="progress-bar rounded-pill"
+                         role="progressbar"
+                         t-att-style="'width:%s%%; background:#3b82f6;' % days_pct"
+                         t-att-aria-valuenow="days_pct"
+                         aria-valuemin="0"
+                         aria-valuemax="100"/>
+                  </div>
+                </div>
+
+                <!-- Dates -->
+                <div class="d-flex justify-content-between small text-muted pt-1">
+                  <span>
+                    Inicio:
+                    <strong class="text-dark"><t t-esc="subscription.start_date"/></strong>
+                  </span>
+                  <span>
+                    Vence:
+                    <strong class="text-dark"><t t-esc="subscription.end_date"/></strong>
+                  </span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats grid -->
+          <div class="col-12 col-lg-7">
+            <div class="row g-3 h-100">
+
+              <div class="col-6">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
+                  <p class="fw-bold fs-3 mb-1 text-dark">
+                    <t t-esc="booking_total"/>
+                  </p>
+                  <p class="small text-muted mb-0">Reservas totales</p>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100"
+                     style="border-left: 3px solid #10b981 !important;">
+                  <p class="fw-bold fs-3 mb-1 text-success">
+                    <t t-esc="booking_confirmed"/>
+                  </p>
+                  <p class="small text-muted mb-0">Confirmadas</p>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100"
+                     style="border-left: 3px solid #f59e0b !important;">
+                  <p class="fw-bold fs-3 mb-1 text-warning">
+                    <t t-esc="booking_pending"/>
+                  </p>
+                  <p class="small text-muted mb-0">Pendientes de pago</p>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100"
+                     style="border-left: 3px solid #6b7280 !important;">
+                  <p class="fw-bold fs-3 mb-1 text-secondary">
+                    <t t-esc="booking_cancelled"/>
+                  </p>
+                  <p class="small text-muted mb-0">Canceladas</p>
+                </div>
+              </div>
 
             </div>
+          </div>
+
+        </t>
+
+        <!-- No active plan -->
+        <t t-else="">
+          <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 text-center py-5 px-4">
+              <div class="mb-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light"
+                      style="width:72px; height:72px; font-size:2rem;">
+                  &#127970;
+                </span>
+              </div>
+              <h5 class="fw-bold mb-2">Sin plan activo</h5>
+              <p class="text-muted mb-4" style="max-width:420px; margin:0 auto;">
+                Activa un plan de coworking para gestionar tus accesos y reservas desde aquí.
+              </p>
+              <div>
+                <a href="/coworking/plans" class="btn btn-primary rounded-pill px-5">
+                  Ver planes disponibles
+                </a>
+              </div>
+            </div>
+          </div>
+        </t>
+
+      </div>
+
+      <!-- ── BOOKINGS SECTION ────────────────────────────────────── -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Mis reservas recientes</h5>
+        <a href="/my/office-bookings"
+           class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+          Ver todas
+        </a>
+      </div>
+
+      <t t-if="bookings">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead style="background:#f8fafc;">
+                <tr>
+                  <th class="ps-4 py-3 text-muted fw-semibold small text-uppercase"
+                      style="letter-spacing:.05em;">Oficina</th>
+                  <th class="py-3 text-muted fw-semibold small text-uppercase"
+                      style="letter-spacing:.05em;">Fecha</th>
+                  <th class="py-3 text-muted fw-semibold small text-uppercase"
+                      style="letter-spacing:.05em;">Franja</th>
+                  <th class="py-3 text-center text-muted fw-semibold small text-uppercase"
+                      style="letter-spacing:.05em;">Estado</th>
+                  <th class="py-3 text-center text-muted fw-semibold small text-uppercase"
+                      style="letter-spacing:.05em;">Pago</th>
+                  <th class="pe-4 py-3"/>
+                </tr>
+              </thead>
+              <tbody>
+                <t t-foreach="bookings" t-as="b">
+                  <tr>
+                    <td class="ps-4 fw-semibold">
+                      <t t-esc="b.office_id.name"/>
+                    </td>
+                    <td class="text-muted">
+                      <t t-esc="b.date"/>
+                    </td>
+                    <td>
+                      <t t-if="b.slot_type == 'morning'">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#e0f2fe; color:#0369a1;">
+                          Mañana
+                        </span>
+                      </t>
+                      <t t-elif="b.slot_type == 'afternoon'">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#fef3c7; color:#92400e;">
+                          Tarde
+                        </span>
+                      </t>
+                      <t t-else="">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#f3f4f6; color:#374151;">
+                          Dia completo
+                        </span>
+                      </t>
+                    </td>
+                    <td class="text-center">
+                      <t t-if="b.state == 'confirmed'">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#d1fae5; color:#065f46;">
+                          Confirmada
+                        </span>
+                      </t>
+                      <t t-elif="b.state == 'pending_payment'">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#fef3c7; color:#92400e;">
+                          Pend. pago
+                        </span>
+                      </t>
+                      <t t-elif="b.state == 'cancelled'">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#f3f4f6; color:#6b7280;">
+                          Cancelada
+                        </span>
+                      </t>
+                      <t t-else="">
+                        <span class="badge rounded-pill px-3 py-1 bg-light text-muted">
+                          <t t-esc="b.state"/>
+                        </span>
+                      </t>
+                    </td>
+                    <td class="text-center">
+                      <t t-if="b.paid">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#d1fae5; color:#065f46;">
+                          Pagado
+                        </span>
+                      </t>
+                      <t t-else="">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#fee2e2; color:#991b1b;">
+                          Pendiente
+                        </span>
+                      </t>
+                    </td>
+                    <td class="pe-4 text-end">
+                      <a t-att-href="'/my/office-bookings/%s' % b.id"
+                         class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        Ver
+                      </a>
+                    </td>
+                  </tr>
+                </t>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </t>
+
+      <!-- Empty bookings state -->
+      <t t-else="">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5 px-4">
+          <div class="mb-3">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-light"
+                  style="width:64px; height:64px; font-size:1.8rem;">
+              &#128197;
+            </span>
+          </div>
+          <h6 class="fw-bold mb-2">Sin reservas todavía</h6>
+          <p class="text-muted mb-4">
+            Tus reservas de espacios aparecerán aquí para que puedas seguirlas.
+          </p>
+          <div>
+            <a href="/offices" class="btn btn-primary rounded-pill px-5">
+              Reservar una oficina
+            </a>
+          </div>
+        </div>
+      </t>
+
     </div>
-</t>
-</div>
-
-</t>
-
-<t t-if="not bookings">
-<div class="alert alert-light rounded-4">
-No tienes reservas todavía.
-</div>
-</t>
-
-    <t t-else="">
-        <p>No tienes reservas.</p>
-    </t>
-
-</div>
-
-</t>
+  </t>
 </template>
 </odoo>

@@ -347,8 +347,22 @@ class SpootOfficePortal(CustomerPortal):
             ('partner_id', '=', partner.id)
         ], order="date desc")
 
-        return request.render("spoot_office_booking.my_coworking_dashboard", {
+        days_used = 0
+        days_pct = 0
+        if subscription and subscription.total_days:
+            days_used = subscription.total_days - subscription.remaining_days
+            days_pct = int(round(days_used * 100.0 / subscription.total_days))
+
+        values = self._prepare_portal_layout_values()
+        values.update({
             'subscription': subscription,
             'bookings': bookings,
-            'user': request.env.user,
+            'page_name': 'coworking',
+            'booking_total': len(bookings),
+            'booking_confirmed': len(bookings.filtered(lambda b: b.state == 'confirmed')),
+            'booking_pending': len(bookings.filtered(lambda b: b.state == 'pending_payment')),
+            'booking_cancelled': len(bookings.filtered(lambda b: b.state == 'cancelled')),
+            'days_used': days_used,
+            'days_pct': days_pct,
         })
+        return request.render("spoot_office_booking.my_coworking_dashboard", values)
