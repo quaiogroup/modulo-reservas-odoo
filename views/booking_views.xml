@@ -1,55 +1,287 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Lista -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SEARCH  VIEW
+         ══════════════════════════════════════════════════════════════ -->
+    <record id="view_spoot_office_booking_search" model="ir.ui.view">
+        <field name="name">spoot.office.booking.search</field>
+        <field name="model">spoot.office.booking</field>
+        <field name="arch" type="xml">
+            <search string="Buscar reservas">
+
+                <!-- Quick-search fields -->
+                <field name="name"       string="Referencia"/>
+                <field name="partner_id" string="Cliente"/>
+                <field name="office_id"  string="Oficina"/>
+                <field name="date"       string="Fecha"/>
+
+                <!-- ── Date filters ─────────────────────────────────── -->
+                <filter string="Fecha de reserva" name="filter_date" date="date"/>
+                <filter string="No canceladas" name="filter_upcoming"
+                        domain="[('state', 'not in', ['cancelled'])]"/>
+
+                <separator/>
+
+                <!-- ── State filters ─────────────────────────────────── -->
+                <filter string="Borrador"          name="filter_draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter string="Pendiente de pago" name="filter_pending"
+                        domain="[('state', '=', 'pending_payment')]"/>
+                <filter string="Confirmadas"       name="filter_confirmed"
+                        domain="[('state', '=', 'confirmed')]"/>
+                <filter string="Canceladas"        name="filter_cancelled"
+                        domain="[('state', '=', 'cancelled')]"/>
+
+                <separator/>
+
+                <!-- ── Payment filters ──────────────────────────────── -->
+                <filter string="Pagadas"   name="filter_paid"
+                        domain="[('paid', '=', True)]"/>
+                <filter string="Sin pagar" name="filter_unpaid"
+                        domain="[('paid', '=', False), ('need_payment', '=', True), ('state', '!=', 'cancelled')]"/>
+
+                <separator/>
+
+                <!-- ── Source filters ───────────────────────────────── -->
+                <filter string="Con plan (saldo)"    name="filter_plan"
+                        domain="[('payment_mode', '=', 'plan')]"/>
+                <filter string="Pago externo (Bold)" name="filter_bold"
+                        domain="[('payment_mode', '=', 'bold')]"/>
+
+                <separator/>
+
+                <!-- ── Slot filters ──────────────────────────────────── -->
+                <filter string="Mañana"     name="filter_morning"
+                        domain="[('slot_type', '=', 'morning')]"/>
+                <filter string="Tarde"      name="filter_afternoon"
+                        domain="[('slot_type', '=', 'afternoon')]"/>
+                <filter string="Día completo" name="filter_full_day"
+                        domain="[('slot_type', '=', 'full_day')]"/>
+
+                <!-- ── Group By ──────────────────────────────────────── -->
+                <group>
+                    <filter string="Cliente"      name="group_partner"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter string="Oficina"      name="group_office"
+                            context="{'group_by': 'office_id'}"/>
+                    <filter string="Fecha"        name="group_date"
+                            context="{'group_by': 'date:month'}"/>
+                    <filter string="Estado"       name="group_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Origen pago"  name="group_payment_mode"
+                            context="{'group_by': 'payment_mode'}"/>
+                    <filter string="Franja"       name="group_slot"
+                            context="{'group_by': 'slot_type'}"/>
+                    <filter string="Plan"         name="group_subscription"
+                            context="{'group_by': 'subscription_id'}"/>
+                </group>
+
+            </search>
+        </field>
+    </record>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         LIST  VIEW
+         ══════════════════════════════════════════════════════════════ -->
     <record id="view_spoot_office_booking_tree" model="ir.ui.view">
         <field name="name">spoot.office.booking.tree</field>
         <field name="model">spoot.office.booking</field>
         <field name="arch" type="xml">
-<list>
-    <field name="name"/>
-    <field name="office_id"/>
-    <field name="partner_id"/>
-    <field name="date"/>
-    <field name="slot_type"/>
-    <field name="state"/>
-    <field name="paid"/>
-</list>
+            <list string="Reservas"
+                  default_order="date desc, id desc"
+                  decoration-success="state == 'confirmed'"
+                  decoration-warning="state == 'pending_payment'"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-info="state == 'draft'">
 
+                <!-- Core identity -->
+                <field name="name"       string="Referencia" class="fw-semibold"/>
+                <field name="office_id"  string="Oficina"/>
+                <field name="partner_id" string="Cliente"/>
+                <field name="date"       string="Fecha"/>
+
+                <!-- Slot — badge with per-value colour -->
+                <field name="slot_type"  string="Franja"
+                       widget="badge"
+                       decoration-info="slot_type == 'morning'"
+                       decoration-warning="slot_type == 'afternoon'"
+                       decoration-primary="slot_type == 'full_day'"/>
+
+                <!-- State — badge -->
+                <field name="state" string="Estado"
+                       widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'pending_payment'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-muted="state == 'cancelled'"/>
+
+                <!-- Payment source — badge -->
+                <field name="payment_mode" string="Origen"
+                       widget="badge"
+                       decoration-success="payment_mode == 'plan'"
+                       decoration-info="payment_mode == 'bold'"/>
+
+                <!-- Paid boolean -->
+                <field name="paid" string="Pagado" widget="boolean_toggle" optional="show"/>
+
+                <!-- Amount (hide when paid via plan, but keep column for easy scan) -->
+                <field name="amount_total" string="Importe"
+                       widget="monetary"
+                       options="{'currency_field': 'currency_id'}"
+                       optional="show"/>
+                <field name="currency_id" column_invisible="True"/>
+
+                <!-- Plan usage -->
+                <field name="plan_days_consumed" string="Días plan"
+                       optional="show"/>
+                <field name="subscription_id"    string="Plan usado"
+                       optional="show"/>
+
+                <!-- Audit / technical (hidden by default, toggleable) -->
+                <field name="bold_payment_status" string="Estado Bold" optional="hide"/>
+                <field name="create_date"         string="Creada el"   optional="hide"/>
+
+            </list>
         </field>
     </record>
 
-    <!-- Formulario -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         FORM  VIEW
+         ══════════════════════════════════════════════════════════════ -->
     <record id="view_spoot_office_booking_form" model="ir.ui.view">
         <field name="name">spoot.office.booking.form</field>
         <field name="model">spoot.office.booking</field>
         <field name="arch" type="xml">
             <form string="Reserva de oficina">
+
+                <!-- ── Header: action buttons + statusbar ────────────── -->
+                <header>
+                    <button name="action_mark_paid"
+                            string="Marcar como pagada"
+                            type="object"
+                            class="btn-primary"
+                            invisible="paid or state == 'cancelled'"
+                            confirm="¿Marcar esta reserva como pagada y confirmada?"/>
+                    <button name="action_cancel_and_restore_plan"
+                            string="Cancelar reserva"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state == 'cancelled'"
+                            confirm="¿Cancelar reserva? Si fue pagada con plan se restaurarán los días consumidos."/>
+                    <field name="state"
+                           widget="statusbar"
+                           statusbar_visible="draft,pending_payment,confirmed,cancelled"
+                           readonly="1"/>
+                </header>
+
                 <sheet>
-                    <group>
-                        <field name="name"/>
-                        <field name="state"/>
+
+                    <!-- ── Smart buttons ─────────────────────────────── -->
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_subscription"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-calendar-check-o"
+                                invisible="not subscription_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Plan usado</span>
+                                <span class="o_stat_value">
+                                    <field name="plan_days_consumed" nolabel="1"/> días
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- ── Title ─────────────────────────────────────── -->
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Referencia de reserva"/>
+                        </h1>
+                    </div>
+
+                    <!-- ── Section: core booking info ────────────────── -->
+                    <group string="Datos de la reserva" col="2">
+                        <group>
+                            <field name="office_id"/>
+                            <field name="partner_id"/>
+                            <field name="date"/>
+                            <field name="slot_type"/>
+                        </group>
+                        <group>
+                            <field name="start_datetime" readonly="1"/>
+                            <field name="end_datetime"   readonly="1"/>
+                            <field name="notes"
+                                   placeholder="Notas internas visibles solo para el equipo…"
+                                   nolabel="1"
+                                   colspan="2"/>
+                        </group>
                     </group>
-                    <group>
-                        <field name="office_id"/>
-                        <field name="partner_id"/>
-                    </group>
-                    <group>
-                        <field name="date"/>
-                        <field name="slot_type"/>
-                    </group>
-                    <group string="Calendario">
-                        <field name="start_datetime"/>
-                        <field name="end_datetime"/>
-                    </group>
-                    <group>
-                        <field name="notes"/>
-                    </group>
+
+                    <!-- ── Notebook ──────────────────────────────────── -->
+                    <notebook>
+
+                        <!-- TAB 1: Payment summary -->
+                        <page string="Pago" name="page_payment">
+                            <group col="2">
+                                <group string="Resumen">
+                                    <field name="payment_mode"/>
+                                    <field name="need_payment"/>
+                                    <field name="paid"/>
+                                    <field name="amount_total"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id"/>
+                                </group>
+                                <group string="Bold — pago externo"
+                                       invisible="payment_mode != 'bold'">
+                                    <field name="bold_order_id"/>
+                                    <field name="bold_tx_id"/>
+                                    <field name="bold_payment_status"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- TAB 2: Plan consumption — only relevant when payment_mode=plan -->
+                        <page string="Consumo de plan" name="page_plan"
+                              invisible="payment_mode != 'plan'">
+                            <group>
+                                <field name="subscription_id"
+                                       options="{'no_create': True}"/>
+                                <field name="plan_days_consumed"/>
+                            </group>
+                            <div class="alert alert-info" role="alert"
+                                 invisible="not subscription_id">
+                                Esta reserva se pagó descontando saldo del plan indicado.
+                                Al cancelar la reserva se restauran los días consumidos.
+                            </div>
+                        </page>
+
+                        <!-- TAB 3: Technical / calendar sync -->
+                        <page string="Técnico" name="page_technical">
+                            <group>
+                                <field name="google_event_id"
+                                       string="ID evento externo (Google, etc.)"/>
+                            </group>
+                        </page>
+
+                    </notebook>
                 </sheet>
+
+                <!-- ── Chatter ────────────────────────────────────────── -->
+                <chatter/>
+
             </form>
         </field>
     </record>
 
-    <!-- Vista calendario -->
+
+    <!-- ══════════════════════════════════════════════════════════════
+         CALENDAR  VIEW
+         ══════════════════════════════════════════════════════════════ -->
     <record id="view_spoot_office_booking_calendar" model="ir.ui.view">
         <field name="name">spoot.office.booking.calendar</field>
         <field name="model">spoot.office.booking</field>
@@ -57,13 +289,16 @@
             <calendar string="Reservas de oficina"
                       date_start="start_datetime"
                       date_stop="end_datetime"
-                      color="office_id">
+                      color="office_id"
+                      mode="month">
                 <field name="name"/>
                 <field name="office_id"/>
                 <field name="partner_id"/>
                 <field name="slot_type"/>
                 <field name="state"/>
+                <field name="payment_mode"/>
             </calendar>
         </field>
     </record>
+
 </odoo>

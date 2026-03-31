@@ -246,6 +246,17 @@ class SpootOfficeBooking(models.Model):
                 "bold_tx_id": tx_id or rec.bold_tx_id,
             })
     
+    def action_view_subscription(self):
+        """Open the linked coworking subscription record (used by the smart button)."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "spoot.coworking.subscription",
+            "view_mode": "form",
+            "res_id": self.subscription_id.id,
+            "target": "current",
+        }
+
     def _get_booking_amount(self):
         """Calcula el monto según la franja."""
         self.ensure_one()
