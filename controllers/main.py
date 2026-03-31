@@ -333,15 +333,22 @@ class SpootOfficePortal(CustomerPortal):
         return request.render("spoot_office_booking.coworking_checkout_page", {
             "plan": plan
         })
-    @http.route("/my/coworking", type="http", auth="user", website=True)
+
+    @http.route(['/my/coworking'], type='http', auth="user", website=True)
     def my_coworking_dashboard(self, **kwargs):
         partner = request.env.user.partner_id
 
-        subscription = request.env["spoot.coworking.subscription"].sudo().search([
-            ("partner_id", "=", partner.id),
-            ("state", "=", "active")
+        subscription = request.env['spoot.coworking.subscription'].sudo().search([
+            ('partner_id', '=', partner.id),
+            ('state', '=', 'active')
         ], limit=1)
 
+        bookings = request.env['spoot.office.booking'].sudo().search([
+            ('partner_id', '=', partner.id)
+        ], order="date desc")
+
         return request.render("spoot_office_booking.my_coworking_dashboard", {
-            "subscription": subscription
+            'subscription': subscription,
+            'bookings': bookings,
+            'user': request.env.user,
         })

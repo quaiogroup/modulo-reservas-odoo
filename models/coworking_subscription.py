@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields
 from datetime import timedelta
 
 
@@ -18,7 +18,11 @@ class SpootCoworkingSubscription(models.Model):
         required=True
     )
 
-    start_date = fields.Date(required=True, default=fields.Date.today)
+    start_date = fields.Date(
+        required=True,
+        default=fields.Date.today
+    )
+
     end_date = fields.Date(required=True)
 
     total_days = fields.Integer(required=True)
@@ -30,7 +34,6 @@ class SpootCoworkingSubscription(models.Model):
             ("expired", "Vencida"),
         ],
         default="active",
-        tracking=True
     )
 
     def consume_day(self):
@@ -40,7 +43,6 @@ class SpootCoworkingSubscription(models.Model):
             rec.remaining_days -= 1
             return True
 
-    @api.model
     def create_from_plan(self, partner, plan):
         start = fields.Date.today()
         end = start + timedelta(days=plan.validity_days)

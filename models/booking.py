@@ -81,8 +81,8 @@ class SpootOfficeBooking(models.Model):
     currency_id = fields.Many2one(
         "res.currency",
         string="Moneda",
-        default=lambda self: self.env.company.currency_id.id,
-        required=True,
+        default=lambda self: self.env.company.currency_id,
+        required=True
     )
 
     amount_total = fields.Monetary(

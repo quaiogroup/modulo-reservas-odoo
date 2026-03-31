@@ -302,8 +302,8 @@
                             </h4>
 
                             <div class="display-6 fw-bold text-primary mb-3">
-                                <t t-esc="plan.price"/>
-                                <small class="fs-6 text-muted">
+<t t-esc="plan.price"
+   t-options='{"widget": "monetary", "display_currency": plan.currency_id}'/>                               <small class="fs-6 text-muted">
                                     <t t-esc="plan.currency_id.symbol"/>
                                 </small>
                             </div>
@@ -338,19 +338,70 @@
 </template>
 <template id="coworking_checkout_page" name="Checkout Coworking">
     <t t-call="website.layout">
-        <div class="container mt-5">
-            <h3>Confirmar plan</h3>
+        <div class="container py-5">
 
-            <div class="card p-4">
-                <h4><t t-esc="plan.name"/></h4>
-                <p>Días: <t t-esc="plan.days_included"/></p>
-                <p>Precio: <t t-esc="plan.price"/> <t t-esc="plan.currency_id.symbol"/></p>
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-6">
 
-                <!-- Aquí luego irá botón Bold -->
-                <button class="btn btn-success mt-3">
-                    Pagar
-                </button>
+                    <div class="card border-0 shadow-lg rounded-4 p-4">
+
+                        <div class="text-center mb-4">
+                            <h2 class="fw-bold mb-1">Confirmar tu plan</h2>
+                            <p class="text-muted mb-0">
+                                Estás a un paso de activar tu acceso.
+                            </p>
+                        </div>
+
+                        <!-- Plan name -->
+                        <div class="text-center mb-3">
+                            <h3 class="fw-bold">
+                                <t t-esc="plan.name"/>
+                            </h3>
+                        </div>
+
+                        <!-- Precio destacado -->
+<div class="display-5 fw-bold text-primary">
+<t t-esc="plan.price"
+   t-options='{"widget": "monetary", "display_currency": plan.currency_id}'/>
+</div>
+                        
+
+                        <!-- Info del plan -->
+                        <div class="bg-light rounded-4 p-3 mb-4">
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Días incluidos</span>
+                                <strong><t t-esc="plan.days_included"/></strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Vigencia</span>
+                                <strong><t t-esc="plan.validity_days"/> días</strong>
+                            </div>
+
+                            <t t-if="plan.description">
+                                <hr/>
+                                <p class="small text-muted mb-0">
+                                    <t t-esc="plan.description"/>
+                                </p>
+                            </t>
+
+                        </div>
+
+                        <!-- Botón -->
+                        <button class="btn btn-success w-100 rounded-pill py-3 fw-semibold">
+                            Pagar ahora
+                        </button>
+
+                        <p class="text-center text-muted small mt-3 mb-0">
+                            Pago seguro · Activación inmediata
+                        </p>
+
+                    </div>
+
+                </div>
             </div>
+
         </div>
     </t>
 </template>
@@ -376,5 +427,78 @@
         </div>
     </t>
 </template>
+<template id="my_coworking_dashboard" name="Mi Coworking">
+<t t-call="website.layout">
 
+<div class="container py-5">
+    <h1>Mi Coworking</h1>
+
+    <h4>Usuario:</h4>
+    <p><t t-esc="user.name"/></p>
+
+    <hr/>
+
+    <t t-if="subscription">
+        <h4>Plan activo:</h4>
+        <p><t t-esc="subscription.plan_id.name"/></p>
+        <p>Días restantes: <t t-esc="subscription.remaining_days"/></p>
+        <p>Vence: <t t-esc="subscription.end_date"/></p>
+    </t>
+
+    <t t-else="">
+        <p>No tienes plan activo.</p>
+        <a href="/coworking/plans" class="btn btn-primary">
+            Ver planes
+        </a>
+    </t>
+
+    <hr/>
+
+<h4 class="fw-bold mb-3">Mis reservas</h4>
+
+<t t-if="bookings">
+
+<div class="row g-3">
+<t t-foreach="bookings" t-as="b">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between mb-2">
+                    <div>
+                        <h6 class="fw-bold mb-1">
+                            <t t-esc="b.office_id.name"/>
+                        </h6>
+                        <small class="text-muted">
+                            <t t-esc="b.slot_type or ''"/>
+                        </small>
+                    </div>
+
+                    <span class="badge bg-primary">
+                        <t t-esc="b.date"/>
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</t>
+</div>
+
+</t>
+
+<t t-if="not bookings">
+<div class="alert alert-light rounded-4">
+No tienes reservas todavía.
+</div>
+</t>
+
+    <t t-else="">
+        <p>No tienes reservas.</p>
+    </t>
+
+</div>
+
+</t>
+</template>
 </odoo>

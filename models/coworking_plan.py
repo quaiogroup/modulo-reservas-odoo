@@ -17,15 +17,16 @@ class SpootCoworkingPlan(models.Model):
 
     price = fields.Monetary(
         string="Precio",
-        required=True
+        required=True,
+        currency_field="currency_id"
     )
 
     currency_id = fields.Many2one(
-        "res.currency",
-        string="Moneda",
-        default=lambda self: self.env.company.currency_id.id,
-        required=True
-    )
+    "res.currency",
+    string="Moneda",
+    default=lambda self: self.env.company.currency_id,
+    required=True
+)
 
     validity_days = fields.Integer(
         string="Duración (días)",
