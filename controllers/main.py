@@ -1,14 +1,18 @@
 # -- coding: utf-8 --
+import base64
+import hashlib
+import hmac
+import json
+import logging
+
+from werkzeug.utils import redirect
+
 from odoo import http, _
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
-from odoo.http import request
 from odoo.fields import Datetime
-from werkzeug.utils import redirect
-from odoo.http import Response
-import base64
-import hmac
-import hashlib
-import json
+from odoo.http import request, Response
+
+_logger = logging.getLogger(__name__)
 
 
 
@@ -133,17 +137,43 @@ class SpootOfficeWebsite(http.Controller):
 class SpootOfficePortal(CustomerPortal):
 
 
+    # Status values Bold sends as bold-tx-status in the browser redirect
+    _BOLD_APPROVED_STATUSES = {"APPROVED", "SALE_APPROVED", "PAID", "SUCCESS", "COMPLETED"}
+
     @http.route("/bold/retorno", type="http", auth="public", website=True, sitemap=False)
     def bold_return(self, **kw):
         order_id = kw.get("bold-order-id") or kw.get("bold_order_id")
         tx_status = (kw.get("bold-tx-status") or "").upper()
+        tx_id = kw.get("bold-tx-id") or kw.get("bold_tx_id") or None
 
-        booking = request.env["spoot.office.booking"].sudo().search([("bold_order_id", "=", order_id)], limit=1) if order_id else None
-        if booking:
+        _logger.info(
+            "[BOLD RETORNO] order_id=%s tx_status=%s tx_id=%s all_params=%s",
+            order_id, tx_status, tx_id, dict(kw),
+        )
+
+        booking = (
+            request.env["spoot.office.booking"].sudo()
+            .search([("bold_order_id", "=", order_id)], limit=1)
+            if order_id else None
+        )
+
+        if not booking:
+            _logger.warning("[BOLD RETORNO] booking not found for order_id=%s", order_id)
+            return redirect("/my/office-bookings")
+
+        _logger.info(
+            "[BOLD RETORNO] booking found id=%s current state=%s paid=%s",
+            booking.id, booking.state, booking.paid,
+        )
+
+        if tx_status in self._BOLD_APPROVED_STATUSES:
+            booking.action_mark_paid(tx_id=tx_id)
+            _logger.info("[BOLD RETORNO] action_mark_paid called — booking id=%s", booking.id)
+        else:
             booking.sudo().write({"bold_payment_status": tx_status or "PROCESSING"})
-            return redirect(f"/my/office-bookings/{booking.id}")
+            _logger.info("[BOLD RETORNO] non-approved status=%s written to booking id=%s", tx_status, booking.id)
 
-        return redirect("/my/office-bookings")
+        return redirect(f"/my/office-bookings/{booking.id}")
 
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
@@ -175,9 +205,7 @@ class SpootOfficePortal(CustomerPortal):
         ICP = request.env["ir.config_parameter"].sudo()
         api_key = (ICP.get_param("bold.api_key") or "").strip()
         secret_key = (ICP.get_param("bold.secret_key") or "").strip()
-        base_url = ICP.get_param("web.base.url")
-
-        print(api_key, secret_key)
+        base_url = (ICP.get_param("web.base.url") or "").strip().replace("http://", "https://")
 
         if api_key and secret_key:
             for b in bookings:
@@ -258,64 +286,109 @@ class SpootOfficePortal(CustomerPortal):
     
     @http.route("/bold/webhook", type="http", auth="public", csrf=False, methods=["POST"], sitemap=False)
     def bold_webhook(self, **kw):
-
         ICP = request.env["ir.config_parameter"].sudo()
-        secret_key = ""
-        #(ICP.get_param("bold.secret_key") or "").strip()
+        secret_key = (ICP.get_param("bold.secret_key") or "").strip()
 
         raw = request.httprequest.get_data() or b""
         headers = request.httprequest.headers
+        content_type = headers.get("Content-Type", "")
         signature = headers.get("X-Bold-Signature") or headers.get("x-bold-signature")
 
-        print("==== WEBHOOK DEBUG ====")
-        print("SECRET_KEY:", repr(secret_key))
-        print("RECEIVED_SIGNATURE:", repr(signature))
-        print("RAW_BODY:", raw.decode("utf-8"))
-        print("BASE64_BODY:", base64.b64encode(raw))
-        print("=======================")
+        _logger.info("==== BOLD WEBHOOK RECEIVED ====")
+        _logger.info("Content-Type: %s", content_type)
+        _logger.info("X-Bold-Signature: %s", signature)
+        _logger.info("secret_key configured: %s", bool(secret_key))
+        _logger.info("raw body (%d bytes): %s", len(raw), raw[:500])
 
-        #if not secret_key or not signature:
-        if not signature:
-            return Response("Missing signature", status=400)
+        if not raw:
+            _logger.error("[BOLD WEBHOOK] empty body received")
+            return Response("Empty body", status=400)
 
-        # EXACTAMENTE como Bold lo hace
         str_message = raw.decode("utf-8")
-        encoded = base64.b64encode(str_message.encode("utf-8"))
 
-        expected = hmac.new(
-            key=secret_key.encode(),
-            msg=encoded,
-            digestmod=hashlib.sha256
-        ).hexdigest()
+        # Signature validation — only enforce if a secret key is configured
+        if secret_key:
+            if not signature:
+                _logger.error("[BOLD WEBHOOK] missing X-Bold-Signature header")
+                return Response("Missing signature", status=400)
 
-        if not hmac.compare_digest(expected, signature):
-            return Response("Invalid signature", status=400)
+            # Bold signs: HMAC-SHA256(base64(raw_body), secret_key)
+            encoded = base64.b64encode(raw)
+            expected = hmac.new(
+                key=secret_key.encode("utf-8"),
+                msg=encoded,
+                digestmod=hashlib.sha256,
+            ).hexdigest()
 
-        # Firma válida → ahora sí procesamos
-        payload = json.loads(str_message)
+            _logger.info("[BOLD WEBHOOK] expected sig: %s", expected)
+            _logger.info("[BOLD WEBHOOK] received sig: %s", signature)
 
-        event_type = payload.get("type")
+            if not hmac.compare_digest(expected, signature):
+                _logger.error("[BOLD WEBHOOK] signature mismatch — rejecting")
+                return Response("Invalid signature", status=400)
+
+            _logger.info("[BOLD WEBHOOK] signature valid")
+        else:
+            _logger.warning("[BOLD WEBHOOK] no secret_key configured — skipping signature check")
+
+        # Parse payload
+        try:
+            payload = json.loads(str_message)
+        except Exception as e:
+            _logger.error("[BOLD WEBHOOK] JSON parse error: %s", e)
+            return Response("Invalid JSON", status=400)
+
+        _logger.info("[BOLD WEBHOOK] parsed payload: %s", payload)
+
+        event_type = payload.get("type") or ""
         data = payload.get("data") or {}
-        reference = (data.get("metadata") or {}).get("reference")
-        payment_id = data.get("payment_id")
+
+        # Bold Smart Checkout payload:
+        #   data.order.id  → the reference we sent (bold_order_id)
+        #   data.payment.id → Bold transaction id
+        # Fallback: older format uses data.metadata.reference
+        order_data = data.get("order") or {}
+        payment_data = data.get("payment") or {}
+
+        reference = (
+            order_data.get("id")
+            or (data.get("metadata") or {}).get("reference")
+            or data.get("reference")
+        )
+        payment_id = payment_data.get("id") or data.get("payment_id")
+
+        _logger.info(
+            "[BOLD WEBHOOK] event_type=%s reference=%s payment_id=%s",
+            event_type, reference, payment_id,
+        )
 
         if not reference:
+            _logger.error("[BOLD WEBHOOK] could not extract order reference from payload")
             return Response("Missing reference", status=400)
 
         booking = request.env["spoot.office.booking"].sudo().search(
-            [("bold_order_id", "=", reference)],
-            limit=1
+            [("bold_order_id", "=", reference)], limit=1
         )
 
         if not booking:
+            _logger.error("[BOLD WEBHOOK] no booking found for bold_order_id=%s", reference)
             return Response("Booking not found", status=404)
 
-        if event_type == "SALE_APPROVED":
+        _logger.info(
+            "[BOLD WEBHOOK] booking found id=%s state=%s paid=%s",
+            booking.id, booking.state, booking.paid,
+        )
+
+        approved_events = {"SALE_APPROVED", "APPROVED", "PAYMENT_APPROVED"}
+        if event_type.upper() in approved_events:
             booking.action_mark_paid(tx_id=payment_id)
+            _logger.info("[BOLD WEBHOOK] action_mark_paid executed for booking id=%s", booking.id)
         else:
-            booking.sudo().write({
-                "bold_payment_status": event_type
-            })
+            booking.sudo().write({"bold_payment_status": event_type})
+            _logger.info(
+                "[BOLD WEBHOOK] non-approval event=%s written to booking id=%s",
+                event_type, booking.id,
+            )
 
         return Response("ok", status=200)
     
