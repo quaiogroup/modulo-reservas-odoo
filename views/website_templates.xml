@@ -769,6 +769,53 @@
 
       </div>
 
+      <!-- ── CALENDAR SECTION ──────────────────────────────────────── -->
+
+      <!-- JSON data for the JS calendar widget (not rendered visually) -->
+      <script type="application/json" id="spoot-calendar-data"><t t-out="calendar_events_json"/></script>
+
+      <div class="card border-0 shadow-sm rounded-4 mb-5">
+        <div class="card-body p-4">
+
+          <!-- Card header: title + legend -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <h5 class="fw-bold mb-0">Calendario de reservas</h5>
+            <div class="spoot-cal-legend">
+              <span class="spoot-cal-legend-item">
+                <span class="spoot-cal-legend-dot" style="background:#3b82f6;"/>
+                Confirmada (Bold)
+              </span>
+              <span class="spoot-cal-legend-item">
+                <span class="spoot-cal-legend-dot" style="background:#10b981;"/>
+                Confirmada (Plan)
+              </span>
+              <span class="spoot-cal-legend-item">
+                <span class="spoot-cal-legend-dot" style="background:#f59e0b;"/>
+                Pend. pago
+              </span>
+              <span class="spoot-cal-legend-item">
+                <span class="spoot-cal-legend-dot" style="background:#9ca3af;"/>
+                Cancelada
+              </span>
+            </div>
+          </div>
+
+          <!-- Calendar mount point — filled by coworking_calendar.js -->
+          <div id="spoot-coworking-calendar"/>
+
+          <!-- Empty state (shown only if there are no bookings at all) -->
+          <t t-if="not bookings">
+            <div class="text-center py-4">
+              <p class="text-muted mb-0" style="font-size:.9rem;">
+                Aún no tienes reservas. ¡Reserva tu primera oficina!
+              </p>
+            </div>
+          </t>
+
+        </div>
+      </div>
+      <!-- ─────────────────────────────────────────────────────────── -->
+
       <!-- ── BOOKINGS SECTION ────────────────────────────────────── -->
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold mb-0">Mis reservas recientes</h5>

@@ -152,3 +152,233 @@ button.btn {
 @media (max-width: 768px){
   .spootServices__grid{ grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   SpootCoworkingCalendar  –  /my/coworking portal calendar widget
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Header (month title + nav buttons) ─────────────────────────── */
+.spoot-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0 2px;
+}
+
+.spoot-cal-month-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -.01em;
+}
+
+.spoot-cal-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: #475569;
+  line-height: 1;
+  transition: background .15s, border-color .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.spoot-cal-nav:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+/* ── Grid layout ─────────────────────────────────────────────────── */
+.spoot-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+/* ── Day-of-week header row ──────────────────────────────────────── */
+.spoot-cal-dow-row {
+  margin-bottom: 4px;
+}
+
+.spoot-cal-dow {
+  text-align: center;
+  font-size: .66rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 2px 0 6px;
+}
+
+/* ── Day cells ───────────────────────────────────────────────────── */
+.spoot-cal-cell {
+  min-height: 76px;
+  border-radius: 10px;
+  padding: 6px 5px 4px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  transition: background .12s;
+  overflow: hidden;
+  position: relative;
+}
+
+.spoot-cal-cell:not(.spoot-cal-blank):hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.spoot-cal-blank {
+  background: transparent !important;
+  border-color: transparent !important;
+  min-height: 0;
+}
+
+/* Today highlight */
+.spoot-cal-cell.sc-today {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+/* Cells that have events get a white bg so pills stand out */
+.spoot-cal-cell.sc-has-events {
+  background: #fff;
+  border-color: #e9ecef;
+}
+
+/* ── Day number ──────────────────────────────────────────────────── */
+.spoot-cal-num {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+/* Today circle */
+.spoot-cal-num.sc-today-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff !important;
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+/* ── Event pills ─────────────────────────────────────────────────── */
+.spoot-cal-pill {
+  display: block;
+  width: 100%;
+  padding: 2px 6px;
+  margin-bottom: 2px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  font-size: .6rem;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none !important;
+  transition: opacity .12s, filter .12s;
+}
+
+.spoot-cal-pill:hover {
+  opacity: .85;
+  filter: brightness(.95);
+}
+
+/* Overflow "+N más" link */
+.spoot-cal-more {
+  display: block;
+  font-size: .58rem;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  text-align: right;
+  padding-right: 3px;
+  margin-top: 1px;
+  transition: color .12s;
+}
+
+.spoot-cal-more:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* ── Legend ──────────────────────────────────────────────────────── */
+.spoot-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem 1rem;
+  font-size: .72rem;
+  color: #64748b;
+}
+
+.spoot-cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.spoot-cal-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 575.98px) {
+  .spoot-cal-cell {
+    min-height: 44px;
+    padding: 4px 3px 3px;
+    border-radius: 7px;
+  }
+
+  /* Hide pills on mobile, just show a colored dot on the number */
+  .spoot-cal-pill,
+  .spoot-cal-more {
+    display: none;
+  }
+
+  .spoot-cal-cell.sc-has-events .spoot-cal-num::after {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #3b82f6;
+    margin-left: 3px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+
+  .spoot-cal-dow {
+    font-size: .58rem;
+    padding-bottom: 4px;
+  }
+
+  .spoot-cal-num {
+    font-size: .65rem;
+  }
+
+  .spoot-cal-legend {
+    gap: .35rem .75rem;
+    font-size: .68rem;
+  }
+}

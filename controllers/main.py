@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 
+from markupsafe import Markup
 from werkzeug.utils import redirect
 
 from odoo import http, _
@@ -580,6 +581,43 @@ class SpootOfficePortal(CustomerPortal):
             days_used = subscription.total_days - subscription.remaining_days
             days_pct = int(round(days_used * 100.0 / subscription.total_days))
 
+        # ── Build calendar event data for the JS widget ───────────────
+        _SLOT_LABELS = {
+            'morning': 'Mañana (8-12)',
+            'afternoon': 'Tarde (14-18)',
+            'full_day': 'Día completo',
+        }
+        _STATE_COLORS = {
+            # confirmed via plan → emerald green
+            # confirmed via bold → blue
+            'pending_payment': '#f59e0b',
+            'cancelled':       '#9ca3af',
+            'draft':           '#6b7280',
+        }
+
+        calendar_events = []
+        for b in bookings:
+            if b.state == 'confirmed':
+                color = '#10b981' if b.payment_mode == 'plan' else '#3b82f6'
+            else:
+                color = _STATE_COLORS.get(b.state, '#6b7280')
+
+            calendar_events.append({
+                'id':         b.id,
+                'title':      b.office_id.name or 'Reserva',
+                'date':       str(b.date) if b.date else None,
+                'slot':       b.slot_type or '',
+                'slot_label': _SLOT_LABELS.get(b.slot_type, b.slot_type or ''),
+                'state':      b.state or '',
+                'payment_mode': b.payment_mode or 'bold',
+                'color':      color,
+                'url':        '/my/office-bookings/%d' % b.id,
+            })
+
+        # Markup tells QWeb this string is already safe (no extra HTML-escaping)
+        safe_json = json.dumps(calendar_events, ensure_ascii=True)
+        safe_json = safe_json.replace('</', '<\\/')   # prevent </script> injection
+
         values = self._prepare_portal_layout_values()
         values.update({
             'subscription': subscription,
@@ -591,5 +629,6 @@ class SpootOfficePortal(CustomerPortal):
             'booking_cancelled': len(bookings.filtered(lambda b: b.state == 'cancelled')),
             'days_used': days_used,
             'days_pct': days_pct,
+            'calendar_events_json': Markup(safe_json),
         })
         return request.render("spoot_office_booking.my_coworking_dashboard", values)

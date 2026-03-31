@@ -35,10 +35,9 @@
     "assets": {
         "web.assets_frontend": [
             "spoot_office_booking/static/src/css/custom.css",
-                    "spoot_office_booking/static/src/js/office_calendar.js",
-                            "spoot_office_booking/static/src/js/office_booking.js",
-
-
+            "spoot_office_booking/static/src/js/office_calendar.js",
+            "spoot_office_booking/static/src/js/office_booking.js",
+            "spoot_office_booking/static/src/js/coworking_calendar.js",
         ],
          "web.assets_backend": [
         "spoot_office_booking/static/src/js/availability_dashboard.js",
