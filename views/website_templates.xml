@@ -461,11 +461,35 @@
                 <p class="text-muted">Elige el plan que mejor se adapte a tu ritmo de trabajo.</p>
             </div>
 
+            <!-- ── Active plan warning banner ──────────────────────────── -->
+            <t t-if="active_subscription">
+              <div class="alert border-0 rounded-4 mb-5 d-flex gap-3 align-items-start"
+                   style="background:#fffbeb; border-left:4px solid #f59e0b !important; border-left-style:solid !important;">
+                <div class="flex-shrink-0 mt-1" style="font-size:1.5rem; line-height:1;">&#9888;</div>
+                <div class="flex-grow-1">
+                  <p class="fw-bold mb-1" style="color:#92400e;">Ya tienes un plan activo</p>
+                  <p class="mb-2 small" style="color:#78350f;">
+                    Tu plan <strong><t t-esc="active_subscription.plan_id.name"/></strong>
+                    está activo hasta el <strong><t t-esc="active_subscription.end_date"/></strong>
+                    con <strong><t t-esc="active_subscription.remaining_days"/></strong> día(s) disponibles.
+                    No puedes adquirir otro plan hasta que el actual expire.
+                  </p>
+                  <a href="/my/coworking"
+                     class="btn btn-sm rounded-pill px-3 fw-semibold"
+                     style="background:#fef3c7; color:#92400e; border:1.5px solid #fcd34d;">
+                    Ver mi plan actual &#8594;
+                  </a>
+                </div>
+              </div>
+            </t>
+            <!-- ─────────────────────────────────────────────────────────── -->
+
             <div class="row g-4 justify-content-center">
                 <t t-foreach="plans" t-as="plan">
 
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="card border-0 shadow-lg h-100 rounded-4 p-4 text-center">
+                        <div class="card border-0 h-100 rounded-4 p-4 text-center"
+                             t-att-style="'box-shadow: 0 4px 24px rgba(0,0,0,.08);' + (' opacity:.65; filter:grayscale(.3);' if active_subscription else '')">
 
                             <h4 class="fw-bold mb-2">
                                 <t t-esc="plan.name"/>
@@ -492,10 +516,20 @@
                                 </div>
                             </t>
 
-                            <a t-att-href="'/coworking/checkout/%s' % plan.id"
-                               class="btn btn-primary w-100 rounded-pill py-2">
-                                Elegir plan
-                            </a>
+                            <!-- Show locked button if user has an active plan -->
+                            <t t-if="active_subscription">
+                              <button type="button" disabled="disabled"
+                                      class="btn w-100 rounded-pill py-2 fw-semibold"
+                                      style="background:#f3f4f6; color:#9ca3af; border:1.5px solid #e5e7eb; cursor:not-allowed;">
+                                &#128274; Plan no disponible
+                              </button>
+                            </t>
+                            <t t-else="">
+                              <a t-att-href="'/coworking/checkout/%s' % plan.id"
+                                 class="btn btn-primary w-100 rounded-pill py-2">
+                                  Elegir plan
+                              </a>
+                            </t>
 
                         </div>
                     </div>
@@ -508,9 +542,11 @@
 </template>
 <template id="coworking_checkout_page" name="Checkout Coworking">
   <t t-call="website.layout">
-    <!-- Bold checkout library — required for the payment button -->
-    <script type="text/javascript"
-            src="https://checkout.bold.co/library/boldPaymentButton.js"/>
+    <!-- Bold checkout library — only load when the payment button will actually render -->
+    <t t-if="not active_subscription">
+      <script type="text/javascript"
+              src="https://checkout.bold.co/library/boldPaymentButton.js"/>
+    </t>
 
     <div class="container py-5">
       <div class="row justify-content-center">
@@ -556,8 +592,29 @@
               </t>
             </div>
 
+            <!-- ── ACTIVE PLAN BLOCK ──────────────────────────────────── -->
+            <t t-if="active_subscription">
+              <div class="rounded-4 p-4 text-center mb-2"
+                   style="background:#fffbeb; border:1.5px solid #fcd34d;">
+                <div class="mb-2" style="font-size:2rem; line-height:1;">&#9888;</div>
+                <p class="fw-bold mb-1" style="color:#92400e; font-size:1rem;">
+                  Ya tienes un plan activo
+                </p>
+                <p class="small mb-3" style="color:#78350f;">
+                  Tu plan <strong><t t-esc="active_subscription.plan_id.name"/></strong>
+                  está activo hasta el <strong><t t-esc="active_subscription.end_date"/></strong>
+                  con <strong><t t-esc="active_subscription.remaining_days"/></strong> día(s) restantes.
+                  No puedes comprar otro plan mientras el actual esté vigente.
+                </p>
+                <a href="/my/coworking"
+                   class="btn rounded-pill px-4 fw-semibold"
+                   style="background:#f59e0b; color:#fff; border:none;">
+                  Ver mi plan actual
+                </a>
+              </div>
+            </t>
             <!-- ── BOLD PAYMENT BUTTON ──────────────────────────────── -->
-            <t t-if="bold_api_key">
+            <t t-elif="bold_api_key">
               <script
                 data-bold-button="dark-L"
                 t-att-data-api-key="bold_api_key"
@@ -580,9 +637,11 @@
             </t>
             <!-- ─────────────────────────────────────────────────────── -->
 
-            <p class="text-center text-muted small mt-3 mb-0">
-              Pago seguro &#183; Activación inmediata
-            </p>
+            <t t-if="not active_subscription">
+              <p class="text-center text-muted small mt-3 mb-0">
+                Pago seguro &#183; Activación inmediata
+              </p>
+            </t>
 
           </div>
         </div>

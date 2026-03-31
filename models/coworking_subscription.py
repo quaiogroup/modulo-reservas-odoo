@@ -77,12 +77,29 @@ class SpootCoworkingSubscription(models.Model):
         """
         Activate the subscription after successful Bold payment.
         Idempotent: already-active subscriptions are skipped.
+        Also guards against activating a second plan while another is already active.
         """
         for rec in self:
             if rec.state in ("active", "expired"):
                 _logger.info(
                     "[BOLD PLAN] action_mark_paid skipped — already %s (subscription id=%s)",
                     rec.state, rec.id,
+                )
+                continue
+
+            # ── Model-level safety gate ────────────────────────────────
+            # If the partner somehow already has an active subscription (e.g. via
+            # a concurrent request or webhook), do NOT create a duplicate.
+            existing_active = self.sudo().search([
+                ("partner_id", "=", rec.partner_id.id),
+                ("state", "=", "active"),
+                ("id", "!=", rec.id),
+            ], limit=1)
+            if existing_active:
+                _logger.warning(
+                    "[BOLD PLAN] action_mark_paid BLOCKED — partner %s already has "
+                    "active subscription %s; will not activate subscription %s.",
+                    rec.partner_id.id, existing_active.id, rec.id,
                 )
                 continue
 

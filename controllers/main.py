@@ -478,8 +478,14 @@ class SpootOfficePortal(CustomerPortal):
     @http.route("/coworking/plans", type="http", auth="user", website=True)
     def coworking_plans(self, **kwargs):
         plans = request.env["spoot.coworking.plan"].sudo().search([("active", "=", True)])
+        partner = request.env.user.partner_id
+        active_subscription = request.env["spoot.coworking.subscription"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("state", "=", "active"),
+        ], limit=1) or False
         return request.render("spoot_office_booking.coworking_plans_page", {
-            "plans": plans
+            "plans": plans,
+            "active_subscription": active_subscription,
         })
     
     @http.route("/coworking/checkout/<int:plan_id>", type="http", auth="user", website=True)
@@ -489,6 +495,24 @@ class SpootOfficePortal(CustomerPortal):
             return redirect("/coworking/plans")
 
         partner = request.env.user.partner_id
+
+        # ── Hard backend block: user already has an active plan ───────
+        active_subscription = request.env["spoot.coworking.subscription"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("state", "=", "active"),
+        ], limit=1) or False
+
+        if active_subscription:
+            _logger.info(
+                "[PLAN CHECKOUT] BLOCKED — partner %s already has active "
+                "subscription %s ('%s'). No new record created.",
+                partner.id, active_subscription.id, active_subscription.plan_id.name,
+            )
+            # Render checkout template with the blocking flag — no pending record created
+            return request.render("spoot_office_booking.coworking_checkout_page", {
+                "plan": plan,
+                "active_subscription": active_subscription,
+            })
 
         # Find an existing pending subscription for this partner+plan, or create one.
         # This prevents duplicate pending records if the user refreshes the page.
