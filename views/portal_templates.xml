@@ -118,8 +118,8 @@
 </t>
 
 
-                                                <!-- Mostrar botón de cancelar solo si no está cancelada ni pagada -->
-<t t-if="booking.state != 'cancelled' and not booking.paid">
+                                                <!-- Cancelar: permitido si no pagado, o si fue pagado con plan -->
+<t t-if="booking.state != 'cancelled' and (not booking.paid or booking.payment_mode == 'plan')">
     <form t-att-action="'/my/office-bookings/%s/cancel' % booking.id"
           method="post"
           style="display:inline;">
@@ -127,7 +127,7 @@
         <button type="submit"
                 class="btn btn-sm btn-outline-danger ms-1"
                 onclick="return confirm('¿Seguro que quieres cancelar esta reserva?');">
-            Cancelar reserva
+            Cancelar
         </button>
     </form>
 </t>
@@ -255,8 +255,28 @@
                             </div>
                         </div>
 
-                        <!-- Total -->
-                        <t t-if="booking.need_payment and booking.state != 'cancelled' and bold_amount">
+                        <!-- Plan consumption info -->
+                        <t t-if="booking.payment_mode == 'plan' and booking.subscription_id">
+<div class="rounded-3 p-3 mt-3"
+     style="background:#f0fdf4; border:1px solid #86efac;">
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-success" style="font-size:.85rem;">
+            Pagado con plan
+        </span>
+        <span class="badge rounded-pill px-2"
+              style="background:#d1fae5; color:#065f46;">
+            <t t-esc="booking.subscription_id.plan_id.name"/>
+        </span>
+    </div>
+    <div class="text-muted mt-1" style="font-size:.82rem;">
+        Se descontaron <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong>
+        día(s) de tu plan.
+    </div>
+</div>
+                        </t>
+
+                        <!-- Total (Bold payment only) -->
+                        <t t-if="booking.payment_mode != 'plan' and booking.need_payment and booking.state != 'cancelled' and bold_amount">
 <div class="alert alert-light border mt-3">
     <div class="d-flex justify-content-between align-items-center">
         <span class="fw-bold">Total a pagar:</span>
@@ -269,7 +289,9 @@
                         </t>
 
                     </div>
-                    <t t-if="bold_api_key">
+
+                    <!-- Bold button (only for unpaid Bold-mode bookings) -->
+                    <t t-if="booking.payment_mode != 'plan' and bold_api_key">
                     <script
                                 data-bold-button="dark-L"
                                 t-att-data-api-key="bold_api_key"
@@ -282,18 +304,27 @@
                                 data-render-mode="embedded"
                             ></script>
                     </t>
-  <!-- Cancelación -->
-<t t-if="booking.state != 'cancelled' and not booking.paid">
+
+  <!-- Cancelación: permitida si no pagado con Bold, o pagado con plan -->
+<t t-if="booking.state != 'cancelled' and (not booking.paid or booking.payment_mode == 'plan')">
+    <div class="p-3">
     <form t-att-action="'/my/office-bookings/%s/cancel' % booking.id"
-          method="post"
-          style="display:inline;">
+          method="post">
         <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+        <t t-if="booking.payment_mode == 'plan'">
+            <p class="small text-muted mb-2">
+                Si cancelas, se restaurarán
+                <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong>
+                día(s) a tu plan.
+            </p>
+        </t>
         <button type="submit"
-                class="btn btn-sm btn-outline-danger ms-1"
+                class="btn btn-outline-danger btn-sm rounded-pill px-3"
                 onclick="return confirm('¿Seguro que quieres cancelar esta reserva?');">
             Cancelar reserva
         </button>
     </form>
+    </div>
 </t>
 
                 </div>

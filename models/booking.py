@@ -2,10 +2,13 @@
 import base64
 from datetime import datetime, time, timedelta
 import hashlib
+import logging
 import uuid
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
+
+_logger = logging.getLogger(__name__)
 
 
 class SpootOfficeBooking(models.Model):
@@ -112,7 +115,109 @@ class SpootOfficeBooking(models.Model):
     bold_order_id = fields.Char(string="Bold Order ID", copy=False, readonly=True)
     bold_tx_id = fields.Char(string="Bold Transaction ID", copy=False, readonly=True)
     bold_payment_status = fields.Char(string="Bold Payment Status", copy=False, readonly=True)
-    
+
+    # ---------------------------
+    # PLAN (coworking balance)
+    # ---------------------------
+    payment_mode = fields.Selection(
+        [
+            ("bold", "Pago externo (Bold)"),
+            ("plan", "Consumo de plan"),
+        ],
+        string="Modo de pago",
+        default="bold",
+        tracking=True,
+    )
+
+    subscription_id = fields.Many2one(
+        "spoot.coworking.subscription",
+        string="Plan consumido",
+        readonly=True,
+        ondelete="set null",
+        copy=False,
+    )
+
+    plan_days_consumed = fields.Float(
+        string="Días de plan consumidos",
+        default=0.0,
+        readonly=True,
+        copy=False,
+        digits=(6, 1),
+    )
+
+    def _get_plan_days_cost(self):
+        """Returns plan days cost for this booking's slot type: 0.5 or 1.0."""
+        self.ensure_one()
+        return 1.0 if self.slot_type == "full_day" else 0.5
+
+    def action_confirm_with_plan(self, subscription):
+        """
+        Confirm this booking by consuming balance from the given subscription.
+        Raises ValidationError if the plan is not active or has insufficient balance.
+        Idempotent: if already confirmed via plan, does nothing.
+        """
+        self.ensure_one()
+
+        if self.state == "confirmed" and self.payment_mode == "plan":
+            _logger.info("[PLAN BOOKING] already confirmed via plan — skipping id=%s", self.id)
+            return
+
+        if subscription.state != "active":
+            raise ValidationError(_("Tu plan no está activo."))
+
+        from odoo.fields import Date as FDate
+        if subscription.end_date and subscription.end_date < FDate.today():
+            raise ValidationError(_("Tu plan ha vencido."))
+
+        cost = self._get_plan_days_cost()
+
+        if subscription.remaining_days < cost:
+            raise ValidationError(_(
+                "Saldo de plan insuficiente. Tienes %.1f día(s) disponibles "
+                "y esta reserva requiere %.1f." % (subscription.remaining_days, cost)
+            ))
+
+        subscription.sudo().write({"remaining_days": subscription.remaining_days - cost})
+
+        self.write({
+            "payment_mode": "plan",
+            "subscription_id": subscription.id,
+            "plan_days_consumed": cost,
+            "need_payment": False,
+            "paid": True,
+            "state": "confirmed",
+        })
+
+        _logger.info(
+            "[PLAN BOOKING] booking id=%s confirmed via plan id=%s — "
+            "cost=%.1f remaining_after=%.1f",
+            self.id, subscription.id, cost, subscription.remaining_days,
+        )
+
+    def action_cancel_and_restore_plan(self):
+        """
+        Cancel booking and restore plan balance if it was paid via plan.
+        Safe to call on already-cancelled bookings (no-op).
+        """
+        self.ensure_one()
+        if self.state == "cancelled":
+            return
+
+        if (
+            self.payment_mode == "plan"
+            and self.subscription_id
+            and self.plan_days_consumed > 0
+        ):
+            new_remaining = self.subscription_id.remaining_days + self.plan_days_consumed
+            self.subscription_id.sudo().write({"remaining_days": new_remaining})
+            _logger.info(
+                "[PLAN BOOKING] cancelled booking id=%s — restored %.1f days "
+                "to subscription id=%s (new remaining: %.1f)",
+                self.id, self.plan_days_consumed,
+                self.subscription_id.id, new_remaining,
+            )
+
+        self.write({"state": "cancelled"})
 
     def _get_bold_currency_code(self):
         """Bold normalmente espera código ISO: COP, USD, etc."""

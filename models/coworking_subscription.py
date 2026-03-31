@@ -30,8 +30,9 @@ class SpootCoworkingSubscription(models.Model):
 
     end_date = fields.Date(required=True)
 
-    total_days = fields.Integer(required=True)
-    remaining_days = fields.Integer(required=True)
+    # Float to support half-day increments (morning/afternoon = 0.5, full_day = 1.0)
+    total_days = fields.Float(required=True, digits=(6, 1))
+    remaining_days = fields.Float(required=True, digits=(6, 1))
 
     state = fields.Selection(
         [
@@ -107,11 +108,26 @@ class SpootCoworkingSubscription(models.Model):
 
     # ── Legacy helpers (kept for backward compat) ─────────────────────────
 
+    def consume_slot(self, slot_type):
+        """
+        Consume plan balance for a given slot type.
+        slot_type: 'morning' | 'afternoon' → 0.5 days
+                   'full_day'              → 1.0 day
+        Returns True if successful, False if insufficient balance.
+        """
+        self.ensure_one()
+        cost = 1.0 if slot_type == "full_day" else 0.5
+        if self.remaining_days < cost:
+            return False
+        self.remaining_days -= cost
+        return True
+
     def consume_day(self):
+        """Legacy helper — kept for backward compatibility."""
         for rec in self:
-            if rec.remaining_days <= 0:
+            if rec.remaining_days < 1.0:
                 return False
-            rec.remaining_days -= 1
+            rec.remaining_days -= 1.0
             return True
 
     def create_from_plan(self, partner, plan):

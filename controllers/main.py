@@ -84,54 +84,85 @@ class SpootOfficeWebsite(http.Controller):
     def office_detail(self, office, **post):
         partner = request.env.user.partner_id
 
+        # Look up active subscription once — used for both GET and POST
+        subscription = request.env["spoot.coworking.subscription"].sudo().search([
+            ("partner_id", "=", partner.id),
+            ("state", "=", "active"),
+        ], limit=1) or False
+
+        def _render_detail(error=None):
+            return request.render("spoot_office_booking.website_office_detail", {
+                "office": office,
+                "subscription": subscription,
+                "error": error,
+            })
+
         if request.httprequest.method == "POST":
             date = post.get("date")
             slot_type = post.get("slot_type")
-
-            # Checkbox correcto
-            need_payment = True
+            payment_mode = post.get("payment_mode", "bold")  # 'plan' or 'bold'
 
             if not date or not slot_type:
-                return request.render(
-                    "spoot_office_booking.website_office_detail",
-                    {"office": office, "error": _("Debes seleccionar una fecha y una franja horaria.")},
-                )
+                return _render_detail(_("Debes seleccionar una fecha y una franja horaria."))
 
             availability = request.env["spoot.office.booking"].sudo().get_availability(office.id, date)
             if "available" not in availability:
-                return request.render(
-                    "spoot_office_booking.website_office_detail",
-                    {"office": office, "error": _("No se pudo validar disponibilidad. Intenta nuevamente.")},
-                )
+                return _render_detail(_("No se pudo validar disponibilidad. Intenta nuevamente."))
 
             if slot_type not in availability["available"]:
-                return request.render(
-                    "spoot_office_booking.website_office_detail",
-                    {
-                        "office": office,
-                        "error": _("Esa franja ya no está disponible. Revisa el calendario y elige una opción libre."),
-                    },
-                )
+                return _render_detail(_("Esa franja ya no está disponible. Revisa el calendario y elige una opción libre."))
 
+            _logger.info(
+                "[BOOKING POST] date=%s slot_type=%s payment_mode=%s all_post=%s",
+                date, slot_type, payment_mode, dict(post),
+            )
+
+            # ── PLAN MODE ──────────────────────────────────────────────────
+            if payment_mode == "plan":
+                if not subscription:
+                    return _render_detail(_("No tienes un plan activo para usar como pago."))
+
+                cost = 1.0 if slot_type == "full_day" else 0.5
+                if subscription.remaining_days < cost:
+                    return _render_detail(_(
+                        "Saldo de plan insuficiente. Tienes %.1f día(s) disponibles "
+                        "y esta reserva requiere %.1f." % (subscription.remaining_days, cost)
+                    ))
+
+                new_remaining = subscription.remaining_days - cost
+                booking = request.env["spoot.office.booking"].sudo().create({
+                    "office_id": office.id,
+                    "partner_id": partner.id,
+                    "date": date,
+                    "slot_type": slot_type,
+                    "need_payment": False,
+                    "state": "confirmed",
+                    "payment_mode": "plan",
+                    "paid": True,
+                    "subscription_id": subscription.id,
+                    "plan_days_consumed": cost,
+                })
+                subscription.sudo().write({"remaining_days": new_remaining})
+                _logger.info(
+                    "[PLAN BOOKING] booking id=%s confirmed — slot=%s cost=%.1f "
+                    "remaining_after=%.1f subscription=%s",
+                    booking.id, slot_type, cost, new_remaining, subscription.id,
+                )
+                return request.render("spoot_office_booking.website_booking_thanks", {"booking": booking})
+
+            # ── BOLD PAYMENT MODE ──────────────────────────────────────────
             booking = request.env["spoot.office.booking"].sudo().create({
                 "office_id": office.id,
                 "partner_id": partner.id,
                 "date": date,
                 "slot_type": slot_type,
-                "need_payment": need_payment,
-                "state": "pending_payment" if need_payment else "confirmed",
+                "need_payment": True,
+                "state": "pending_payment",
+                "payment_mode": "bold",
             })
-            print(booking)
-
-            # Sin pago -> confirmación normal
-            if not need_payment:
-                booking.sudo().action_send_emails()
-                return request.render("spoot_office_booking.website_booking_thanks", {"booking": booking})
-
-            # Con pago -> BOLD
             return redirect(f"/my/office-bookings/{booking.id}")
 
-        return request.render("spoot_office_booking.website_office_detail", {"office": office})
+        return _render_detail()
 
 
 class SpootOfficePortal(CustomerPortal):
@@ -322,8 +353,14 @@ class SpootOfficePortal(CustomerPortal):
     def portal_booking_cancel(self, booking_id, **kw):
         booking = request.env["spoot.office.booking"].sudo().browse(booking_id)
         if booking and booking.partner_id == request.env.user.partner_id:
-            if booking.state != "cancelled" and not booking.paid:
-                booking.write({"state": "cancelled"})
+            if booking.state != "cancelled":
+                if booking.payment_mode == "plan":
+                    # Restore plan balance before cancelling
+                    booking.sudo().action_cancel_and_restore_plan()
+                elif not booking.paid:
+                    # Regular unpaid Bold booking
+                    booking.write({"state": "cancelled"})
+                # Bold-paid bookings cannot be self-cancelled (would require a refund)
         return request.redirect("/my/office-bookings")
     
 

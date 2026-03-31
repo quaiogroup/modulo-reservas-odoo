@@ -209,42 +209,212 @@
                     <t t-esc="error"/>
                   </div>
                 </t>
+
+                <!-- ── PLAN BALANCE PANEL ──────────────────────── -->
+                <t t-if="subscription">
+                  <div class="rounded-4 p-3 mb-3" id="plan_balance_panel"
+                       t-att-data-remaining="'%.1f' % subscription.remaining_days"
+                       style="background:#f0fdf4; border:1px solid #86efac;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <span class="fw-semibold text-success" style="font-size:.85rem;">
+                        Plan activo
+                      </span>
+                      <span class="badge rounded-pill px-2"
+                            style="background:#d1fae5; color:#065f46; font-size:.75rem;">
+                        <t t-esc="subscription.plan_id.name"/>
+                      </span>
+                    </div>
+                    <div class="d-flex gap-3 text-center">
+                      <div class="flex-fill rounded-3 py-2"
+                           style="background:rgba(255,255,255,.7);">
+                        <div class="fw-bold fs-5 text-success">
+                          <t t-esc="'%.1f' % subscription.remaining_days"/>
+                        </div>
+                        <div class="text-muted" style="font-size:.72rem;">Días disp.</div>
+                      </div>
+                      <div class="flex-fill rounded-3 py-2"
+                           style="background:rgba(255,255,255,.7);">
+                        <div class="fw-bold fs-5 text-muted">
+                          <t t-esc="'%.1f' % subscription.total_days"/>
+                        </div>
+                        <div class="text-muted" style="font-size:.72rem;">Incluidos</div>
+                      </div>
+                      <div class="flex-fill rounded-3 py-2"
+                           style="background:rgba(255,255,255,.7);">
+                        <div class="fw-bold text-muted" style="font-size:.85rem;">
+                          <t t-esc="subscription.end_date"/>
+                        </div>
+                        <div class="text-muted" style="font-size:.72rem;">Vence</div>
+                      </div>
+                    </div>
+                    <!-- Cost table -->
+                    <div class="mt-2 pt-2" style="border-top:1px solid #bbf7d0; font-size:.78rem;">
+                      <div class="d-flex justify-content-between text-muted mb-1">
+                        <span>Mañana (8-12) o Tarde (14-18)</span>
+                        <strong class="text-dark">0.5 día</strong>
+                      </div>
+                      <div class="d-flex justify-content-between text-muted">
+                        <span>Día completo (8-18)</span>
+                        <strong class="text-dark">1.0 día</strong>
+                      </div>
+                    </div>
+                  </div>
+                </t>
+                <!-- ─────────────────────────────────────────────── -->
+
                 <div class="js_spoot_office_detail" t-att-data-office-id="office.id">
-
-
-                <form method="post" class="oe_website_form">
+                <form method="post" id="spoot-booking-form">
                   <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
 
                   <div class="mb-3">
-                    <label class="form-label">Fecha</label>
-                    <input type="date" name="date" class="form-control rounded-4" required="required"/>
+                    <label class="form-label fw-semibold">Fecha</label>
+                    <input type="date" name="date" id="spoot_date"
+                           class="form-control rounded-4" required="required"/>
                   </div>
 
                   <div class="mb-3">
-
-<select name="slot_type" id="spoot_slot" class="form-control" required="required">
-  <option value="" selected="selected" disabled="disabled">Elige una franja</option>
-  <option value="morning">Mañana (8-12)</option>
-  <option value="afternoon">Tarde (14-18)</option>
-  <option value="full_day">Todo el día</option>
-</select>
-
-<div id="spoot_slot_hint" class="form-text"></div>
-
+                    <label class="form-label fw-semibold">Franja horaria</label>
+                    <select name="slot_type" id="spoot_slot"
+                            class="form-control rounded-4" required="required">
+                      <option value="" selected="selected" disabled="disabled">
+                        Elige una franja
+                      </option>
+                      <option value="morning">Mañana (8-12)</option>
+                      <option value="afternoon">Tarde (14-18)</option>
+                      <option value="full_day">Todo el día</option>
+                    </select>
+                    <div id="spoot_slot_hint" class="form-text"/>
                   </div>
 
-                  <button type="submit" class="btn btn-primary w-100 rounded-pill py-2">
+                  <!-- ── PAYMENT MODE SELECTOR (only if plan exists) ── -->
+                  <t t-if="subscription">
+                    <div class="mb-3">
+                      <label class="form-label fw-semibold">¿Cómo quieres pagar?</label>
+                      <div class="d-flex gap-2">
+
+                        <label class="flex-fill text-center rounded-3 py-2 px-2 cursor-pointer"
+                               id="lbl_plan"
+                               style="border:2px solid #86efac; background:#f0fdf4; cursor:pointer;">
+                          <input type="radio" name="payment_mode" value="plan"
+                                 class="d-none" id="radio_plan" checked="checked"/>
+                          <div class="fw-semibold text-success" style="font-size:.85rem;">
+                            Usar mi plan
+                          </div>
+                          <div class="text-muted" style="font-size:.72rem;"
+                               id="plan_cost_label">
+                            Descuenta 0.5 día
+                          </div>
+                        </label>
+
+                        <label class="flex-fill text-center rounded-3 py-2 px-2 cursor-pointer"
+                               id="lbl_bold"
+                               style="border:2px solid #e5e7eb; background:#f9fafb; cursor:pointer;">
+                          <input type="radio" name="payment_mode" value="bold"
+                                 class="d-none" id="radio_bold"/>
+                          <div class="fw-semibold text-dark" style="font-size:.85rem;">
+                            Pagar aparte
+                          </div>
+                          <div class="text-muted" style="font-size:.72rem;">
+                            Pago con Bold
+                          </div>
+                        </label>
+
+                      </div>
+                      <!-- Insufficient balance warning -->
+                      <div id="plan_balance_warn" class="form-text text-danger d-none">
+                        Saldo insuficiente para esta franja.
+                      </div>
+                    </div>
+                  </t>
+                  <!-- ─────────────────────────────────────────────── -->
+
+                  <button type="submit" id="spoot_submit_btn"
+                          class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
                     Confirmar reserva
                   </button>
 
-                  <p class="text-muted mt-3 mb-0">
-                    Debes iniciar sesión para reservar.
+                  <p class="text-muted mt-3 mb-0 small text-center">
+                    Pago seguro &#183; Confirmación inmediata
                   </p>
                 </form>
                 </div>
 
               </div>
             </div>
+
+            <!-- Inline JS for payment mode toggle and cost display -->
+            <t t-if="subscription">
+              <script>
+              (function () {
+                var form      = document.getElementById('spoot-booking-form');
+                if (!form) return;
+
+                var slotSel    = document.getElementById('spoot_slot');
+                var radioPlan  = document.getElementById('radio_plan');
+                var radioBold  = document.getElementById('radio_bold');
+                var lblPlan    = document.getElementById('lbl_plan');
+                var lblBold    = document.getElementById('lbl_bold');
+                var costLabel  = document.getElementById('plan_cost_label');
+                var warnEl     = document.getElementById('plan_balance_warn');
+                var submitBtn  = document.getElementById('spoot_submit_btn');
+                var balanceEl  = document.getElementById('plan_balance_panel');
+                var remaining  = parseFloat((balanceEl &amp;&amp; balanceEl.dataset.remaining) || '0');
+
+                function slotCost(slot) {
+                  return slot === 'full_day' ? 1.0 : 0.5;
+                }
+
+                function updateUI() {
+                  var slot   = slotSel ? slotSel.value : '';
+                  var cost   = slotCost(slot);
+                  var isPlan = radioPlan &amp;&amp; radioPlan.checked;
+
+                  // Cost label
+                  if (costLabel) {
+                    costLabel.textContent = slot
+                      ? 'Descuenta ' + cost.toFixed(1) + ' día' + (cost === 1 ? '' : 's')
+                      : 'Descuenta 0.5 ó 1 día';
+                  }
+
+                  // Balance warning
+                  var insufficient = isPlan &amp;&amp; slot &amp;&amp; remaining &lt; cost;
+                  if (warnEl) {
+                    warnEl.classList.toggle('d-none', !insufficient);
+                  }
+
+                  // Highlight active card
+                  if (lblPlan &amp;&amp; lblBold) {
+                    if (isPlan) {
+                      lblPlan.style.border = '2px solid #22c55e';
+                      lblPlan.style.background = '#f0fdf4';
+                      lblBold.style.border = '2px solid #e5e7eb';
+                      lblBold.style.background = '#f9fafb';
+                    } else {
+                      lblBold.style.border = '2px solid #3b82f6';
+                      lblBold.style.background = '#eff6ff';
+                      lblPlan.style.border = '2px solid #e5e7eb';
+                      lblPlan.style.background = '#f9fafb';
+                    }
+                  }
+
+                  // Button text
+                  if (submitBtn) {
+                    submitBtn.textContent = isPlan
+                      ? 'Confirmar con mi plan'
+                      : 'Confirmar y pagar con Bold';
+                    submitBtn.disabled = insufficient;
+                  }
+                }
+
+                if (radioPlan) radioPlan.addEventListener('change', updateUI);
+                if (radioBold) radioBold.addEventListener('change', updateUI);
+                if (slotSel)   slotSel.addEventListener('change', updateUI);
+
+                // Init
+                updateUI();
+              })();
+              </script>
+            </t>
 
           </div>
         </div>
