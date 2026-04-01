@@ -172,6 +172,16 @@
   grid-template-columns: 1fr 320px;
   gap: 16px;
   align-items: start;
+  /* prevent grid columns from overflowing their track */
+  min-width: 0;
+}
+
+/* grid children must declare min-width:0 so the 1fr track can actually shrink */
+.sd-col-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 /* ── Cards ─────────────────────────────────────────────────────────── */
@@ -295,36 +305,49 @@
 
 /* ── Matrix card ───────────────────────────────────────────────────── */
 .sd-matrix-card {
-  overflow: hidden;
+  /* don't clip — scrollable content lives inside sd-table-wrap */
+  overflow: visible;
 }
 
 /* ── Table (day / week view) ───────────────────────────────────────── */
 .sd-table-wrap {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
   border-radius: 0 0 var(--sd-radius) var(--sd-radius);
+  /* custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.sd-table-wrap::-webkit-scrollbar { height: 6px; }
+.sd-table-wrap::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
 }
 
 .sd-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 680px;
+  /* office col 180px + 7 days × 80px = 740px minimum for week view */
+  min-width: 740px;
 }
 
 .sd-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   background: #fff;
   border-bottom: 1px solid rgba(0,0,0,.08);
-  padding: 10px 8px;
+  padding: 10px 6px;
   text-align: center;
-  vertical-align: bottom;
+  vertical-align: middle;
+  white-space: nowrap;
+  /* minimum width per day column */
+  min-width: 80px;
 }
 
 .sd-table__office-col {
   text-align: left !important;
-  min-width: 180px;
+  min-width: 160px;
+  width: 160px;
   position: sticky;
   left: 0;
   z-index: 3;
@@ -334,9 +357,10 @@
 
 .sd-table tbody td {
   border-bottom: 1px solid rgba(0,0,0,.05);
-  padding: 8px 8px;
+  padding: 10px 6px;
   vertical-align: middle;
   text-align: center;
+  min-width: 80px;
 }
 
 .sd-table tbody tr:nth-child(odd) {
@@ -354,12 +378,11 @@
 }
 
 /* ── Day header ────────────────────────────────────────────────────── */
+/* sd-day-head is on the <th> — inner divs handle layout */
 .sd-day-head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  line-height: 1;
+  text-align: center;
+  vertical-align: middle !important;
+  padding: 8px 4px !important;
 }
 
 .sd-day-head__dow {
@@ -382,7 +405,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
@@ -392,9 +415,13 @@
   position: sticky;
   left: 0;
   z-index: 1;
-  background: inherit;
+  background: #fff;
   border-right: 1px solid rgba(0,0,0,.06);
   text-align: left !important;
+}
+
+.sd-table tbody tr:nth-child(odd) .sd-office-cell {
+  background: #fafbfc;
 }
 
 .sd-office-cell__name {
