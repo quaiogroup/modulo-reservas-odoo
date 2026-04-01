@@ -475,13 +475,18 @@ class SpootOfficePortal(CustomerPortal):
         values.update({"dbg_api_len": len(api_key), "dbg_sec_len": len(secret_key)})
         return request.render("spoot_office_booking.portal_my_bookings", values)
     @http.route("/my/office-bookings/<int:booking_id>", type="http", auth="user", website=True)
-    def portal_booking_detail(self, booking_id, **kw):
+    def portal_booking_detail(self, booking_id, cancel_error=None, cancel_msg=None, **kw):
         booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
         if not booking or booking.partner_id != request.env.user.partner_id:
             return request.redirect("/my")
 
         values = self._prepare_portal_layout_values()
-        values.update({"booking": booking, "page_name": "office_bookings"})
+        values.update({
+            "booking": booking,
+            "page_name": "office_bookings",
+            "cancel_error": cancel_error,
+            "cancel_msg": cancel_msg,
+        })
 
         if booking.need_payment and not booking.paid and booking.state != "cancelled":
             ICP = request.env["ir.config_parameter"].sudo()
@@ -513,18 +518,33 @@ class SpootOfficePortal(CustomerPortal):
 
     @http.route('/my/office-bookings/<int:booking_id>/cancel', type='http', auth='user', methods=['POST'], website=True)
     def portal_booking_cancel(self, booking_id, **kw):
-        booking = request.env["spoot.office.booking"].sudo().browse(booking_id)
-        if booking and booking.partner_id == request.env.user.partner_id:
-            can_mod, _ = booking._can_be_modified()
-            if can_mod and booking.state != "cancelled":
-                if booking.payment_mode == "plan":
-                    booking.sudo().action_cancel_and_restore_plan()
-                elif not booking.paid:
-                    booking.write({"state": "cancelled"})
-                    booking._notify_customer("spoot_office_booking.mail_template_booking_cancelled_user")
-                    booking._notify_admin("spoot_office_booking.mail_template_booking_cancelled_admin")
-                # Bold-paid bookings cannot be self-cancelled (would require a refund)
-        return request.redirect("/my/coworking")
+        from urllib.parse import quote as _q
+        booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
+        detail_url = "/my/office-bookings/%s" % booking_id
+
+        if not booking or booking.partner_id != request.env.user.partner_id:
+            return request.redirect("/my/office-bookings")
+
+        if booking.state == "cancelled":
+            return request.redirect(detail_url + "?cancel_msg=ya_cancelada")
+
+        can_mod, reason = booking._can_be_modified()
+        if not can_mod:
+            return request.redirect(detail_url + "?cancel_error=" + _q(reason))
+
+        if booking.paid and booking.payment_mode != "plan":
+            return request.redirect(detail_url + "?cancel_error=" + _q(
+                "Esta reserva fue pagada mediante Bold. Para solicitar la cancelación y el reembolso, contacta con nosotros directamente."
+            ))
+
+        if booking.payment_mode == "plan":
+            booking.sudo().action_cancel_and_restore_plan()
+        else:
+            booking.write({"state": "cancelled"})
+            booking._notify_customer("spoot_office_booking.mail_template_booking_cancelled_user")
+            booking._notify_admin("spoot_office_booking.mail_template_booking_cancelled_admin")
+
+        return request.redirect(detail_url + "?cancel_msg=ok")
 
     @http.route(
         '/my/office-bookings/<int:booking_id>/reschedule',

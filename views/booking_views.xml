@@ -126,24 +126,20 @@
                 <!-- Bold: mostrar si ya está pagado o pendiente -->
                 <field name="paid" string="Pago recibido"
                        widget="boolean_toggle"
-                       optional="show"
-                       column_invisible="payment_mode == 'plan'"/>
+                       optional="show"/>
 
                 <!-- Bold: importe cobrado -->
                 <field name="amount_total" string="Importe"
                        widget="monetary"
                        options="{'currency_field': 'currency_id'}"
-                       optional="show"
-                       column_invisible="payment_mode == 'plan'"/>
+                       optional="show"/>
                 <field name="currency_id" column_invisible="True"/>
 
                 <!-- Plan: días descontados y plan -->
                 <field name="plan_days_consumed" string="Días desc."
-                       optional="show"
-                       column_invisible="payment_mode == 'bold'"/>
+                       optional="hide"/>
                 <field name="subscription_id" string="Plan"
-                       optional="show"
-                       column_invisible="payment_mode == 'bold'"/>
+                       optional="hide"/>
 
                 <!-- Audit (ocultos por defecto) -->
                 <field name="bold_payment_status" string="Estado Bold" optional="hide"/>

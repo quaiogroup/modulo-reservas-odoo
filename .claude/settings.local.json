@@ -4,7 +4,8 @@
       "Bash(docker exec:*)",
       "Read(//usr/lib/python3/dist-packages/odoo/tools/**)",
       "Read(//c//**)",
-      "Bash(winpty dock)"
+      "Bash(winpty dock)",
+      "Bash(docker restart:*)"
     ]
   }
 }
