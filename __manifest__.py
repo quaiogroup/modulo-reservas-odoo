@@ -18,6 +18,10 @@
 'data': [
     'security/ir.model.access.csv',
 
+    # DATOS (templates y crons) — antes de las vistas
+    'data/mail_templates.xml',
+    'data/ir_cron_data.xml',
+
     # VISTAS PRIMERO
     'views/office_views.xml',
     'views/booking_views.xml',

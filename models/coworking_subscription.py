@@ -62,6 +62,56 @@ class SpootCoworkingSubscription(models.Model):
         readonly=True,
     )
 
+    # ── Email notification helpers ─────────────────────────────────────────
+
+    def _notify_customer(self, template_xml_id):
+        """Send a transactional email to the subscription's partner."""
+        self.ensure_one()
+        if not self.partner_id.email:
+            _logger.warning(
+                "[NOTIFY] partner %s has no email — skipping template %s",
+                self.partner_id.id, template_xml_id,
+            )
+            return
+        try:
+            template = self.env.ref(template_xml_id, raise_if_not_found=False)
+            if template:
+                template.sudo().send_mail(self.id, force_send=True)
+                _logger.info("[NOTIFY] customer email sent — template=%s sub=%s", template_xml_id, self.id)
+            else:
+                _logger.warning("[NOTIFY] template not found: %s", template_xml_id)
+        except Exception as exc:
+            _logger.error("[NOTIFY] customer email FAILED — template=%s sub=%s error=%s",
+                          template_xml_id, self.id, exc)
+
+    def _notify_admin(self, template_xml_id):
+        """Send a notification email to the configured administrator address."""
+        self.ensure_one()
+        param = self.env["ir.config_parameter"].sudo()
+        admin_email = (
+            param.get_param("spoot_office_booking.admin_email")
+            or self.env.company.email
+            or ""
+        )
+        if not admin_email:
+            _logger.warning("[NOTIFY] no admin email configured — skipping template %s", template_xml_id)
+            return
+        try:
+            template = self.env.ref(template_xml_id, raise_if_not_found=False)
+            if template:
+                template.sudo().send_mail(
+                    self.id,
+                    force_send=True,
+                    email_values={"email_to": admin_email, "recipient_ids": []},
+                )
+                _logger.info("[NOTIFY] admin email sent — template=%s sub=%s to=%s",
+                             template_xml_id, self.id, admin_email)
+            else:
+                _logger.warning("[NOTIFY] template not found: %s", template_xml_id)
+        except Exception as exc:
+            _logger.error("[NOTIFY] admin email FAILED — template=%s sub=%s error=%s",
+                          template_xml_id, self.id, exc)
+
     # ── Bold helpers ───────────────────────────────────────────────────────
 
     def _ensure_bold_order_id(self):
@@ -122,6 +172,10 @@ class SpootCoworkingSubscription(models.Model):
                 rec.id, rec.partner_id.id, rec.plan_id.name,
                 start, end, rec.plan_id.days_included,
             )
+
+            # Notify customer and admin of plan activation
+            rec._notify_customer("spoot_office_booking.mail_template_plan_confirmed_user")
+            rec._notify_admin("spoot_office_booking.mail_template_plan_confirmed_admin")
 
     # ── Legacy helpers (kept for backward compat) ─────────────────────────
 

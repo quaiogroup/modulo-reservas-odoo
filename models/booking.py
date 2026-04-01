@@ -103,6 +103,23 @@ class SpootOfficeBooking(models.Model):
     start_datetime = fields.Datetime(string="Inicio", compute="_compute_datetimes", store=True)
     end_datetime = fields.Datetime(string="Fin", compute="_compute_datetimes", store=True)
 
+    @api.depends("date", "slot_type")
+    def _compute_datetimes(self):
+        _slot_hours = {
+            "morning":   (8, 0,  12, 0),
+            "afternoon": (14, 0, 18, 0),
+            "full_day":  (8, 0,  18, 0),
+        }
+        for rec in self:
+            times = _slot_hours.get(rec.slot_type) if rec.slot_type else None
+            if rec.date and times:
+                sh, sm, eh, em = times
+                rec.start_datetime = datetime.combine(rec.date, time(sh, sm))
+                rec.end_datetime   = datetime.combine(rec.date, time(eh, em))
+            else:
+                rec.start_datetime = False
+                rec.end_datetime   = False
+
     google_event_id = fields.Char(
         string="ID evento calendario (externo)",
         help="Se puede usar para sincronizar con Google Calendar u otros.",
@@ -143,6 +160,15 @@ class SpootOfficeBooking(models.Model):
         readonly=True,
         copy=False,
         digits=(6, 1),
+    )
+
+    # ── Email / reminder tracking ──────────────────────────────────
+    reminder_sent = fields.Boolean(
+        string="Recordatorio enviado",
+        default=False,
+        copy=False,
+        help="Se marca en True cuando el cron de recordatorios ha enviado "
+             "el correo de aviso previo a esta reserva.",
     )
 
     def _get_plan_days_cost(self):
@@ -218,6 +244,9 @@ class SpootOfficeBooking(models.Model):
             )
 
         self.write({"state": "cancelled"})
+        # Notify both parties of the cancellation
+        self._notify_customer("spoot_office_booking.mail_template_booking_cancelled_user")
+        self._notify_admin("spoot_office_booking.mail_template_booking_cancelled_admin")
 
     def _get_bold_currency_code(self):
         """Bold normalmente espera código ISO: COP, USD, etc."""
@@ -236,15 +265,22 @@ class SpootOfficeBooking(models.Model):
         return self.bold_order_id
 
     def action_mark_paid(self, tx_id=None):
-        """Marca la reserva pagada y confirmada (la llama el webhook)."""
+        """Marca la reserva pagada y confirmada (la llama el webhook o el retorno de Bold).
+        Idempotente: si ya está confirmada no reenvía correos.
+        """
         for rec in self:
             if rec.state == "cancelled":
                 continue
+            # Guard against double email when both browser redirect and webhook fire
+            already_confirmed = (rec.state == "confirmed")
             rec.write({
                 "paid": True,
                 "state": "confirmed",
                 "bold_tx_id": tx_id or rec.bold_tx_id,
             })
+            if not already_confirmed:
+                rec._notify_customer("spoot_office_booking.mail_template_booking_confirmed_bold")
+                rec._notify_admin("spoot_office_booking.mail_template_booking_confirmed_admin")
     
     def action_view_subscription(self):
         """Open the linked coworking subscription record (used by the smart button)."""
@@ -256,6 +292,73 @@ class SpootOfficeBooking(models.Model):
             "res_id": self.subscription_id.id,
             "target": "current",
         }
+
+    # ── Email notification helpers ────────────────────────────────────────
+    def _notify_customer(self, template_xml_id):
+        """Send a transactional email to the booking's customer partner."""
+        self.ensure_one()
+        if not self.partner_id.email:
+            _logger.warning(
+                "[NOTIFY] partner %s has no email — skipping template %s",
+                self.partner_id.id, template_xml_id,
+            )
+            return
+        try:
+            template = self.env.ref(template_xml_id, raise_if_not_found=False)
+            if template:
+                template.sudo().send_mail(self.id, force_send=True)
+                _logger.info("[NOTIFY] customer email sent — template=%s booking=%s", template_xml_id, self.id)
+            else:
+                _logger.warning("[NOTIFY] template not found: %s", template_xml_id)
+        except Exception as exc:
+            _logger.error("[NOTIFY] customer email FAILED — template=%s booking=%s error=%s",
+                          template_xml_id, self.id, exc)
+
+    def _notify_admin(self, template_xml_id):
+        """Send a notification email to the configured administrator address."""
+        self.ensure_one()
+        admin_email = self._get_admin_email()
+        if not admin_email:
+            _logger.warning("[NOTIFY] no admin email configured — skipping template %s", template_xml_id)
+            return
+        try:
+            template = self.env.ref(template_xml_id, raise_if_not_found=False)
+            if template:
+                template.sudo().send_mail(
+                    self.id,
+                    force_send=True,
+                    email_values={"email_to": admin_email, "recipient_ids": []},
+                )
+                _logger.info("[NOTIFY] admin email sent — template=%s booking=%s to=%s",
+                             template_xml_id, self.id, admin_email)
+            else:
+                _logger.warning("[NOTIFY] template not found: %s", template_xml_id)
+        except Exception as exc:
+            _logger.error("[NOTIFY] admin email FAILED — template=%s booking=%s error=%s",
+                          template_xml_id, self.id, exc)
+
+    # ── Scheduled reminder ────────────────────────────────────────────────
+    @api.model
+    def _cron_send_booking_reminders(self):
+        """Daily cron: send a reminder email for every confirmed booking scheduled for tomorrow.
+        Uses reminder_sent flag to guarantee exactly-once delivery.
+        """
+        from datetime import date, timedelta
+        tomorrow = date.today() + timedelta(days=1)
+        bookings = self.search([
+            ("state", "=", "confirmed"),
+            ("date", "=", tomorrow),
+            ("reminder_sent", "=", False),
+        ])
+        _logger.info(
+            "[CRON REMINDER] date=%s — found %d booking(s) to remind",
+            tomorrow, len(bookings),
+        )
+        for booking in bookings:
+            booking._notify_customer("spoot_office_booking.mail_template_booking_reminder")
+            booking.write({"reminder_sent": True})
+        if bookings:
+            _logger.info("[CRON REMINDER] sent %d reminder(s)", len(bookings))
 
     def _get_booking_amount(self):
         """Calcula el monto según la franja."""

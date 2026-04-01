@@ -149,6 +149,9 @@ class SpootOfficeWebsite(http.Controller):
                     "remaining_after=%.1f subscription=%s",
                     booking.id, slot_type, cost, new_remaining, subscription.id,
                 )
+                # Notify customer (plan confirmation) and admin (new booking)
+                booking._notify_customer("spoot_office_booking.mail_template_booking_confirmed_plan")
+                booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
                 return request.render("spoot_office_booking.website_booking_thanks", {"booking": booking})
 
             # ── BOLD PAYMENT MODE ──────────────────────────────────────────
@@ -161,6 +164,9 @@ class SpootOfficeWebsite(http.Controller):
                 "state": "pending_payment",
                 "payment_mode": "bold",
             })
+            # Notify customer (pending payment) and admin (new booking)
+            booking._notify_customer("spoot_office_booking.mail_template_booking_pending_payment")
+            booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
             return redirect(f"/my/office-bookings/{booking.id}")
 
         return _render_detail()
@@ -359,8 +365,10 @@ class SpootOfficePortal(CustomerPortal):
                     # Restore plan balance before cancelling
                     booking.sudo().action_cancel_and_restore_plan()
                 elif not booking.paid:
-                    # Regular unpaid Bold booking
+                    # Regular unpaid Bold booking — cancel directly and notify
                     booking.write({"state": "cancelled"})
+                    booking._notify_customer("spoot_office_booking.mail_template_booking_cancelled_user")
+                    booking._notify_admin("spoot_office_booking.mail_template_booking_cancelled_admin")
                 # Bold-paid bookings cannot be self-cancelled (would require a refund)
         return request.redirect("/my/office-bookings")
     
