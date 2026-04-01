@@ -45,6 +45,12 @@
       <field name="currency_id"/>
     </group>
 
+    <group string="Política de cambios y cancelaciones">
+      <field name="modification_limit_hours"
+             string="Horas mínimas de anticipación para modificar/cancelar"
+             help="El cliente puede modificar o cancelar su reserva hasta este número de horas antes del inicio. 0 = sin restricción."/>
+    </group>
+
     <group>
       <field name="active"/>
     </group>

@@ -411,10 +411,36 @@ class SpootOfficeBooking(models.Model):
     
     
     # -------------------------------------------------------------------------
-    # DISPONIBILIDAD 
+    # POLÍTICA DE MODIFICACIÓN
+    # -------------------------------------------------------------------------
+    def _can_be_modified(self):
+        """
+        Returns (True, "") if the booking can still be modified or cancelled
+        by the customer, or (False, reason) if the time window has closed.
+        """
+        self.ensure_one()
+        if self.state == 'cancelled':
+            return False, _("La reserva ya está cancelada.")
+        limit = self.office_id.modification_limit_hours
+        if limit and self.start_datetime:
+            from datetime import datetime as _dt
+            hours_left = (self.start_datetime - _dt.now()).total_seconds() / 3600
+            if hours_left <= limit:
+                return False, _(
+                    "No es posible modificar ni cancelar esta reserva: "
+                    "faltan menos de %d hora(s) para su inicio." % limit
+                )
+        return True, ""
+
+    # -------------------------------------------------------------------------
+    # DISPONIBILIDAD
     # -------------------------------------------------------------------------
     @api.model
-    def get_availability(self, office_id, date_str):
+    def get_availability(self, office_id, date_str, exclude_id=None):
+        """
+        Returns available/taken slots for office_id on date_str.
+        exclude_id: booking id to ignore (used when rescheduling).
+        """
         if not office_id or not date_str:
             return {"available": [], "taken": []}
 
@@ -430,24 +456,26 @@ class SpootOfficeBooking(models.Model):
                 "block_reason": reason,
             }
 
-        taken = self.sudo().search([
+        domain = [
             ("office_id", "=", int(office_id)),
             ("date", "=", date),
             ("state", "!=", "cancelled"),
-        ]).mapped("slot_type")
+        ]
+        if exclude_id:
+            domain.append(("id", "!=", int(exclude_id)))
+
+        taken = self.sudo().search(domain).mapped("slot_type")
 
         taken_set = set(taken)
         available = []
 
         if "full_day" in taken_set:
-            # full_day ocupa toda la jornada → ningún slot disponible
             available = []
         else:
             if "morning" not in taken_set:
                 available.append("morning")
             if "afternoon" not in taken_set:
                 available.append("afternoon")
-            # full_day solo si ningún slot parcial está tomado
             if "morning" not in taken_set and "afternoon" not in taken_set:
                 available.append("full_day")
 
@@ -519,7 +547,68 @@ class SpootOfficeBooking(models.Model):
 
         return {"days": [fields.Date.to_string(d) for d in days], "rows": rows}
 
+    # -------------------------------------------------------------------------
+    # STATS PARA DASHBOARD
+    # -------------------------------------------------------------------------
+    @api.model
+    def get_dashboard_stats(self):
+        import calendar as _cal
+        from datetime import date as _date, timedelta as _td
 
+        today = _date.today()
+        week_start = today - _td(days=today.weekday())
+        week_end   = week_start + _td(days=6)
+        last_day   = _cal.monthrange(today.year, today.month)[1]
+        month_start = today.replace(day=1)
+        month_end   = today.replace(day=last_day)
+
+        all_active = self.sudo().search([("state", "!=", "cancelled")])
+
+        today_bk   = all_active.filtered(lambda b: b.date == today)
+        week_bk    = all_active.filtered(lambda b: week_start <= b.date <= week_end)
+        month_bk   = all_active.filtered(lambda b: month_start <= b.date <= month_end)
+        pending_bk = all_active.filtered(lambda b: b.state == "pending_payment")
+
+        upcoming = self.sudo().search([
+            ("date", ">=", today),
+            ("state", "in", ["confirmed", "pending_payment"]),
+        ], order="date asc, slot_type asc", limit=8)
+
+        _SLOT = {
+            "morning":   "Mañana (8–12)",
+            "afternoon": "Tarde (14–18)",
+            "full_day":  "Día completo",
+        }
+
+        currency_symbol = (
+            self.env.company.currency_id.symbol or "$"
+        )
+
+        return {
+            "today_total":     len(today_bk),
+            "today_confirmed": len(today_bk.filtered(lambda b: b.state == "confirmed")),
+            "week_confirmed":  len(week_bk.filtered(lambda b: b.state == "confirmed")),
+            "month_total":     len(month_bk),
+            "pending_count":   len(pending_bk),
+            "currency":        currency_symbol,
+            "month_revenue":   sum(
+                b.amount_total for b in month_bk
+                if b.paid and b.payment_mode == "bold"
+            ),
+            "upcoming": [
+                {
+                    "id":           b.id,
+                    "name":         b.name,
+                    "office":       b.office_id.name,
+                    "date":         fields.Date.to_string(b.date),
+                    "slot":         _SLOT.get(b.slot_type, b.slot_type or ""),
+                    "partner":      b.partner_id.name or "",
+                    "state":        b.state,
+                    "payment_mode": b.payment_mode or "bold",
+                }
+                for b in upcoming
+            ],
+        }
 
     # -------------------------------------------------------------------------
     # Correo + ICS (para Google Calendar, Outlook, etc.)

@@ -178,7 +178,7 @@ class SpootOfficeWebsite(http.Controller):
 
     # ── JSON: disponibilidad mensual para el calendario de reserva ──────────
     @http.route("/spoot/office/month-availability", type="json", auth="public", website=True)
-    def office_month_availability(self, office_id=None, year=None, month=None, **kw):
+    def office_month_availability(self, office_id=None, year=None, month=None, exclude_id=None, **kw):
         import calendar as _cal
         from datetime import date as _date, timedelta as _td
 
@@ -188,6 +188,7 @@ class SpootOfficeWebsite(http.Controller):
         office_id = int(office_id)
         year = int(year)
         month = int(month)
+        exclude_id = int(exclude_id) if exclude_id else None
 
         _, days_in_month = _cal.monthrange(year, month)
         today = _date.today()
@@ -197,12 +198,15 @@ class SpootOfficeWebsite(http.Controller):
         Booking = request.env["spoot.office.booking"].sudo()
         Block = request.env["spoot.office.block"].sudo()
 
-        bookings = Booking.search([
+        bk_domain = [
             ("office_id", "=", office_id),
             ("date", ">=", month_start),
             ("date", "<=", month_end),
             ("state", "!=", "cancelled"),
-        ])
+        ]
+        if exclude_id:
+            bk_domain.append(("id", "!=", exclude_id))
+        bookings = Booking.search(bk_domain)
         booking_index = {}
         for b in bookings:
             booking_index.setdefault(b.date, []).append(b.slot_type)
@@ -264,11 +268,11 @@ class SpootOfficeWebsite(http.Controller):
 
     # ── JSON: disponibilidad de slots (usado por office_booking.js) ──────────
     @http.route("/spoot/office/availability", type="json", auth="user", website=True)
-    def office_slot_availability(self, office_id=None, day=None, **kw):
+    def office_slot_availability(self, office_id=None, day=None, exclude_id=None, **kw):
         if not office_id or not day:
             return {"available": [], "taken": []}
         return request.env["spoot.office.booking"].sudo().get_availability(
-            office_id, day
+            office_id, day, exclude_id=exclude_id
         )
 
     # ── JSON: eventos de calendario FullCalendar (usado por office_calendar.js) ─
@@ -511,17 +515,88 @@ class SpootOfficePortal(CustomerPortal):
     def portal_booking_cancel(self, booking_id, **kw):
         booking = request.env["spoot.office.booking"].sudo().browse(booking_id)
         if booking and booking.partner_id == request.env.user.partner_id:
-            if booking.state != "cancelled":
+            can_mod, _ = booking._can_be_modified()
+            if can_mod and booking.state != "cancelled":
                 if booking.payment_mode == "plan":
-                    # Restore plan balance before cancelling
                     booking.sudo().action_cancel_and_restore_plan()
                 elif not booking.paid:
-                    # Regular unpaid Bold booking — cancel directly and notify
                     booking.write({"state": "cancelled"})
                     booking._notify_customer("spoot_office_booking.mail_template_booking_cancelled_user")
                     booking._notify_admin("spoot_office_booking.mail_template_booking_cancelled_admin")
                 # Bold-paid bookings cannot be self-cancelled (would require a refund)
         return request.redirect("/my/coworking")
+
+    @http.route(
+        '/my/office-bookings/<int:booking_id>/reschedule',
+        type='http', auth='user', website=True,
+        methods=['GET', 'POST'], csrf=False,
+    )
+    def portal_booking_reschedule(self, booking_id, **post):
+        booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
+        if not booking or booking.partner_id != request.env.user.partner_id:
+            return request.redirect("/my")
+
+        can_mod, mod_reason = booking._can_be_modified()
+
+        values = self._prepare_portal_layout_values()
+        values.update({
+            "booking": booking,
+            "can_modify": can_mod,
+            "mod_reason": mod_reason,
+            "error": None,
+        })
+
+        if request.httprequest.method == 'POST':
+            if not can_mod:
+                values["error"] = mod_reason
+                return request.render("spoot_office_booking.portal_booking_reschedule", values)
+
+            new_date = (post.get("date") or "").strip()
+            new_slot = (post.get("slot_type") or "").strip()
+
+            if not new_date or not new_slot:
+                values["error"] = _("Debes seleccionar fecha y franja horaria.")
+                return request.render("spoot_office_booking.portal_booking_reschedule", values)
+
+            if str(booking.date) == new_date and booking.slot_type == new_slot:
+                values["error"] = _("La nueva fecha y franja son iguales a las actuales.")
+                return request.render("spoot_office_booking.portal_booking_reschedule", values)
+
+            avail = request.env["spoot.office.booking"].sudo().get_availability(
+                booking.office_id.id, new_date, exclude_id=booking.id
+            )
+            if avail.get("blocked"):
+                values["error"] = _("Esa fecha no está disponible: %s" % avail.get("block_reason", ""))
+                return request.render("spoot_office_booking.portal_booking_reschedule", values)
+
+            if new_slot not in avail.get("available", []):
+                values["error"] = _("Esa franja no está disponible para la fecha seleccionada.")
+                return request.render("spoot_office_booking.portal_booking_reschedule", values)
+
+            # Adjust plan balance if slot type changes
+            if booking.payment_mode == 'plan' and booking.subscription_id:
+                old_cost = booking.plan_days_consumed
+                new_cost = 1.0 if new_slot == 'full_day' else 0.5
+                diff = new_cost - old_cost
+                if diff > 0 and booking.subscription_id.remaining_days < diff:
+                    values["error"] = _(
+                        "Saldo de plan insuficiente. Necesitas %.1f día(s) adicional(es)." % diff
+                    )
+                    return request.render("spoot_office_booking.portal_booking_reschedule", values)
+                if diff != 0:
+                    booking.subscription_id.sudo().write({
+                        "remaining_days": booking.subscription_id.remaining_days - diff
+                    })
+                    booking.sudo().write({"plan_days_consumed": new_cost})
+
+            booking.sudo().write({"date": new_date, "slot_type": new_slot})
+            _logger.info(
+                "[RESCHEDULE] booking id=%s → date=%s slot=%s by partner=%s",
+                booking.id, new_date, new_slot, request.env.user.partner_id.id,
+            )
+            return request.redirect("/my/office-bookings/%d" % booking.id)
+
+        return request.render("spoot_office_booking.portal_booking_reschedule", values)
     
 
     

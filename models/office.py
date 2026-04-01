@@ -31,3 +31,10 @@ class SpootOffice(models.Model):
 
     active = fields.Boolean(string="Activo", default=True)
     short_description = fields.Char(string="Descripción corta para web")
+
+    modification_limit_hours = fields.Integer(
+        string="Límite para cambios/cancelaciones (horas)",
+        default=24,
+        help="Número de horas mínimas de anticipación que necesita el cliente "
+             "para poder modificar o cancelar su reserva. 0 = sin límite.",
+    )
