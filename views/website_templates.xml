@@ -430,11 +430,21 @@
       <div class="container py-5">
         <div class="mx-auto text-center" style="max-width: 720px;">
           <h1 class="mb-2">¡Reserva registrada!</h1>
-          <p class="text-muted mb-4">
+          <p class="text-muted mb-3">
             Registramos tu reserva para <b><t t-esc="booking.office_id.name"/></b>
-            el <b><t t-esc="booking.date"/></b>
-            (<b><t t-esc="booking.slot_type"/></b>).
+            el <b><t t-esc="booking.date"/></b>.
           </p>
+
+          <!-- Referencia de reserva -->
+          <div class="d-inline-block mb-4 px-4 py-3 rounded-3"
+               style="background:#f0fdf4; border:1px solid #86efac;">
+            <div class="text-muted mb-1" style="font-size:12px; letter-spacing:.08em; text-transform:uppercase;">
+              Referencia de reserva
+            </div>
+            <div class="fw-bold" style="font-size:24px; letter-spacing:.1em; color:#065f46; font-family:monospace;">
+              <t t-esc="booking.name"/>
+            </div>
+          </div>
 
           <div class="d-flex justify-content-center gap-2 flex-wrap">
             <a href="/my/office-bookings" class="btn btn-primary rounded-pill px-4">
@@ -891,7 +901,7 @@
               <thead style="background:#f8fafc;">
                 <tr>
                   <th class="ps-4 py-3 text-muted fw-semibold small text-uppercase"
-                      style="letter-spacing:.05em;">Oficina</th>
+                      style="letter-spacing:.05em;">Referencia / Oficina</th>
                   <th class="py-3 text-muted fw-semibold small text-uppercase"
                       style="letter-spacing:.05em;">Fecha</th>
                   <th class="py-3 text-muted fw-semibold small text-uppercase"
@@ -925,8 +935,12 @@
 
                   <tr t-att-style="row_bg">
                     <!-- Primera celda lleva el borde de color -->
-                    <td class="ps-3 fw-semibold" t-att-style="row_border + ('color:#9ca3af;' if b.state == 'cancelled' else '')">
-                      <t t-esc="b.office_id.name"/>
+                    <td class="ps-3" t-att-style="row_border + ('color:#9ca3af;' if b.state == 'cancelled' else '')">
+                      <span class="d-block fw-semibold"><t t-esc="b.office_id.name"/></span>
+                      <span class="d-block text-muted"
+                            style="font-family:monospace; font-size:.76rem; letter-spacing:.04em;">
+                        <t t-esc="b.name"/>
+                      </span>
                     </td>
 
                     <td t-att-class="'text-muted' if (b.state == 'cancelled' or is_past) else ''">

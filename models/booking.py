@@ -23,9 +23,19 @@ class SpootOfficeBooking(models.Model):
         string="Referencia",
         required=True,
         copy=False,
-        default="Nueva reserva",
+        default="/",
         tracking=True,
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('name') or vals['name'] in ('/', 'Nueva reserva', False):
+                vals['name'] = (
+                    self.env['ir.sequence'].next_by_code('spoot.office.booking')
+                    or '/'
+                )
+        return super().create(vals_list)
 
     office_id = fields.Many2one(
         "spoot.office",
