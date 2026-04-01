@@ -654,6 +654,7 @@ class SpootOfficePortal(CustomerPortal):
         values.update({
             'subscription': subscription,
             'bookings': bookings,
+            'today': Date.today(),
             'page_name': 'coworking',
             'booking_total': len(bookings),
             'booking_confirmed': len(bookings.filtered(lambda b: b.state == 'confirmed')),

@@ -905,13 +905,34 @@
               </thead>
               <tbody>
                 <t t-foreach="bookings" t-as="b">
-                  <tr>
-                    <td class="ps-4 fw-semibold">
+
+                  <!-- is_past: confirmada cuya fecha ya pasó → se muestra como "Completada" -->
+                  <t t-set="is_past" t-value="b.state == 'confirmed' and bool(b.date) and b.date &lt; today"/>
+
+                  <!-- Color de fondo y borde izquierdo según estado efectivo -->
+                  <t t-set="row_bg"
+                     t-value="'background:#fafafa; opacity:.72;' if b.state == 'cancelled'
+                              else ('background:#f8fafc;' if is_past
+                              else ('background:#f0fdf4;' if b.state == 'confirmed'
+                              else ('background:#fffbeb;' if b.state == 'pending_payment'
+                              else '')))"/>
+                  <t t-set="row_border"
+                     t-value="'border-left:4px solid #ef4444;' if b.state == 'cancelled'
+                              else ('border-left:4px solid #9ca3af;' if is_past
+                              else ('border-left:4px solid #10b981;' if b.state == 'confirmed'
+                              else ('border-left:4px solid #f59e0b;' if b.state == 'pending_payment'
+                              else 'border-left:4px solid #e5e7eb;')))"/>
+
+                  <tr t-att-style="row_bg">
+                    <!-- Primera celda lleva el borde de color -->
+                    <td class="ps-3 fw-semibold" t-att-style="row_border + ('color:#9ca3af;' if b.state == 'cancelled' else '')">
                       <t t-esc="b.office_id.name"/>
                     </td>
-                    <td class="text-muted">
+
+                    <td t-att-class="'text-muted' if (b.state == 'cancelled' or is_past) else ''">
                       <t t-esc="b.date"/>
                     </td>
+
                     <td>
                       <t t-if="b.slot_type == 'morning'">
                         <span class="badge rounded-pill px-3 py-1"
@@ -928,52 +949,77 @@
                       <t t-else="">
                         <span class="badge rounded-pill px-3 py-1"
                               style="background:#f3f4f6; color:#374151;">
-                          Dia completo
+                          Día completo
                         </span>
                       </t>
                     </td>
+
+                    <!-- Badge de estado con lógica "Completada" para pasadas -->
                     <td class="text-center">
-                      <t t-if="b.state == 'confirmed'">
+                      <t t-if="is_past">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#e5e7eb; color:#6b7280;">
+                          ✓ Completada
+                        </span>
+                      </t>
+                      <t t-elif="b.state == 'confirmed'">
                         <span class="badge rounded-pill px-3 py-1"
                               style="background:#d1fae5; color:#065f46;">
-                          Confirmada
+                          ✓ Confirmada
                         </span>
                       </t>
                       <t t-elif="b.state == 'pending_payment'">
                         <span class="badge rounded-pill px-3 py-1"
                               style="background:#fef3c7; color:#92400e;">
-                          Pend. pago
+                          ⏳ Pend. pago
                         </span>
                       </t>
                       <t t-elif="b.state == 'cancelled'">
                         <span class="badge rounded-pill px-3 py-1"
-                              style="background:#f3f4f6; color:#6b7280;">
-                          Cancelada
+                              style="background:#fee2e2; color:#991b1b;">
+                          ✕ Cancelada
                         </span>
                       </t>
                       <t t-else="">
-                        <span class="badge rounded-pill px-3 py-1 bg-light text-muted">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#f3f4f6; color:#9ca3af;">
                           <t t-esc="b.state"/>
                         </span>
                       </t>
                     </td>
+
+                    <!-- Badge de pago -->
                     <td class="text-center">
-                      <t t-if="b.paid">
+                      <t t-if="b.payment_mode == 'plan'">
                         <span class="badge rounded-pill px-3 py-1"
                               style="background:#d1fae5; color:#065f46;">
-                          Pagado
+                          Plan
+                        </span>
+                      </t>
+                      <t t-elif="b.paid">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#dbeafe; color:#1e40af;">
+                          Bold ✓
+                        </span>
+                      </t>
+                      <t t-elif="b.state == 'cancelled'">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#f3f4f6; color:#9ca3af;">
+                          —
                         </span>
                       </t>
                       <t t-else="">
                         <span class="badge rounded-pill px-3 py-1"
-                              style="background:#fee2e2; color:#991b1b;">
+                              style="background:#fef3c7; color:#92400e;">
                           Pendiente
                         </span>
                       </t>
                     </td>
+
                     <td class="pe-4 text-end">
                       <a t-att-href="'/my/office-bookings/%s' % b.id"
-                         class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                         class="btn btn-sm rounded-pill px-3"
+                         t-att-class="'btn-outline-secondary' if (b.state == 'cancelled' or is_past) else 'btn-outline-primary'">
                         Ver
                       </a>
                     </td>

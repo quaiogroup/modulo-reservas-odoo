@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+  <data noupdate="1">
+
+    <!-- Secuencia para referencias de reserva: SPT000001, SPT000002, … -->
+    <record id="seq_spoot_office_booking" model="ir.sequence">
+        <field name="name">Referencia de Reserva Spoot</field>
+        <field name="code">spoot.office.booking</field>
+        <field name="prefix">SPT</field>
+        <field name="padding" eval="6"/>
+        <field name="number_next" eval="1"/>
+        <field name="number_increment" eval="1"/>
+    </record>
 
     <!--
         Daily cron: sends a reminder email to every customer with a confirmed booking
@@ -13,9 +24,9 @@
         <field name="code">model._cron_send_booking_reminders()</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <field name="numbercall">-1</field>
-        <field name="active" eval="True"/>
+<field name="active" eval="True"/>
         <field name="user_id" ref="base.user_root"/>
     </record>
 
+  </data>
 </odoo>
