@@ -167,7 +167,7 @@ class SpootOfficeWebsite(http.Controller):
             # Notify customer (pending payment) and admin (new booking)
             booking._notify_customer("spoot_office_booking.mail_template_booking_pending_payment")
             booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
-            return redirect(f"/my/office-bookings/{booking.id}")
+            return redirect("/my/coworking")
 
         return _render_detail()
 
@@ -253,8 +253,6 @@ class SpootOfficePortal(CustomerPortal):
                 tx_status, record_type, record.id,
             )
 
-        if record_type == "booking":
-            return redirect(f"/my/office-bookings/{record.id}")
         return redirect("/my/coworking")
 
     def _prepare_home_portal_values(self, counters):
@@ -370,7 +368,7 @@ class SpootOfficePortal(CustomerPortal):
                     booking._notify_customer("spoot_office_booking.mail_template_booking_cancelled_user")
                     booking._notify_admin("spoot_office_booking.mail_template_booking_cancelled_admin")
                 # Bold-paid bookings cannot be self-cancelled (would require a refund)
-        return request.redirect("/my/office-bookings")
+        return request.redirect("/my/coworking")
     
 
     
@@ -603,9 +601,15 @@ class SpootOfficePortal(CustomerPortal):
             ('state', '=', 'active')
         ], limit=1)
 
-        bookings = request.env['spoot.office.booking'].sudo().search([
+        # Para el calendario: todas las reservas ordenadas por fecha
+        all_bookings = request.env['spoot.office.booking'].sudo().search([
             ('partner_id', '=', partner.id)
         ], order="date desc")
+
+        # Para la tabla del historial: las más recientes (por fecha de creación)
+        bookings = request.env['spoot.office.booking'].sudo().search([
+            ('partner_id', '=', partner.id)
+        ], order="id desc", limit=20)
 
         days_used = 0
         days_pct = 0
@@ -628,7 +632,7 @@ class SpootOfficePortal(CustomerPortal):
         }
 
         calendar_events = []
-        for b in bookings:
+        for b in all_bookings:
             if b.state == 'confirmed':
                 color = '#10b981' if b.payment_mode == 'plan' else '#3b82f6'
             else:
@@ -656,10 +660,10 @@ class SpootOfficePortal(CustomerPortal):
             'bookings': bookings,
             'today': Date.today(),
             'page_name': 'coworking',
-            'booking_total': len(bookings),
-            'booking_confirmed': len(bookings.filtered(lambda b: b.state == 'confirmed')),
-            'booking_pending': len(bookings.filtered(lambda b: b.state == 'pending_payment')),
-            'booking_cancelled': len(bookings.filtered(lambda b: b.state == 'cancelled')),
+            'booking_total': len(all_bookings),
+            'booking_confirmed': len(all_bookings.filtered(lambda b: b.state == 'confirmed')),
+            'booking_pending': len(all_bookings.filtered(lambda b: b.state == 'pending_payment')),
+            'booking_cancelled': len(all_bookings.filtered(lambda b: b.state == 'cancelled')),
             'days_used': days_used,
             'days_pct': days_pct,
             'calendar_events_json': Markup(safe_json),
