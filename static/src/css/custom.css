@@ -411,3 +411,283 @@ button.btn {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Booking Calendar — office detail page
+   ═══════════════════════════════════════════════════════════ */
+
+.spoot-bk-cal {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px 12px;
+  background: #fff;
+}
+
+.spoot-bk-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.spoot-bk-month-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -.01em;
+}
+
+.spoot-bk-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #374151;
+  line-height: 1;
+  transition: background .15s, border-color .15s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.spoot-bk-nav:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.spoot-bk-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 4px;
+}
+
+.spoot-bk-dow-row span {
+  text-align: center;
+  font-size: .62rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding-bottom: 4px;
+}
+
+.spoot-bk-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.spoot-bk-cell {
+  min-height: 56px;
+  border-radius: 8px;
+  padding: 5px 4px 4px;
+  border: 1.5px solid transparent;
+  position: relative;
+  transition: border-color .12s, background .12s;
+  overflow: hidden;
+}
+
+.spoot-bk-cell.blank {
+  background: transparent !important;
+  border: none !important;
+  min-height: 0;
+}
+
+.spoot-bk-cell.free {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  cursor: pointer;
+}
+
+.spoot-bk-cell.free:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.spoot-bk-cell.partial {
+  background: #fffbeb;
+  border-color: #fde68a;
+  cursor: pointer;
+}
+
+.spoot-bk-cell.partial:hover {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.spoot-bk-cell.taken {
+  background: #fef2f2;
+  border-color: #fecaca;
+  cursor: default;
+}
+
+.spoot-bk-cell.blocked {
+  background: repeating-linear-gradient(
+    135deg,
+    #f3f4f6,
+    #f3f4f6 4px,
+    #e5e7eb 4px,
+    #e5e7eb 8px
+  );
+  border-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.spoot-bk-cell.past {
+  background: #fafafa;
+  border-color: #f3f4f6;
+  cursor: default;
+  opacity: .5;
+}
+
+.spoot-bk-cell.selected {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59,130,246,.25);
+}
+
+.spoot-bk-num {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  color: #374151;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.spoot-bk-num.today-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  font-size: .62rem;
+}
+
+.spoot-bk-pips {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.spoot-bk-pip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 14px;
+  border-radius: 4px;
+  font-size: .52rem;
+  font-weight: 700;
+}
+
+.spoot-bk-pip.avail {
+  background: #10b981;
+  color: #fff;
+}
+
+.spoot-bk-pip.unavail {
+  background: #e5e7eb;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.spoot-bk-cell-lbl {
+  display: block;
+  font-size: .55rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 3px;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spoot-bk-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .75rem;
+  font-size: .7rem;
+  color: #6b7280;
+  align-items: center;
+}
+
+.spoot-bk-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+.dot-free    { background: #10b981; }
+.dot-partial { background: #f59e0b; }
+.dot-taken   { background: #f87171; }
+.dot-blocked { background: #9ca3af; }
+
+/* ── Slot selector ─────────────────────────────────────── */
+
+.spoot-bk-slot-row {
+  display: flex;
+  gap: 8px;
+}
+
+.spoot-bk-slot-btn {
+  flex: 1;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  line-height: 1.3;
+}
+
+.spoot-bk-slot-btn .slot-time {
+  font-size: .62rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.spoot-bk-slot-btn .slot-name {
+  font-size: .8rem;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 2px;
+}
+
+.spoot-bk-slot-btn:hover:not(:disabled):not(.unavail) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.spoot-bk-slot-btn.active {
+  border-color: #3b82f6 !important;
+  background: #eff6ff !important;
+}
+
+.spoot-bk-slot-btn:disabled,
+.spoot-bk-slot-btn.unavail {
+  opacity: .4;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+  background: #f3f4f6;
+}
+
+@media (max-width: 400px) {
+  .spoot-bk-slot-row { flex-direction: column; }
+  .spoot-bk-cell { min-height: 40px; }
+  .spoot-bk-pips { display: none; }
+}

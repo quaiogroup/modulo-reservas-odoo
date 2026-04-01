@@ -440,13 +440,15 @@ class SpootOfficeBooking(models.Model):
         available = []
 
         if "full_day" in taken_set:
+            # full_day ocupa toda la jornada → ningún slot disponible
             available = []
         else:
             if "morning" not in taken_set:
                 available.append("morning")
             if "afternoon" not in taken_set:
                 available.append("afternoon")
-            if ("morning" not in taken_set) and ("afternoon" not in taken_set):
+            # full_day solo si ningún slot parcial está tomado
+            if "morning" not in taken_set and "afternoon" not in taken_set:
                 available.append("full_day")
 
         return {"available": available, "taken": list(taken_set)}

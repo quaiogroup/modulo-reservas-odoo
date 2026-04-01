@@ -176,6 +176,92 @@ class SpootOfficeWebsite(http.Controller):
 
         return _render_detail()
 
+    # ── JSON: disponibilidad mensual para el calendario de reserva ──────────
+    @http.route("/spoot/office/month-availability", type="json", auth="public", website=True)
+    def office_month_availability(self, office_id=None, year=None, month=None, **kw):
+        import calendar as _cal
+        from datetime import date as _date, timedelta as _td
+
+        if not office_id or not year or not month:
+            return []
+
+        office_id = int(office_id)
+        year = int(year)
+        month = int(month)
+
+        _, days_in_month = _cal.monthrange(year, month)
+        today = _date.today()
+        month_start = _date(year, month, 1)
+        month_end = _date(year, month, days_in_month)
+
+        Booking = request.env["spoot.office.booking"].sudo()
+        Block = request.env["spoot.office.block"].sudo()
+
+        bookings = Booking.search([
+            ("office_id", "=", office_id),
+            ("date", ">=", month_start),
+            ("date", "<=", month_end),
+            ("state", "!=", "cancelled"),
+        ])
+        booking_index = {}
+        for b in bookings:
+            booking_index.setdefault(b.date, []).append(b.slot_type)
+
+        blocks = Block.search([
+            ("active", "=", True),
+            ("date_start", "<=", month_end),
+            ("date_end", ">=", month_start),
+            "|",
+            ("office_id", "=", office_id),
+            ("office_id", "=", False),
+        ])
+        block_index = {}
+        for blk in blocks:
+            cur = max(blk.date_start, month_start)
+            end = min(blk.date_end, month_end)
+            while cur <= end:
+                block_index[cur] = blk.name or "No disponible"
+                cur += _td(days=1)
+
+        result = []
+        for day_num in range(1, days_in_month + 1):
+            d = _date(year, month, day_num)
+            if d in block_index:
+                result.append({
+                    "date": str(d),
+                    "past": d < today,
+                    "today": d == today,
+                    "blocked": True,
+                    "block_reason": block_index[d],
+                    "available": [],
+                    "taken": [],
+                })
+                continue
+
+            taken = set(booking_index.get(d, []))
+            available = []
+            if "full_day" in taken:
+                # full_day ocupa toda la jornada → ningún slot disponible
+                available = []
+            else:
+                if "morning" not in taken:
+                    available.append("morning")
+                if "afternoon" not in taken:
+                    available.append("afternoon")
+                if "morning" not in taken and "afternoon" not in taken:
+                    available.append("full_day")
+
+            result.append({
+                "date": str(d),
+                "past": d < today,
+                "today": d == today,
+                "blocked": False,
+                "available": available,
+                "taken": list(taken),
+            })
+
+        return result
+
     # ── JSON: disponibilidad de slots (usado por office_booking.js) ──────────
     @http.route("/spoot/office/availability", type="json", auth="user", website=True)
     def office_slot_availability(self, office_id=None, day=None, **kw):

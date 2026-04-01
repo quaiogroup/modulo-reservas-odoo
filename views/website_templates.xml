@@ -262,29 +262,72 @@
                 </t>
                 <!-- ─────────────────────────────────────────────── -->
 
-                <div class="js_spoot_office_detail" t-att-data-office-id="office.id">
+                <div class="js_spoot_office_detail"
+                     t-att-data-office-id="office.id"
+                     t-att-data-pm="'%.2f|%.2f|%.2f' % (office.price_morning or 0, office.price_afternoon or 0, office.price_full_day or 0)"
+                     t-att-data-cur="office.currency_id.symbol or ''">
                 <form method="post" id="spoot-booking-form">
                   <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
+                  <input type="hidden" name="date"      id="spoot_date"/>
+                  <input type="hidden" name="slot_type" id="spoot_slot"/>
 
-                  <div class="mb-3">
-                    <label class="form-label fw-semibold">Fecha</label>
-                    <input type="date" name="date" id="spoot_date"
-                           class="form-control rounded-4" required="required"/>
+                  <!-- ── CALENDAR PICKER ─────────────────────────────── -->
+                  <div class="spoot-bk-cal mb-3">
+                    <div class="spoot-bk-hdr">
+                      <button type="button" class="spoot-bk-nav" id="spoot-bk-prev">&#8249;</button>
+                      <span class="spoot-bk-month-title" id="spoot-bk-month-title"></span>
+                      <button type="button" class="spoot-bk-nav" id="spoot-bk-next">&#8250;</button>
+                    </div>
+                    <div class="spoot-bk-dow-row">
+                      <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                    </div>
+                    <div class="spoot-bk-grid" id="spoot-bk-grid">
+                      <div class="text-center py-3 text-muted" style="grid-column:1/-1;font-size:.8rem;">Cargando…</div>
+                    </div>
+                    <div class="spoot-bk-legend mt-2">
+                      <span><span class="spoot-bk-dot dot-free"></span>Libre</span>
+                      <span><span class="spoot-bk-dot dot-partial"></span>Parcial</span>
+                      <span><span class="spoot-bk-dot dot-taken"></span>Lleno</span>
+                      <span><span class="spoot-bk-dot dot-blocked"></span>Bloqueado</span>
+                    </div>
                   </div>
+                  <!-- ─────────────────────────────────────────────────── -->
 
-                  <div class="mb-3">
-                    <label class="form-label fw-semibold">Franja horaria</label>
-                    <select name="slot_type" id="spoot_slot"
-                            class="form-control rounded-4" required="required">
-                      <option value="" selected="selected" disabled="disabled">
-                        Elige una franja
-                      </option>
-                      <option value="morning">Mañana (8-12)</option>
-                      <option value="afternoon">Tarde (14-18)</option>
-                      <option value="full_day">Todo el día</option>
-                    </select>
-                    <div id="spoot_slot_hint" class="form-text"/>
+                  <!-- ── SLOT SELECTOR ───────────────────────────────── -->
+                  <div id="spoot-bk-slots" class="d-none mb-3">
+                    <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
+                      Franja para <span id="spoot-bk-sel-date" class="text-primary fw-bold"></span>:
+                    </div>
+                    <div class="spoot-bk-slot-row">
+                      <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-morning">
+                        <div class="slot-time">8:00 – 12:00</div>
+                        <div class="slot-name">Mañana</div>
+                      </button>
+                      <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-afternoon">
+                        <div class="slot-time">14:00 – 18:00</div>
+                        <div class="slot-name">Tarde</div>
+                      </button>
+                      <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-full_day">
+                        <div class="slot-time">8:00 – 18:00</div>
+                        <div class="slot-name">Día completo</div>
+                      </button>
+                    </div>
                   </div>
+                  <!-- ─────────────────────────────────────────────────── -->
+
+                  <!-- ── SELECTED SUMMARY ────────────────────────────── -->
+                  <div id="spoot-bk-summary" class="d-none rounded-4 p-3 mb-3"
+                       style="background:#f0fdf4;border:1px solid #86efac;">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div class="fw-bold text-success" id="spoot-bk-summary-text"></div>
+                        <div class="text-muted" style="font-size:.78rem;" id="spoot-bk-summary-price"></div>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                              id="spoot-bk-reset-btn">Cambiar</button>
+                    </div>
+                  </div>
+                  <!-- ─────────────────────────────────────────────────── -->
 
                   <!-- ── PAYMENT MODE SELECTOR (only if plan exists) ── -->
                   <t t-if="subscription">
@@ -320,7 +363,6 @@
                         </label>
 
                       </div>
-                      <!-- Insufficient balance warning -->
                       <div id="plan_balance_warn" class="form-text text-danger d-none">
                         Saldo insuficiente para esta franja.
                       </div>
@@ -328,7 +370,7 @@
                   </t>
                   <!-- ─────────────────────────────────────────────── -->
 
-                  <button type="submit" id="spoot_submit_btn"
+                  <button type="submit" id="spoot_submit_btn" disabled="disabled"
                           class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
                     Confirmar reserva
                   </button>
@@ -342,79 +384,257 @@
               </div>
             </div>
 
-            <!-- Inline JS for payment mode toggle and cost display -->
-            <t t-if="subscription">
-              <script>
-              (function () {
-                var form      = document.getElementById('spoot-booking-form');
-                if (!form) return;
+            <!-- Booking calendar + payment mode JS -->
+            <script>
+            (function () {
+              var container = document.querySelector('.js_spoot_office_detail');
+              if (!container) return;
 
-                var slotSel    = document.getElementById('spoot_slot');
-                var radioPlan  = document.getElementById('radio_plan');
-                var radioBold  = document.getElementById('radio_bold');
-                var lblPlan    = document.getElementById('lbl_plan');
-                var lblBold    = document.getElementById('lbl_bold');
-                var costLabel  = document.getElementById('plan_cost_label');
-                var warnEl     = document.getElementById('plan_balance_warn');
-                var submitBtn  = document.getElementById('spoot_submit_btn');
-                var balanceEl  = document.getElementById('plan_balance_panel');
-                var remaining  = parseFloat((balanceEl &amp;&amp; balanceEl.dataset.remaining) || '0');
+              var officeId  = parseInt(container.dataset.officeId || '0');
+              var pmRaw     = (container.dataset.pm || '0|0|0').split('|').map(parseFloat);
+              var currency  = container.dataset.cur || '';
+              var prices    = {morning: pmRaw[0], afternoon: pmRaw[1], full_day: pmRaw[2]};
 
-                function slotCost(slot) {
-                  return slot === 'full_day' ? 1.0 : 0.5;
+              var dateHidden   = document.getElementById('spoot_date');
+              var slotHidden   = document.getElementById('spoot_slot');
+              var submitBtn    = document.getElementById('spoot_submit_btn');
+              var grid         = document.getElementById('spoot-bk-grid');
+              var monthTitle   = document.getElementById('spoot-bk-month-title');
+              var slotsPanel   = document.getElementById('spoot-bk-slots');
+              var summaryPanel = document.getElementById('spoot-bk-summary');
+              var selDateEl    = document.getElementById('spoot-bk-sel-date');
+              var summaryText  = document.getElementById('spoot-bk-summary-text');
+              var summaryPrice = document.getElementById('spoot-bk-summary-price');
+              var resetBtn     = document.getElementById('spoot-bk-reset-btn');
+              var prevBtn      = document.getElementById('spoot-bk-prev');
+              var nextBtn      = document.getElementById('spoot-bk-next');
+
+              var radioPlan  = document.getElementById('radio_plan');
+              var radioBold  = document.getElementById('radio_bold');
+              var lblPlan    = document.getElementById('lbl_plan');
+              var lblBold    = document.getElementById('lbl_bold');
+              var costLabel  = document.getElementById('plan_cost_label');
+              var warnEl     = document.getElementById('plan_balance_warn');
+              var balanceEl  = document.getElementById('plan_balance_panel');
+              var remaining  = parseFloat((balanceEl &amp;&amp; balanceEl.dataset.remaining) || '9999');
+
+              var MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+              var SLOT_LABELS = {morning:'Mañana (8–12)', afternoon:'Tarde (14–18)', full_day:'Día completo (8–18)'};
+              var SLOT_IDS = ['morning','afternoon','full_day'];
+
+              var today = new Date(); today.setHours(0,0,0,0);
+              var curYear  = today.getFullYear();
+              var curMonth = today.getMonth();
+
+              var monthData    = {};
+              var selectedDate = null;
+              var selectedSlot = null;
+
+              function pad(n){ return n &lt; 10 ? '0'+n : ''+n; }
+
+              function fmtDate(ds) {
+                var p = ds.split('-');
+                return parseInt(p[2]) + ' de ' + MONTHS[parseInt(p[1])-1] + ' ' + p[0];
+              }
+
+              function makeEl(tag, cls, txt) {
+                var el = document.createElement(tag);
+                el.className = cls;
+                if (txt !== undefined) el.textContent = txt;
+                return el;
+              }
+
+              /* ── Fetch month data ──────────────────────────────────── */
+              function fetchMonth(yr, mo1) {
+                return fetch('/spoot/office/month-availability', {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({jsonrpc:'2.0', method:'call', id:1,
+                    params:{office_id:officeId, year:yr, month:mo1}})
+                }).then(function(r){ return r.json(); })
+                  .then(function(d){ return d.result || []; });
+              }
+
+              function buildIndex(days) {
+                monthData = {};
+                days.forEach(function(d){ monthData[d.date] = d; });
+              }
+
+              /* ── Render calendar ───────────────────────────────────── */
+              function renderCalendar() {
+                var yr = curYear, mo0 = curMonth, mo1 = mo0 + 1;
+                monthTitle.textContent = MONTHS[mo0] + ' ' + yr;
+
+                var firstDow = new Date(yr, mo0, 1).getDay();
+                firstDow = (firstDow + 6) % 7;
+                var dim = new Date(yr, mo0 + 1, 0).getDate();
+
+                grid.innerHTML = '';
+
+                for (var i = 0; i &lt; firstDow; i++) {
+                  grid.appendChild(makeEl('div', 'spoot-bk-cell blank'));
                 }
 
-                function updateUI() {
-                  var slot   = slotSel ? slotSel.value : '';
-                  var cost   = slotCost(slot);
-                  var isPlan = radioPlan &amp;&amp; radioPlan.checked;
+                for (var dn = 1; dn &lt;= dim; dn++) {
+                  var ds = yr + '-' + pad(mo1) + '-' + pad(dn);
+                  var info = monthData[ds];
+                  var cd = new Date(yr, mo0, dn); cd.setHours(0,0,0,0);
+                  var isPast  = cd &lt; today;
+                  var isToday = cd.getTime() === today.getTime();
 
-                  // Cost label
-                  if (costLabel) {
-                    costLabel.textContent = slot
-                      ? 'Descuenta ' + cost.toFixed(1) + ' día' + (cost === 1 ? '' : 's')
-                      : 'Descuenta 0.5 ó 1 día';
+                  var cell = document.createElement('div');
+                  cell.className = 'spoot-bk-cell';
+
+                  var numCls = 'spoot-bk-num' + (isToday ? ' today-num' : '');
+                  cell.appendChild(makeEl('span', numCls, dn));
+
+                  if (isPast) {
+                    cell.classList.add('past');
+                  } else if (!info) {
+                    cell.classList.add('loading');
+                  } else if (info.blocked) {
+                    cell.classList.add('blocked');
+                    cell.title = info.block_reason || 'Bloqueado';
+                    cell.appendChild(makeEl('span', 'spoot-bk-cell-lbl', info.block_reason || 'Bloqueado'));
+                  } else if (!info.available.length) {
+                    cell.classList.add('taken');
+                    cell.appendChild(makeEl('span', 'spoot-bk-cell-lbl', 'Sin disponibilidad'));
+                  } else {
+                    cell.classList.add(info.available.length === 3 ? 'free' : 'partial');
+                    var pips = document.createElement('div');
+                    pips.className = 'spoot-bk-pips';
+                    [{s:'morning',l:'M'},{s:'afternoon',l:'T'},{s:'full_day',l:'D'}].forEach(function(x){
+                      pips.appendChild(makeEl('span','spoot-bk-pip '+(info.available.indexOf(x.s)>=0?'avail':'unavail'),x.l));
+                    });
+                    cell.appendChild(pips);
+                    (function(d2, inf){ cell.addEventListener('click', function(){ onDayClick(d2, inf); }); })(ds, info);
                   }
 
-                  // Balance warning
-                  var insufficient = isPlan &amp;&amp; slot &amp;&amp; remaining &lt; cost;
-                  if (warnEl) {
-                    warnEl.classList.toggle('d-none', !insufficient);
-                  }
+                  if (ds === selectedDate) cell.classList.add('selected');
+                  grid.appendChild(cell);
+                }
+              }
 
-                  // Highlight active card
-                  if (lblPlan &amp;&amp; lblBold) {
-                    if (isPlan) {
-                      lblPlan.style.border = '2px solid #22c55e';
-                      lblPlan.style.background = '#f0fdf4';
-                      lblBold.style.border = '2px solid #e5e7eb';
-                      lblBold.style.background = '#f9fafb';
-                    } else {
-                      lblBold.style.border = '2px solid #3b82f6';
-                      lblBold.style.background = '#eff6ff';
-                      lblPlan.style.border = '2px solid #e5e7eb';
-                      lblPlan.style.background = '#f9fafb';
-                    }
-                  }
+              /* ── Day click ─────────────────────────────────────────── */
+              function onDayClick(ds, info) {
+                selectedDate = ds;
+                selectedSlot = null;
+                dateHidden.value = '';
+                slotHidden.value = '';
+                submitBtn.disabled = true;
 
-                  // Button text
-                  if (submitBtn) {
-                    submitBtn.textContent = isPlan
-                      ? 'Confirmar con mi plan'
-                      : 'Confirmar y pagar con Bold';
-                    submitBtn.disabled = insufficient;
+                selDateEl.textContent = fmtDate(ds);
+                slotsPanel.classList.remove('d-none');
+                summaryPanel.classList.add('d-none');
+
+                SLOT_IDS.forEach(function(s){
+                  var btn = document.getElementById('spoot-bk-btn-' + s);
+                  if (!btn) return;
+                  var avail = info.available.indexOf(s) >= 0;
+                  btn.disabled = !avail;
+                  btn.classList.toggle('unavail', !avail);
+                  btn.classList.remove('active');
+                });
+
+                renderCalendar();
+                slotsPanel.scrollIntoView({behavior:'smooth', block:'nearest'});
+              }
+
+              /* ── Slot click ────────────────────────────────────────── */
+              function onSlotClick(slot) {
+                if (!selectedDate) return;
+                selectedSlot = slot;
+                dateHidden.value = selectedDate;
+                slotHidden.value = slot;
+
+                SLOT_IDS.forEach(function(s){
+                  var btn = document.getElementById('spoot-bk-btn-' + s);
+                  if (btn) btn.classList.toggle('active', s === slot);
+                });
+
+                summaryText.textContent = fmtDate(selectedDate) + ' · ' + SLOT_LABELS[slot];
+                var price = prices[slot];
+                summaryPrice.textContent = price &amp;&amp; price > 0 ? (currency + ' ' + Math.round(price).toLocaleString('es-CO')) : '';
+                summaryPanel.classList.remove('d-none');
+
+                submitBtn.disabled = false;
+                updatePaymentUI();
+              }
+
+              /* ── Reset ─────────────────────────────────────────────── */
+              function reset() {
+                selectedDate = null; selectedSlot = null;
+                dateHidden.value = ''; slotHidden.value = '';
+                slotsPanel.classList.add('d-none');
+                summaryPanel.classList.add('d-none');
+                submitBtn.disabled = true;
+                if (submitBtn) submitBtn.textContent = 'Confirmar reserva';
+                renderCalendar();
+              }
+
+              /* ── Payment mode UI ───────────────────────────────────── */
+              function slotCost(s){ return s === 'full_day' ? 1.0 : 0.5; }
+
+              function updatePaymentUI() {
+                if (!radioPlan) return;
+                var slot   = slotHidden.value;
+                var cost   = slotCost(slot);
+                var isPlan = radioPlan.checked;
+
+                if (costLabel) costLabel.textContent = slot
+                  ? 'Descuenta ' + cost.toFixed(1) + ' día' + (cost === 1 ? '' : 's')
+                  : 'Descuenta 0.5 ó 1 día';
+
+                var insuf = isPlan &amp;&amp; slot &amp;&amp; remaining &lt; cost;
+                if (warnEl) warnEl.classList.toggle('d-none', !insuf);
+
+                if (lblPlan &amp;&amp; lblBold) {
+                  if (isPlan) {
+                    lblPlan.style.border='2px solid #22c55e'; lblPlan.style.background='#f0fdf4';
+                    lblBold.style.border='2px solid #e5e7eb'; lblBold.style.background='#f9fafb';
+                  } else {
+                    lblBold.style.border='2px solid #3b82f6'; lblBold.style.background='#eff6ff';
+                    lblPlan.style.border='2px solid #e5e7eb'; lblPlan.style.background='#f9fafb';
                   }
                 }
 
-                if (radioPlan) radioPlan.addEventListener('change', updateUI);
-                if (radioBold) radioBold.addEventListener('change', updateUI);
-                if (slotSel)   slotSel.addEventListener('change', updateUI);
+                if (submitBtn &amp;&amp; selectedSlot) {
+                  submitBtn.disabled = !!insuf;
+                  submitBtn.textContent = isPlan ? 'Confirmar con mi plan' : 'Confirmar y pagar con Bold';
+                }
+              }
 
-                // Init
-                updateUI();
-              })();
-              </script>
-            </t>
+              /* ── Wire events ───────────────────────────────────────── */
+              SLOT_IDS.forEach(function(s){
+                var btn = document.getElementById('spoot-bk-btn-' + s);
+                if (btn) btn.addEventListener('click', function(){ onSlotClick(s); });
+              });
+
+              if (resetBtn) resetBtn.addEventListener('click', reset);
+              if (prevBtn)  prevBtn.addEventListener('click', function(){
+                if (curMonth === 0){ curYear--; curMonth = 11; } else curMonth--;
+                loadAndRender();
+              });
+              if (nextBtn)  nextBtn.addEventListener('click', function(){
+                if (curMonth === 11){ curYear++; curMonth = 0; } else curMonth++;
+                loadAndRender();
+              });
+              if (radioPlan) radioPlan.addEventListener('change', updatePaymentUI);
+              if (radioBold) radioBold.addEventListener('change', updatePaymentUI);
+
+              /* ── Init ──────────────────────────────────────────────── */
+              function loadAndRender() {
+                grid.innerHTML = '<div class="text-center py-3 text-muted" style="grid-column:1/-1;font-size:.8rem;">Cargando…</div>';
+                fetchMonth(curYear, curMonth + 1)
+                  .then(function(days){ buildIndex(days); renderCalendar(); })
+                  .catch(function(){
+                    grid.innerHTML = '<div class="text-center py-3 text-danger" style="grid-column:1/-1;font-size:.8rem;">Error cargando disponibilidad</div>';
+                  });
+              }
+
+              loadAndRender();
+            })();
+            </script>
 
           </div>
         </div>
