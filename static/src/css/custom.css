@@ -382,3 +382,32 @@ button.btn {
     font-size: .68rem;
   }
 }
+
+/* ── Días bloqueados en el calendario coworking ────────────────────────── */
+.spoot-cal-cell.sc-blocked {
+  background: repeating-linear-gradient(
+    135deg,
+    #f3f4f6,
+    #f3f4f6 4px,
+    #e5e7eb 4px,
+    #e5e7eb 8px
+  );
+  opacity: .85;
+  cursor: not-allowed;
+}
+
+.spoot-cal-cell.sc-blocked .spoot-cal-num {
+  color: #9ca3af;
+}
+
+.spoot-cal-blocked-label {
+  display: block;
+  font-size: .65rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 2px;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

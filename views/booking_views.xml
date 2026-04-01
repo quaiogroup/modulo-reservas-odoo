@@ -117,13 +117,13 @@
                        decoration-success="state == 'confirmed'"
                        decoration-muted="state == 'cancelled'"/>
 
-                <!-- Payment source — badge -->
-                <field name="payment_mode" string="Origen"
+                <!-- Payment method — badge -->
+                <field name="payment_mode" string="Método de pago"
                        widget="badge"
                        decoration-success="payment_mode == 'plan'"
                        decoration-info="payment_mode == 'bold'"/>
 
-                <!-- Paid boolean -->
+                <!-- Paid: only meaningful for Bold bookings -->
                 <field name="paid" string="Pagado" widget="boolean_toggle" optional="show"/>
 
                 <!-- Amount (hide when paid via plan, but keep column for easy scan) -->
@@ -224,47 +224,57 @@
                     <!-- ── Notebook ──────────────────────────────────── -->
                     <notebook>
 
-                        <!-- TAB 1: Payment summary -->
+                        <!-- TAB 1: Payment — adapts to Bold vs Plan -->
                         <page string="Pago" name="page_payment">
                             <group col="2">
-                                <group string="Resumen">
-                                    <field name="payment_mode"/>
-                                    <field name="need_payment"/>
-                                    <field name="paid"/>
-                                    <field name="amount_total"
-                                           widget="monetary"
-                                           options="{'currency_field': 'currency_id'}"/>
-                                    <field name="currency_id"/>
-                                </group>
-                                <group string="Bold — pago externo"
-                                       invisible="payment_mode != 'bold'">
-                                    <field name="bold_order_id"/>
-                                    <field name="bold_tx_id"/>
-                                    <field name="bold_payment_status"/>
-                                </group>
-                            </group>
-                        </page>
 
-                        <!-- TAB 2: Plan consumption — only relevant when payment_mode=plan -->
-                        <page string="Consumo de plan" name="page_plan"
-                              invisible="payment_mode != 'plan'">
-                            <group>
-                                <field name="subscription_id"
-                                       options="{'no_create': True}"/>
-                                <field name="plan_days_consumed"/>
+                                <!-- Método y estado (siempre visible) -->
+                                <group string="Método de pago">
+                                    <field name="payment_mode"/>
+                                    <field name="paid" string="Confirmado / pagado"
+                                           widget="boolean_toggle"/>
+                                    <field name="amount_total"
+                                           string="Importe cobrado"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"
+                                           invisible="payment_mode == 'plan'"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </group>
+
+                                <!-- Bold: tx info (solo si es pago externo) -->
+                                <group string="Transacción Bold"
+                                       invisible="payment_mode != 'bold'">
+                                    <field name="bold_order_id" readonly="1"/>
+                                    <field name="bold_tx_id"    readonly="1"/>
+                                    <field name="bold_payment_status" readonly="1"/>
+                                </group>
+
+                                <!-- Plan: datos del plan consumido (solo si es plan) -->
+                                <group string="Plan consumido"
+                                       invisible="payment_mode != 'plan'">
+                                    <field name="subscription_id"
+                                           options="{'no_create': True}"/>
+                                    <field name="plan_days_consumed"
+                                           string="Días descontados del plan"/>
+                                </group>
+
                             </group>
-                            <div class="alert alert-info" role="alert"
-                                 invisible="not subscription_id">
-                                Esta reserva se pagó descontando saldo del plan indicado.
-                                Al cancelar la reserva se restauran los días consumidos.
+
+                            <!-- Aviso plan -->
+                            <div class="alert alert-success mt-2" role="alert"
+                                 invisible="payment_mode != 'plan' or not subscription_id">
+                                Esta reserva fue pagada descontando saldo del plan.
+                                Al cancelarla se restauran los días consumidos automáticamente.
                             </div>
                         </page>
 
-                        <!-- TAB 3: Technical / calendar sync -->
+                        <!-- TAB 2: Technical / calendar sync -->
                         <page string="Técnico" name="page_technical">
                             <group>
                                 <field name="google_event_id"
                                        string="ID evento externo (Google, etc.)"/>
+                                <field name="need_payment" string="Requiere pago (interno)"/>
+                                <field name="reminder_sent" string="Recordatorio enviado"/>
                             </group>
                         </page>
 

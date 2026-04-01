@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import logging
+from datetime import timedelta
 
 from markupsafe import Markup
 from werkzeug.utils import redirect
@@ -110,6 +111,10 @@ class SpootOfficeWebsite(http.Controller):
             if "available" not in availability:
                 return _render_detail(_("No se pudo validar disponibilidad. Intenta nuevamente."))
 
+            if availability.get("blocked"):
+                reason = availability.get("block_reason", "Fecha no disponible")
+                return _render_detail(_(f"Esta fecha no está disponible: {reason}"))
+
             if slot_type not in availability["available"]:
                 return _render_detail(_("Esa franja ya no está disponible. Revisa el calendario y elige una opción libre."))
 
@@ -170,6 +175,68 @@ class SpootOfficeWebsite(http.Controller):
             return redirect("/my/coworking")
 
         return _render_detail()
+
+    # ── JSON: disponibilidad de slots (usado por office_booking.js) ──────────
+    @http.route("/spoot/office/availability", type="json", auth="user", website=True)
+    def office_slot_availability(self, office_id=None, day=None, **kw):
+        if not office_id or not day:
+            return {"available": [], "taken": []}
+        return request.env["spoot.office.booking"].sudo().get_availability(
+            office_id, day
+        )
+
+    # ── JSON: eventos de calendario FullCalendar (usado por office_calendar.js) ─
+    @http.route("/spoot/calendar/events", type="json", auth="user", website=True)
+    def spoot_calendar_events(self, office_id=None, start=None, end=None, **kw):
+        if not office_id or not start or not end:
+            return []
+
+        start_dt = Datetime.to_datetime(start)
+        end_dt   = Datetime.to_datetime(end)
+
+        Booking = request.env["spoot.office.booking"].sudo()
+        bookings = Booking.search([
+            ("office_id", "=", int(office_id)),
+            ("state", "!=", "cancelled"),
+            ("start_datetime", "<", end_dt),
+            ("end_datetime",   ">", start_dt),
+        ])
+
+        events = []
+        for b in bookings:
+            events.append({
+                "id":              f"booking_{b.id}",
+                "title":           "Reservada",
+                "start":           b.start_datetime.isoformat() if b.start_datetime else None,
+                "end":             b.end_datetime.isoformat()   if b.end_datetime   else None,
+                "backgroundColor": "#ef4444",
+                "borderColor":     "#dc2626",
+                "textColor":       "#ffffff",
+            })
+
+        # Blocks as FullCalendar background events
+        Block = request.env["spoot.office.block"].sudo()
+        blocks = Block.search([
+            ("active",     "=",  True),
+            ("date_start", "<=", end_dt.date()),
+            ("date_end",   ">=", start_dt.date()),
+            "|",
+            ("office_id",  "=",  int(office_id)),
+            ("office_id",  "=",  False),
+        ])
+        for block in blocks:
+            events.append({
+                "id":              f"block_{block.id}",
+                "title":           block.name,
+                "start":           str(block.date_start),
+                "end":             str(block.date_end + timedelta(days=1)),
+                "allDay":          True,
+                "display":         "background",
+                "backgroundColor": "#fecaca",
+                "borderColor":     "#ef4444",
+            })
+
+        return events
 
 
 class SpootOfficePortal(CustomerPortal):
@@ -649,6 +716,37 @@ class SpootOfficePortal(CustomerPortal):
                 'color':      color,
                 'url':        '/my/office-bookings/%d' % b.id,
             })
+
+        # Add admin blocks to the calendar (next 6 months)
+        from datetime import date as _date
+        block_start = _date.today()
+        block_end   = block_start + timedelta(days=180)
+        Block = request.env["spoot.office.block"].sudo()
+        block_events = Block.get_block_events(0, block_start, block_end)
+        # get_block_events with office_id=0 won't match specific offices — re-query for all
+        all_blocks = Block.search([
+            ("active",     "=", True),
+            ("date_start", "<=", block_end),
+            ("date_end",   ">=", block_start),
+        ])
+        for blk in all_blocks:
+            cur = max(blk.date_start, block_start)
+            end = min(blk.date_end, block_end)
+            while cur <= end:
+                calendar_events.append({
+                    "id":           f"block_{blk.id}_{cur}",
+                    "title":        blk.name,
+                    "date":         str(cur),
+                    "note":         blk.note or blk.name,
+                    "type":         "blocked",
+                    "color":        "#9ca3af",
+                    "url":          "#",
+                    "slot":         "",
+                    "slot_label":   blk.note or blk.name,
+                    "state":        "blocked",
+                    "payment_mode": "",
+                })
+                cur += timedelta(days=1)
 
         # Markup tells QWeb this string is already safe (no extra HTML-escaping)
         safe_json = json.dumps(calendar_events, ensure_ascii=True)

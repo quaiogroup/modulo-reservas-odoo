@@ -25,6 +25,7 @@
     # VISTAS PRIMERO
     'views/office_views.xml',
     'views/booking_views.xml',
+    'views/office_block_views.xml',
     'views/coworking_plan_views.xml',
     'views/coworking_subscription_views.xml',
     'views/availability_views.xml',

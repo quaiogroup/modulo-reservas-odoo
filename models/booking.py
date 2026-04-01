@@ -420,6 +420,16 @@ class SpootOfficeBooking(models.Model):
 
         date = fields.Date.from_string(date_str)
 
+        # Check admin blocks first
+        blocked, reason = self.env["spoot.office.block"].is_date_blocked(office_id, date)
+        if blocked:
+            return {
+                "available": [],
+                "taken": [],
+                "blocked": True,
+                "block_reason": reason,
+            }
+
         taken = self.sudo().search([
             ("office_id", "=", int(office_id)),
             ("date", "=", date),

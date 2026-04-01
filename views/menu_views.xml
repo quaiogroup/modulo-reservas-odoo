@@ -74,6 +74,13 @@
               action="spoot_office_booking.action_spoot_coworking_subscription"
               sequence="30"/>
 
+    <!-- Bloqueos de fechas -->
+    <menuitem id="menu_spoot_office_block"
+              name="Bloqueos de fechas"
+              parent="menu_spoot_office_root"
+              action="spoot_office_booking.action_spoot_office_block"
+              sequence="35"/>
+
     <!-- Disponibilidad (dashboard OWL) -->
     <menuitem id="menu_spoot_office_availability_dashboard"
               name="Disponibilidad"

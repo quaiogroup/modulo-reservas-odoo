@@ -13,7 +13,21 @@ async function refreshAvailability(officeId, day) {
   if (data.error) return;
 
   const select = document.getElementById("spoot_slot");
-  const hint = document.getElementById("spoot_slot_hint");
+  const hint   = document.getElementById("spoot_slot_hint");
+
+  // Fecha bloqueada por el administrador
+  if (data.blocked) {
+    Array.from(select.options).forEach(opt => {
+      if (!opt.value) return;
+      opt.disabled = true;
+    });
+    select.value = "";
+    hint.textContent = `🚫 ${data.block_reason || "Fecha no disponible."}`;
+    hint.style.color = "#dc2626";
+    return;
+  }
+
+  hint.style.color = "";
   const available = new Set(data.available);
 
   // Recorre opciones y deshabilita según disponibilidad

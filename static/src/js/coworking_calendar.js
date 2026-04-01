@@ -103,9 +103,13 @@
                 var dayEvs = byDate[ds] || [];
                 var hasEvs = dayEvs.length > 0;
 
+                var isBlocked = dayEvs.some(function(ev) { return ev.type === 'blocked'; });
+                var bookingEvs = dayEvs.filter(function(ev) { return ev.type !== 'blocked'; });
+
                 var cls = 'spoot-cal-cell';
-                if (isToday) cls += ' sc-today';
-                if (hasEvs) cls += ' sc-has-events';
+                if (isToday)   cls += ' sc-today';
+                if (isBlocked) cls += ' sc-blocked';
+                else if (bookingEvs.length > 0) cls += ' sc-has-events';
 
                 buf.push('<div class="' + cls + '">');
 
@@ -116,30 +120,40 @@
                     buf.push('<span class="spoot-cal-num">' + day + '</span>');
                 }
 
-                // Event pills (up to 2 visible, then overflow badge)
-                var max = 2;
-                var shown = Math.min(dayEvs.length, max);
-                for (var i = 0; i < shown; i++) {
-                    var ev = dayEvs[i];
-                    var bg = hexToRgba(ev.color, 0.14);
-                    var border = hexToRgba(ev.color, 0.35);
-                    var pillLabel = truncate(ev.title, 12);
-                    var tooltip = esc(ev.title) + ' \u2014 ' + esc(ev.slot_label);
+                // Blocked: show a single indicator instead of pills
+                if (isBlocked) {
+                    var blockNote = dayEvs.find(function(ev) { return ev.type === 'blocked'; });
                     buf.push(
-                        '<a href="' + esc(ev.url) + '" ' +
-                        'class="spoot-cal-pill" ' +
-                        'style="background:' + bg + ';color:' + esc(ev.color) + ';border-color:' + border + ';" ' +
-                        'title="' + tooltip + '">' +
-                        esc(pillLabel) +
-                        '</a>'
+                        '<span class="spoot-cal-blocked-label" title="' +
+                        esc(blockNote ? blockNote.slot_label : 'Bloqueado') + '">' +
+                        'No disponible' +
+                        '</span>'
                     );
-                }
-
-                if (dayEvs.length > max) {
-                    buf.push(
-                        '<a href="/my/office-bookings" class="spoot-cal-more">+' +
-                        (dayEvs.length - max) + ' m\u00e1s</a>'
-                    );
+                } else {
+                    // Regular event pills (up to 2 visible, then overflow badge)
+                    var max = 2;
+                    var shown = Math.min(bookingEvs.length, max);
+                    for (var i = 0; i < shown; i++) {
+                        var ev = bookingEvs[i];
+                        var bg = hexToRgba(ev.color, 0.14);
+                        var border = hexToRgba(ev.color, 0.35);
+                        var pillLabel = truncate(ev.title, 12);
+                        var tooltip = esc(ev.title) + ' \u2014 ' + esc(ev.slot_label);
+                        buf.push(
+                            '<a href="' + esc(ev.url) + '" ' +
+                            'class="spoot-cal-pill" ' +
+                            'style="background:' + bg + ';color:' + esc(ev.color) + ';border-color:' + border + ';" ' +
+                            'title="' + tooltip + '">' +
+                            esc(pillLabel) +
+                            '</a>'
+                        );
+                    }
+                    if (bookingEvs.length > max) {
+                        buf.push(
+                            '<a href="/my/office-bookings" class="spoot-cal-more">+' +
+                            (bookingEvs.length - max) + ' m\u00e1s</a>'
+                        );
+                    }
                 }
 
                 buf.push('</div>'); // .spoot-cal-cell
