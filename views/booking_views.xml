@@ -117,29 +117,35 @@
                        decoration-success="state == 'confirmed'"
                        decoration-muted="state == 'cancelled'"/>
 
-                <!-- Payment method — badge -->
-                <field name="payment_mode" string="Método de pago"
+                <!-- Payment method — badge prominente -->
+                <field name="payment_mode" string="Cómo pagó"
                        widget="badge"
                        decoration-success="payment_mode == 'plan'"
                        decoration-info="payment_mode == 'bold'"/>
 
-                <!-- Paid: only meaningful for Bold bookings -->
-                <field name="paid" string="Pagado" widget="boolean_toggle" optional="show"/>
+                <!-- Bold: mostrar si ya está pagado o pendiente -->
+                <field name="paid" string="Pago recibido"
+                       widget="boolean_toggle"
+                       optional="show"
+                       column_invisible="payment_mode == 'plan'"/>
 
-                <!-- Amount (hide when paid via plan, but keep column for easy scan) -->
+                <!-- Bold: importe cobrado -->
                 <field name="amount_total" string="Importe"
                        widget="monetary"
                        options="{'currency_field': 'currency_id'}"
-                       optional="show"/>
+                       optional="show"
+                       column_invisible="payment_mode == 'plan'"/>
                 <field name="currency_id" column_invisible="True"/>
 
-                <!-- Plan usage -->
-                <field name="plan_days_consumed" string="Días plan"
-                       optional="show"/>
-                <field name="subscription_id"    string="Plan usado"
-                       optional="show"/>
+                <!-- Plan: días descontados y plan -->
+                <field name="plan_days_consumed" string="Días desc."
+                       optional="show"
+                       column_invisible="payment_mode == 'bold'"/>
+                <field name="subscription_id" string="Plan"
+                       optional="show"
+                       column_invisible="payment_mode == 'bold'"/>
 
-                <!-- Audit / technical (hidden by default, toggleable) -->
+                <!-- Audit (ocultos por defecto) -->
                 <field name="bold_payment_status" string="Estado Bold" optional="hide"/>
                 <field name="create_date"         string="Creada el"   optional="hide"/>
 
@@ -224,56 +230,52 @@
                     <!-- ── Notebook ──────────────────────────────────── -->
                     <notebook>
 
-                        <!-- TAB 1: Payment — adapts to Bold vs Plan -->
+                        <!-- TAB 1: Pago -->
                         <page string="Pago" name="page_payment">
-                            <group col="2">
 
-                                <!-- Método y estado (siempre visible) -->
-                                <group string="Método de pago">
-                                    <field name="payment_mode"/>
-                                    <field name="paid" string="Confirmado / pagado"
-                                           widget="boolean_toggle"/>
-                                    <field name="amount_total"
-                                           string="Importe cobrado"
-                                           widget="monetary"
-                                           options="{'currency_field': 'currency_id'}"
-                                           invisible="payment_mode == 'plan'"/>
-                                    <field name="currency_id" invisible="1"/>
-                                </group>
-
-                                <!-- Bold: tx info (solo si es pago externo) -->
-                                <group string="Transacción Bold"
-                                       invisible="payment_mode != 'bold'">
-                                    <field name="bold_order_id" readonly="1"/>
-                                    <field name="bold_tx_id"    readonly="1"/>
-                                    <field name="bold_payment_status" readonly="1"/>
-                                </group>
-
-                                <!-- Plan: datos del plan consumido (solo si es plan) -->
-                                <group string="Plan consumido"
-                                       invisible="payment_mode != 'plan'">
-                                    <field name="subscription_id"
-                                           options="{'no_create': True}"/>
-                                    <field name="plan_days_consumed"
-                                           string="Días descontados del plan"/>
-                                </group>
-
+                            <!-- Pasarela Bold -->
+                            <group string="Pago con pasarela (Bold)"
+                                   invisible="payment_mode != 'bold'">
+                                <field name="paid" string="Pago recibido"
+                                       widget="boolean_toggle"/>
+                                <field name="amount_total"
+                                       string="Importe cobrado"
+                                       widget="monetary"
+                                       options="{'currency_field': 'currency_id'}"/>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="bold_order_id"       readonly="1" string="Order ID Bold"/>
+                                <field name="bold_tx_id"          readonly="1" string="Transaction ID"/>
+                                <field name="bold_payment_status" readonly="1" string="Estado en Bold"/>
                             </group>
 
-                            <!-- Aviso plan -->
+                            <!-- Plan de días -->
+                            <group string="Pago con días de plan"
+                                   invisible="payment_mode != 'plan'">
+                                <field name="subscription_id"
+                                       string="Plan utilizado"
+                                       options="{'no_create': True}"/>
+                                <field name="plan_days_consumed"
+                                       string="Días descontados del plan"/>
+                            </group>
+
                             <div class="alert alert-success mt-2" role="alert"
                                  invisible="payment_mode != 'plan' or not subscription_id">
-                                Esta reserva fue pagada descontando saldo del plan.
-                                Al cancelarla se restauran los días consumidos automáticamente.
+                                Reserva cubierta con días del plan. Si se cancela,
+                                los días se restauran automáticamente.
                             </div>
+
+                            <div class="alert alert-info mt-2" role="alert"
+                                 invisible="payment_mode != 'bold' or paid">
+                                Pago pendiente de confirmación por pasarela Bold.
+                            </div>
+
                         </page>
 
-                        <!-- TAB 2: Technical / calendar sync -->
+                        <!-- TAB 2: Técnico -->
                         <page string="Técnico" name="page_technical">
                             <group>
                                 <field name="google_event_id"
                                        string="ID evento externo (Google, etc.)"/>
-                                <field name="need_payment" string="Requiere pago (interno)"/>
                                 <field name="reminder_sent" string="Recordatorio enviado"/>
                             </group>
                         </page>
