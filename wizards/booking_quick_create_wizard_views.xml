@@ -6,17 +6,31 @@
     <field name="arch" type="xml">
       <form string="Crear reserva rápida">
         <sheet>
-          <group>
+
+          <group string="Datos de la reserva">
             <field name="office_id"/>
             <field name="partner_id"/>
-          </group>
-          <group>
             <field name="date"/>
             <field name="slot_type"/>
           </group>
-          <group>
-            <field name="need_payment"/>
+
+          <group string="Método de pago">
+            <field name="payment_mode" widget="radio"/>
+            <field name="subscription_id"
+                   invisible="payment_mode != 'plan'"
+                   required="payment_mode == 'plan'"
+                   string="Plan activo del cliente"/>
           </group>
+
+          <div class="alert alert-info" role="alert"
+               invisible="payment_mode != 'plan'">
+            La reserva quedará <strong>confirmada</strong> y se descontarán los días del plan seleccionado.
+          </div>
+          <div class="alert alert-warning" role="alert"
+               invisible="payment_mode != 'bold'">
+            La reserva quedará en estado <strong>pendiente de pago</strong> hasta que Bold confirme el cobro.
+          </div>
+
         </sheet>
         <footer>
           <button string="Crear reserva" type="object" name="action_create_booking" class="btn-primary"/>
