@@ -78,7 +78,7 @@ class SpootOfficeAvailability(models.TransientModel):
             def slot_state(booking):
                 if not booking:
                     return ("free", False)
-                if booking.state == "pending_payment" or (booking.need_payment and not booking.paid):
+                if booking.state == "pending_payment" or (booking.payment_mode == "bold" and not booking.paid):
                     return ("pending", booking)
                 return ("busy", booking)
 

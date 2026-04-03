@@ -39,7 +39,7 @@
                 <filter string="Pagadas"   name="filter_paid"
                         domain="[('paid', '=', True)]"/>
                 <filter string="Sin pagar" name="filter_unpaid"
-                        domain="[('paid', '=', False), ('need_payment', '=', True), ('state', '!=', 'cancelled')]"/>
+                        domain="[('paid', '=', False), ('payment_mode', '=', 'bold'), ('state', '!=', 'cancelled')]"/>
 
                 <separator/>
 

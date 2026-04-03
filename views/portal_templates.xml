@@ -88,11 +88,14 @@
 
                                             <!-- Pagado -->
                                             <td class="text-center">
-                                                <t t-if="booking.paid">
+                                                <t t-if="booking.payment_mode == 'plan'">
+                                                    <span class="badge bg-success">Con plan</span>
+                                                </t>
+                                                <t t-elif="booking.paid">
                                                     <span class="badge bg-success">Sí</span>
                                                 </t>
                                                 <t t-else="">
-                                                    <span class="badge bg-danger">No</span>
+                                                    <span class="badge bg-danger">Pendiente</span>
                                                 </t>
                                             </td>
 
@@ -103,7 +106,7 @@
                                                     Ver
                                                 </a>
                                                
-<t t-if="booking.need_payment and not booking.paid and booking.state != 'cancelled' and bold_api_key">
+<t t-if="booking.payment_mode == 'bold' and not booking.paid and booking.state != 'cancelled' and bold_api_key">
   <script
     data-bold-button="dark-L"
     t-att-data-api-key="bold_api_key"
@@ -271,12 +274,15 @@
                                     <t t-esc="booking.end_datetime"/>
                                 </p>
                                 <p>
-                                    <strong>Pagado:</strong>
-                                    <t t-if="booking.paid">
-                                        <span class="text-success">Sí</span>
+                                    <strong>Pago:</strong>
+                                    <t t-if="booking.payment_mode == 'plan'">
+                                        <span class="text-success fw-semibold">Cubierto por plan</span>
+                                    </t>
+                                    <t t-elif="booking.paid">
+                                        <span class="text-success">Confirmado</span>
                                     </t>
                                     <t t-else="">
-                                        <span class="text-danger">No</span>
+                                        <span class="text-warning fw-semibold">Pendiente</span>
                                     </t>
                                 </p>
                             </div>
@@ -303,7 +309,7 @@
                         </t>
 
                         <!-- Total (Bold payment only) -->
-                        <t t-if="booking.payment_mode != 'plan' and booking.need_payment and booking.state != 'cancelled' and bold_amount">
+                        <t t-if="booking.payment_mode == 'bold' and not booking.paid and booking.state != 'cancelled' and bold_amount">
 <div class="alert alert-light border mt-3">
     <div class="d-flex justify-content-between align-items-center">
         <span class="fw-bold">Total a pagar:</span>

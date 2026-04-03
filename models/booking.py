@@ -77,13 +77,6 @@ class SpootOfficeBooking(models.Model):
         tracking=True,
     )
 
-    need_payment = fields.Boolean(
-        string="Requiere pago",
-        help="Indica si esta reserva debe ir asociada a un pago.",
-        default=True,
-        tracking=True,
-    )
-
     paid = fields.Boolean(
         string="Pagado",
         help="Se marcará en verdadero cuando el pago esté realizado.",
@@ -219,7 +212,6 @@ class SpootOfficeBooking(models.Model):
             "payment_mode": "plan",
             "subscription_id": subscription.id,
             "plan_days_consumed": cost,
-            "need_payment": False,
             "paid": True,
             "state": "confirmed",
         })

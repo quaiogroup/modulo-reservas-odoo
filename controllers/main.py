@@ -143,7 +143,6 @@ class SpootOfficeWebsite(http.Controller):
                     "partner_id": partner.id,
                     "date": date,
                     "slot_type": slot_type,
-                    "need_payment": False,
                     "state": "confirmed",
                     "payment_mode": "plan",
                     "paid": True,
@@ -167,7 +166,6 @@ class SpootOfficeWebsite(http.Controller):
                 "partner_id": partner.id,
                 "date": date,
                 "slot_type": slot_type,
-                "need_payment": True,
                 "state": "pending_payment",
                 "payment_mode": "bold",
             })
@@ -179,7 +177,7 @@ class SpootOfficeWebsite(http.Controller):
         return _render_detail()
 
     # ── JSON: disponibilidad mensual para el calendario de reserva ──────────
-    @http.route("/spoot/office/month-availability", type="json", auth="public", website=True)
+    @http.route("/spoot/office/month-availability", type="jsonrpc", auth="public", website=True)
     def office_month_availability(self, office_id=None, year=None, month=None, exclude_id=None, **kw):
         import calendar as _cal
         from datetime import date as _date, timedelta as _td
@@ -269,7 +267,7 @@ class SpootOfficeWebsite(http.Controller):
         return result
 
     # ── JSON: disponibilidad de slots (usado por office_booking.js) ──────────
-    @http.route("/spoot/office/availability", type="json", auth="user", website=True)
+    @http.route("/spoot/office/availability", type="jsonrpc", auth="user", website=True)
     def office_slot_availability(self, office_id=None, day=None, exclude_id=None, **kw):
         if not office_id or not day:
             return {"available": [], "taken": []}
@@ -278,7 +276,7 @@ class SpootOfficeWebsite(http.Controller):
         )
 
     # ── JSON: eventos de calendario FullCalendar (usado por office_calendar.js) ─
-    @http.route("/spoot/calendar/events", type="json", auth="user", website=True)
+    @http.route("/spoot/calendar/events", type="jsonrpc", auth="user", website=True)
     def spoot_calendar_events(self, office_id=None, start=None, end=None, **kw):
         if not office_id or not start or not end:
             return []
@@ -448,7 +446,7 @@ class SpootOfficePortal(CustomerPortal):
 
         if api_key and secret_key:
             for b in bookings:
-                if not (b.need_payment and not b.paid and b.state != "cancelled"):
+                if not (b.payment_mode == "bold" and not b.paid and b.state != "cancelled"):
                     continue
 
                 amount_int = int(round(b._get_amount_to_pay()))
@@ -490,7 +488,7 @@ class SpootOfficePortal(CustomerPortal):
             "cancel_msg": cancel_msg,
         })
 
-        if booking.need_payment and not booking.paid and booking.state != "cancelled":
+        if booking.payment_mode == "bold" and not booking.paid and booking.state != "cancelled":
             ICP = request.env["ir.config_parameter"].sudo()
             api_key = (ICP.get_param("bold.api_key") or "").strip()
             secret_key = (ICP.get_param("bold.secret_key") or "").strip()

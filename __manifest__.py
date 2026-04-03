@@ -17,6 +17,7 @@
     ],
 'data': [
     'security/ir.model.access.csv',
+    'security/ir_rules.xml',
 
     # DATOS (templates y crons) — antes de las vistas
     'data/mail_templates.xml',
