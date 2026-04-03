@@ -299,24 +299,28 @@ class SpootOfficeBooking(models.Model):
 
     # ── Email notification helpers ────────────────────────────────────────
     def _notify_customer(self, template_xml_id):
-        """Send a transactional email to the booking's customer partner."""
+        """Send a transactional email to the booking's customer partner.
+        Returns True if the email was actually sent, False otherwise."""
         self.ensure_one()
         if not self.partner_id.email:
             _logger.warning(
                 "[NOTIFY] partner %s has no email — skipping template %s",
                 self.partner_id.id, template_xml_id,
             )
-            return
+            return False
         try:
             template = self.env.ref(template_xml_id, raise_if_not_found=False)
             if template:
                 template.sudo().send_mail(self.id, force_send=True)
                 _logger.info("[NOTIFY] customer email sent — template=%s booking=%s", template_xml_id, self.id)
+                return True
             else:
                 _logger.warning("[NOTIFY] template not found: %s", template_xml_id)
+                return False
         except Exception as exc:
             _logger.error("[NOTIFY] customer email FAILED — template=%s booking=%s error=%s",
                           template_xml_id, self.id, exc)
+            return False
 
     def _notify_admin(self, template_xml_id):
         """Send a notification email to the configured administrator address."""

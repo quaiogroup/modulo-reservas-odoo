@@ -156,9 +156,12 @@ class SpootOfficeWebsite(http.Controller):
                     booking.id, slot_type, cost, new_remaining, subscription.id,
                 )
                 # Notify customer (plan confirmation) and admin (new booking)
-                booking._notify_customer("spoot_office_booking.mail_template_booking_confirmed_plan")
+                email_sent = booking._notify_customer("spoot_office_booking.mail_template_booking_confirmed_plan")
                 booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
-                return request.render("spoot_office_booking.website_booking_thanks", {"booking": booking})
+                return request.render("spoot_office_booking.website_booking_thanks", {
+                    "booking": booking,
+                    "email_sent": email_sent,
+                })
 
             # ── BOLD PAYMENT MODE ──────────────────────────────────────────
             booking = request.env["spoot.office.booking"].sudo().create({
@@ -403,14 +406,18 @@ class SpootOfficePortal(CustomerPortal):
                 "[BOLD RETORNO] action_mark_paid called — %s id=%s",
                 record_type, record.id,
             )
+            if record_type == "booking":
+                return redirect(f"/my/office-bookings/{record.id}?bold_ok=1")
+            return redirect("/my/coworking?plan_ok=1")
         else:
             record.sudo().write({"bold_payment_status": tx_status or "PROCESSING"})
             _logger.info(
                 "[BOLD RETORNO] non-approved status=%s written to %s id=%s",
                 tx_status, record_type, record.id,
             )
-
-        return redirect("/my/coworking")
+            if record_type == "booking":
+                return redirect(f"/my/office-bookings/{record.id}")
+            return redirect("/my/coworking")
 
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
@@ -475,7 +482,7 @@ class SpootOfficePortal(CustomerPortal):
         values.update({"dbg_api_len": len(api_key), "dbg_sec_len": len(secret_key)})
         return request.render("spoot_office_booking.portal_my_bookings", values)
     @http.route("/my/office-bookings/<int:booking_id>", type="http", auth="user", website=True)
-    def portal_booking_detail(self, booking_id, cancel_error=None, cancel_msg=None, **kw):
+    def portal_booking_detail(self, booking_id, cancel_error=None, cancel_msg=None, bold_ok=None, **kw):
         booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
         if not booking or booking.partner_id != request.env.user.partner_id:
             return request.redirect("/my")
@@ -486,6 +493,7 @@ class SpootOfficePortal(CustomerPortal):
             "page_name": "office_bookings",
             "cancel_error": cancel_error,
             "cancel_msg": cancel_msg,
+            "bold_ok": bold_ok,
         })
 
         if booking.payment_mode == "bold" and not booking.paid and booking.state != "cancelled":
@@ -841,7 +849,7 @@ class SpootOfficePortal(CustomerPortal):
         return request.render("spoot_office_booking.coworking_checkout_page", values)
 
     @http.route(['/my/coworking'], type='http', auth="user", website=True)
-    def my_coworking_dashboard(self, **kwargs):
+    def my_coworking_dashboard(self, plan_ok=None, **kwargs):
         partner = request.env.user.partner_id
 
         subscription = request.env['spoot.coworking.subscription'].sudo().search([
@@ -933,12 +941,23 @@ class SpootOfficePortal(CustomerPortal):
         safe_json = json.dumps(calendar_events, ensure_ascii=True)
         safe_json = safe_json.replace('</', '<\\/')   # prevent </script> injection
 
+        # Plan usage history: bookings that consumed days from the active plan
+        plan_bookings = False
+        if subscription:
+            plan_bookings = request.env['spoot.office.booking'].sudo().search([
+                ('partner_id', '=', partner.id),
+                ('payment_mode', '=', 'plan'),
+                ('subscription_id', '=', subscription.id),
+            ], order="date desc")
+
         values = self._prepare_portal_layout_values()
         values.update({
             'subscription': subscription,
             'bookings': bookings,
+            'plan_bookings': plan_bookings,
             'today': Date.today(),
             'page_name': 'coworking',
+            'plan_ok': plan_ok,
             'booking_total': len(all_bookings),
             'booking_confirmed': len(all_bookings.filtered(lambda b: b.state == 'confirmed')),
             'booking_pending': len(all_bookings.filtered(lambda b: b.state == 'pending_payment')),

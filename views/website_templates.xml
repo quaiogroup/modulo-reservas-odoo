@@ -586,7 +586,20 @@
                   : 'Descuenta 0.5 ó 1 día';
 
                 var insuf = isPlan &amp;&amp; slot &amp;&amp; remaining &lt; cost;
-                if (warnEl) warnEl.classList.toggle('d-none', !insuf);
+
+                // Auto-switch to Bold when plan can't cover this slot
+                if (insuf &amp;&amp; radioBold) {
+                  radioBold.checked = true;
+                  isPlan = false;
+                  insuf = false;
+                  if (warnEl) {
+                    warnEl.textContent = 'Saldo insuficiente — cambiado a pago con Bold.';
+                    warnEl.classList.remove('d-none');
+                    setTimeout(function(){ warnEl.classList.add('d-none'); }, 4000);
+                  }
+                } else {
+                  if (warnEl) warnEl.classList.add('d-none');
+                }
 
                 if (lblPlan &amp;&amp; lblBold) {
                   if (isPlan) {
@@ -599,9 +612,22 @@
                 }
 
                 if (submitBtn &amp;&amp; selectedSlot) {
-                  submitBtn.disabled = !!insuf;
+                  submitBtn.disabled = false;
                   submitBtn.textContent = isPlan ? 'Confirmar con mi plan' : 'Confirmar y pagar con Bold';
                 }
+              }
+
+              /* ── Init: disable plan if no balance ──────────────────── */
+              if (radioPlan &amp;&amp; remaining &lt; 0.5) {
+                radioPlan.disabled = true;
+                if (lblPlan) {
+                  lblPlan.style.opacity = '0.45';
+                  lblPlan.style.cursor = 'not-allowed';
+                  var noBalLabel = lblPlan.querySelector('#plan_cost_label');
+                  if (noBalLabel) noBalLabel.textContent = 'Sin días disponibles';
+                }
+                if (radioBold) radioBold.checked = true;
+                updatePaymentUI();
               }
 
               /* ── Wire events ───────────────────────────────────────── */
@@ -648,36 +674,98 @@
   <template id="website_booking_thanks" name="Reserva confirmada">
     <t t-call="website.layout">
       <div class="container py-5">
-        <div class="mx-auto text-center" style="max-width: 720px;">
-          <h1 class="mb-2">¡Reserva registrada!</h1>
-          <p class="text-muted mb-3">
-            Registramos tu reserva para <b><t t-esc="booking.office_id.name"/></b>
-            el <b><t t-esc="booking.date"/></b>.
-          </p>
+        <div class="mx-auto" style="max-width: 640px;">
 
-          <!-- Referencia de reserva -->
-          <div class="d-inline-block mb-4 px-4 py-3 rounded-3"
-               style="background:#f0fdf4; border:1px solid #86efac;">
-            <div class="text-muted mb-1" style="font-size:12px; letter-spacing:.08em; text-transform:uppercase;">
-              Referencia de reserva
+          <!-- Icono + título -->
+          <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                 style="width:72px; height:72px; background:#d1fae5; font-size:2rem; line-height:1;">
+              ✓
             </div>
-            <div class="fw-bold" style="font-size:24px; letter-spacing:.1em; color:#065f46; font-family:monospace;">
-              <t t-esc="booking.name"/>
+            <h2 class="fw-bold mb-1">¡Reserva confirmada!</h2>
+            <t t-if="email_sent">
+              <p class="text-muted mb-0">
+                Tu espacio está reservado. Enviamos un correo de confirmación a
+                <strong><t t-esc="booking.partner_id.email"/></strong>.
+              </p>
+            </t>
+            <t t-else="">
+              <p class="text-muted mb-0">Tu espacio está reservado.</p>
+            </t>
+          </div>
+
+          <!-- Card con detalle de la reserva -->
+          <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+
+              <!-- Referencia -->
+              <div class="d-flex justify-content-between align-items-center mb-3 pb-3"
+                   style="border-bottom:1px solid #e5e7eb;">
+                <span class="text-muted small text-uppercase fw-semibold"
+                      style="letter-spacing:.06em;">Referencia</span>
+                <span class="fw-bold" style="font-family:monospace; font-size:1.1rem; color:#065f46;">
+                  <t t-esc="booking.name"/>
+                </span>
+              </div>
+
+              <!-- Detalle -->
+              <div class="row g-3">
+                <div class="col-6">
+                  <p class="text-muted small mb-1">Oficina</p>
+                  <p class="fw-semibold mb-0"><t t-esc="booking.office_id.name"/></p>
+                </div>
+                <div class="col-6">
+                  <p class="text-muted small mb-1">Fecha</p>
+                  <p class="fw-semibold mb-0"><t t-esc="booking.date"/></p>
+                </div>
+                <div class="col-6">
+                  <p class="text-muted small mb-1">Franja</p>
+                  <p class="fw-semibold mb-0">
+                    <t t-if="booking.slot_type == 'morning'">Mañana (8:00 – 12:00)</t>
+                    <t t-elif="booking.slot_type == 'afternoon'">Tarde (14:00 – 18:00)</t>
+                    <t t-else="">Día completo (8:00 – 18:00)</t>
+                  </p>
+                </div>
+                <div class="col-6">
+                  <p class="text-muted small mb-1">Estado</p>
+                  <span class="badge rounded-pill px-3 py-1"
+                        style="background:#d1fae5; color:#065f46;">
+                    ✓ Confirmada
+                  </span>
+                </div>
+
+                <!-- Plan info -->
+                <t t-if="booking.payment_mode == 'plan' and booking.subscription_id">
+                  <div class="col-12">
+                    <div class="rounded-3 p-3 mt-1"
+                         style="background:#f0fdf4; border:1px solid #86efac;">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-success fw-semibold" style="font-size:.85rem;">
+                          Pagado con plan · <t t-esc="booking.subscription_id.plan_id.name"/>
+                        </span>
+                        <span class="text-muted" style="font-size:.82rem;">
+                          <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong> día(s) descontados
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </t>
+              </div>
+
             </div>
           </div>
 
+          <!-- Acciones -->
           <div class="d-flex justify-content-center gap-2 flex-wrap">
-            <a href="/my/coworking" class="btn btn-primary rounded-pill px-4">
-              Ver mis reservas
+            <a t-att-href="'/my/office-bookings/%s' % booking.id"
+               class="btn btn-primary rounded-pill px-4">
+              Ver reserva
             </a>
             <a href="/offices" class="btn btn-outline-secondary rounded-pill px-4">
               Reservar otra
             </a>
           </div>
 
-          <p class="text-muted mt-4 mb-0">
-            Si configuramos correo/calendario, aquí también confirmaremos el envío automático.
-          </p>
         </div>
       </div>
     </t>
@@ -886,7 +974,7 @@
     <div class="container py-5">
 
       <!-- ── PAGE HEADER ─────────────────────────────────────────── -->
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
           <h2 class="fw-bold mb-1">Mi Coworking</h2>
           <p class="text-muted mb-0">
@@ -897,6 +985,17 @@
           Reservar espacio
         </a>
       </div>
+
+      <!-- Plan activado tras pago Bold -->
+      <t t-if="plan_ok == '1'">
+        <div class="alert alert-success d-flex align-items-start gap-2 rounded-4 mb-4" role="alert">
+          <span style="font-size:1.3rem;">✅</span>
+          <div>
+            <strong>¡Plan activado!</strong><br/>
+            Tu plan de coworking está activo. Ya puedes usar tus días para reservar oficinas.
+          </div>
+        </div>
+      </t>
 
       <!-- ── PLAN + STATS ROW ────────────────────────────────────── -->
       <div class="row g-4 mb-5">
@@ -1285,6 +1384,101 @@
           </div>
         </div>
       </t>
+
+      <!-- ── HISTORIAL DE DÍAS DEL PLAN ──────────────────────────── -->
+      <t t-if="subscription and plan_bookings">
+        <div class="mt-5">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Historial de uso del plan</h5>
+            <span class="badge rounded-pill px-3 py-2"
+                  style="background:#d1fae5; color:#065f46; font-size:.8rem;">
+              <t t-esc="'%.1f' % days_used"/> días usados de <t t-esc="subscription.total_days"/>
+            </span>
+          </div>
+
+          <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead style="background:#f0fdf4;">
+                  <tr>
+                    <th class="ps-4 py-3 text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Oficina</th>
+                    <th class="py-3 text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Fecha</th>
+                    <th class="py-3 text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Franja</th>
+                    <th class="py-3 text-center text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Estado</th>
+                    <th class="py-3 text-center text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Días desc.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <t t-foreach="plan_bookings" t-as="pb">
+                    <tr>
+                      <td class="ps-4">
+                        <span class="d-block fw-semibold"><t t-esc="pb.office_id.name"/></span>
+                        <span class="d-block text-muted"
+                              style="font-family:monospace; font-size:.76rem;">
+                          <t t-esc="pb.name"/>
+                        </span>
+                      </td>
+                      <td><t t-esc="pb.date"/></td>
+                      <td>
+                        <t t-if="pb.slot_type == 'morning'">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#e0f2fe; color:#0369a1; font-size:.75rem;">
+                            Mañana
+                          </span>
+                        </t>
+                        <t t-elif="pb.slot_type == 'afternoon'">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#fef3c7; color:#92400e; font-size:.75rem;">
+                            Tarde
+                          </span>
+                        </t>
+                        <t t-else="">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#f3f4f6; color:#374151; font-size:.75rem;">
+                            Día completo
+                          </span>
+                        </t>
+                      </td>
+                      <td class="text-center">
+                        <t t-if="pb.state == 'confirmed'">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#d1fae5; color:#065f46; font-size:.75rem;">
+                            Confirmada
+                          </span>
+                        </t>
+                        <t t-elif="pb.state == 'cancelled'">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#fee2e2; color:#991b1b; font-size:.75rem;">
+                            Cancelada
+                          </span>
+                        </t>
+                        <t t-else="">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#f3f4f6; color:#9ca3af; font-size:.75rem;">
+                            <t t-esc="pb.state"/>
+                          </span>
+                        </t>
+                      </td>
+                      <td class="text-center">
+                        <span class="fw-bold"
+                              t-att-style="'color:#065f46;' if pb.state != 'cancelled' else 'color:#9ca3af; text-decoration:line-through;'">
+                          <t t-esc="'%.1f' % pb.plan_days_consumed"/>
+                        </span>
+                      </td>
+                    </tr>
+                  </t>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </t>
+      <!-- ────────────────────────────────────────────────────────── -->
 
     </div>
   </t>
