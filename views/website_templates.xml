@@ -755,6 +755,35 @@
             </div>
           </div>
 
+          <!-- Agregar al calendario -->
+          <t t-if="gcal_url">
+            <div class="card border-0 rounded-4 mb-4"
+                 style="background:#f8fafc; border:1px solid #e5e7eb !important;">
+              <div class="card-body py-3 px-4">
+                <p class="fw-semibold mb-2" style="font-size:.9rem;">
+                  ¿Quieres añadirlo a tu calendario?
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                  <a t-att-href="gcal_url" target="_blank" rel="noopener"
+                     class="btn btn-sm rounded-pill px-3 fw-semibold"
+                     style="background:#4285f4; color:#fff; border:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                         viewBox="0 0 24 24" fill="currentColor" class="me-1"
+                         style="vertical-align:-.1em;">
+                      <path d="M19.5 3h-2.25V1.5h-1.5V3h-7.5V1.5h-1.5V3H4.5A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3zm0 16.5h-15V9h15v10.5zM6.75 12h1.5v1.5h-1.5zm0 3h1.5v1.5h-1.5zm3-3h1.5v1.5h-1.5zm0 3h1.5v1.5h-1.5zm3-3h1.5v1.5h-1.5zm0 3h1.5v1.5h-1.5z"/>
+                    </svg>
+                    Google Calendar
+                  </a>
+                  <a t-att-href="ics_url"
+                     class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                    &#8595; Descargar .ics
+                    <span class="text-muted ms-1" style="font-size:.72rem;">Outlook · Apple</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </t>
+
           <!-- Acciones -->
           <div class="d-flex justify-content-center gap-2 flex-wrap">
             <a t-att-href="'/my/office-bookings/%s' % booking.id"

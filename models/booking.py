@@ -793,6 +793,55 @@ END:VCALENDAR
 """
         return ics
 
+    def _get_google_calendar_url(self):
+        """Returns a Google Calendar 'add event' URL pre-filled with booking data.
+        No OAuth required — opens directly in the user's browser.
+        Computes times from date+slot_type directly to avoid stored-compute issues."""
+        self.ensure_one()
+        if not self.date or not self.slot_type:
+            return False
+
+        from urllib.parse import urlencode
+        from datetime import datetime as _dt, time as _time
+
+        _slot_hours = {
+            "morning":   (8,  0, 12, 0),
+            "afternoon": (14, 0, 18, 0),
+            "full_day":  (8,  0, 18, 0),
+        }
+        hours = _slot_hours.get(self.slot_type)
+        if not hours:
+            return False
+
+        sh, sm, eh, em = hours
+        start = _dt.combine(self.date, _time(sh, sm))
+        end   = _dt.combine(self.date, _time(eh, em))
+
+        def fmt(d):
+            return d.strftime("%Y%m%dT%H%M%S")
+
+        _slot_labels = {
+            "morning":   "Manana (8:00-12:00)",
+            "afternoon": "Tarde (14:00-18:00)",
+            "full_day":  "Dia completo (8:00-18:00)",
+        }
+        details = (
+            "Oficina: {}\nFranja: {}\nReferencia: {}".format(
+                self.office_id.name or "",
+                _slot_labels.get(self.slot_type, self.slot_type),
+                self.name or "",
+            )
+        )
+
+        params = urlencode({
+            "action":   "TEMPLATE",
+            "text":     "Reserva {}".format(self.office_id.name or "oficina"),
+            "dates":    "{}/{}".format(fmt(start), fmt(end)),
+            "details":  details,
+            "location": self.office_id.location or "",
+        })
+        return "https://calendar.google.com/calendar/render?{}".format(params)
+
     def _create_ics_attachment(self):
         self.ensure_one()
         ics_content = self._generate_ics_content()

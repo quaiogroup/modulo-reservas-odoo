@@ -161,6 +161,8 @@ class SpootOfficeWebsite(http.Controller):
                 return request.render("spoot_office_booking.website_booking_thanks", {
                     "booking": booking,
                     "email_sent": email_sent,
+                    "gcal_url": booking._get_google_calendar_url(),
+                    "ics_url": f"/my/office-bookings/{booking.id}/calendar.ics",
                 })
 
             # ── BOLD PAYMENT MODE ──────────────────────────────────────────
@@ -488,12 +490,20 @@ class SpootOfficePortal(CustomerPortal):
             return request.redirect("/my")
 
         values = self._prepare_portal_layout_values()
+        try:
+            gcal_url = booking._get_google_calendar_url() if booking.state != "cancelled" else False
+        except Exception:
+            gcal_url = False
+        ics_url = f"/my/office-bookings/{booking.id}/calendar.ics" if booking.state != "cancelled" else False
+
         values.update({
             "booking": booking,
             "page_name": "office_bookings",
             "cancel_error": cancel_error,
             "cancel_msg": cancel_msg,
             "bold_ok": bold_ok,
+            "gcal_url": gcal_url,
+            "ics_url": ics_url,
         })
 
         if booking.payment_mode == "bold" and not booking.paid and booking.state != "cancelled":
@@ -625,9 +635,30 @@ class SpootOfficePortal(CustomerPortal):
             return request.redirect("/my/office-bookings/%d" % booking.id)
 
         return request.render("spoot_office_booking.portal_booking_reschedule", values)
-    
 
-    
+    @http.route(
+        "/my/office-bookings/<int:booking_id>/calendar.ics",
+        type="http", auth="user", website=True,
+    )
+    def portal_booking_ics(self, booking_id, **kw):
+        booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
+        if not booking or booking.partner_id != request.env.user.partner_id:
+            return request.redirect("/my")
+
+        ics = booking._generate_ics_content()
+        if not ics:
+            return request.redirect(f"/my/office-bookings/{booking_id}")
+
+        filename = f"reserva_{booking.name or booking_id}.ics"
+        return Response(
+            ics,
+            status=200,
+            headers={
+                "Content-Type": "text/calendar; charset=utf-8",
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+
     @http.route("/bold/webhook", type="http", auth="public", csrf=False, methods=["POST"], sitemap=False)
     def bold_webhook(self, **kw):
         ICP = request.env["ir.config_parameter"].sudo()

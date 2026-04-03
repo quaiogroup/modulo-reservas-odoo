@@ -349,6 +349,27 @@
                             ></script>
                     </t>
 
+  <!-- Agregar al calendario (solo reservas confirmadas) -->
+<t t-if="gcal_url">
+    <div class="px-3 pb-3">
+        <div class="rounded-3 p-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+            <p class="fw-semibold mb-2" style="font-size:.85rem;">Añadir al calendario</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a t-att-href="gcal_url" target="_blank" rel="noopener"
+                   class="btn btn-sm rounded-pill px-3 fw-semibold"
+                   style="background:#4285f4; color:#fff; border:none; font-size:.82rem;">
+                    Google Calendar
+                </a>
+                <a t-att-href="ics_url"
+                   class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                   style="font-size:.82rem;">
+                    &#8595; .ics — Outlook / Apple
+                </a>
+            </div>
+        </div>
+    </div>
+</t>
+
   <!-- Acciones: Cambiar y Cancelar -->
 <t t-if="booking.state != 'cancelled'">
     <div class="p-3 d-flex flex-wrap gap-2 align-items-start">
