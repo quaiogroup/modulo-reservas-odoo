@@ -347,6 +347,143 @@ class SpootOfficeBooking(models.Model):
             _logger.error("[NOTIFY] admin email FAILED — template=%s booking=%s error=%s",
                           template_xml_id, self.id, exc)
 
+    # ── Analytics ─────────────────────────────────────────────────────────
+    @api.model
+    def get_analytics_data(self):
+        import calendar as _cal
+        from datetime import date, timedelta
+        from collections import Counter
+
+        today = date.today()
+        MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun',
+                       'Jul','Ago','Sep','Oct','Nov','Dic']
+        C = 251.327  # circumference r=40
+
+        # ── últimos 6 meses ────────────────────────────────────────────
+        monthly = []
+        for i in range(5, -1, -1):
+            m, y = today.month - i, today.year
+            while m <= 0:
+                m += 12; y -= 1
+            first = date(y, m, 1)
+            last  = date(y, m, _cal.monthrange(y, m)[1])
+            bk = self.search([('date', '>=', first), ('date', '<=', last)])
+            revenue = sum(
+                b.amount_total for b in bk
+                if b.payment_mode == 'bold' and b.paid
+            )
+            monthly.append({
+                'label':     f"{MONTH_NAMES[m-1]} {y}",
+                'bookings':  len(bk.filtered(lambda b: b.state != 'cancelled')),
+                'cancelled': len(bk.filtered(lambda b: b.state == 'cancelled')),
+                'revenue':   revenue,
+            })
+
+        # ── este mes vs mes anterior ────────────────────────────────────
+        fm = date(today.year, today.month, 1)
+        lm_day = date(today.year, today.month,
+                      _cal.monthrange(today.year, today.month)[1])
+        this_bk = self.search([('date','>=',fm),('date','<=',lm_day),
+                                ('state','!=','cancelled')])
+        this_rev = sum(b.amount_total for b in this_bk
+                       if b.payment_mode == 'bold' and b.paid)
+
+        pm, py = today.month - 1, today.year
+        if pm <= 0: pm += 12; py -= 1
+        pfm = date(py, pm, 1)
+        plm = date(py, pm, _cal.monthrange(py, pm)[1])
+        prev_bk = self.search([('date','>=',pfm),('date','<=',plm),
+                                ('state','!=','cancelled')])
+        prev_rev = sum(b.amount_total for b in prev_bk
+                       if b.payment_mode == 'bold' and b.paid)
+
+        # ── ocupación por oficina (mes actual) ──────────────────────────
+        offices = self.env['spoot.office'].search([('active','=',True)])
+        total_slots = _cal.monthrange(today.year, today.month)[1] * 2
+        office_stats = []
+        for office in offices:
+            bk = self.search([
+                ('office_id','=', office.id),
+                ('date','>=', fm), ('date','<=', lm_day),
+                ('state','!=','cancelled'),
+            ])
+            consumed = sum(2 if b.slot_type == 'full_day' else 1 for b in bk)
+            rate = round(consumed / total_slots * 100, 1) if total_slots else 0
+            office_stats.append({
+                'name': office.name, 'consumed': consumed,
+                'total': total_slots, 'rate': rate,
+            })
+        office_stats.sort(key=lambda x: x['rate'], reverse=True)
+
+        # ── distribución últimos 6 meses ───────────────────────────────
+        m6, y6 = today.month - 5, today.year
+        while m6 <= 0: m6 += 12; y6 -= 1
+        all_bk = self.search([
+            ('date', '>=', date(y6, m6, 1)),
+            ('state', '!=', 'cancelled'),
+        ])
+        slots = {
+            'morning':   len(all_bk.filtered(lambda b: b.slot_type == 'morning')),
+            'afternoon': len(all_bk.filtered(lambda b: b.slot_type == 'afternoon')),
+            'full_day':  len(all_bk.filtered(lambda b: b.slot_type == 'full_day')),
+        }
+        slots_total = sum(slots.values()) or 1
+        payment = {
+            'bold': len(all_bk.filtered(lambda b: b.payment_mode == 'bold')),
+            'plan': len(all_bk.filtered(lambda b: b.payment_mode == 'plan')),
+        }
+        payment_total = sum(payment.values()) or 1
+
+        # donut segments: (label, value, pct, color, arc, rotate)
+        def build_donut(segments_def):
+            out, cum = [], 0
+            for label, val, total_val, color in segments_def:
+                pct = round(val / (total_val or 1) * 100)
+                arc = val / (total_val or 1) * C
+                out.append({
+                    'label': label, 'value': val, 'pct': pct,
+                    'color': color, 'arc': arc, 'rotate': -90 + cum * 3.6,
+                })
+                cum += pct
+            return out
+
+        slots_donut = build_donut([
+            ('Mañana',      slots['morning'],   slots_total, '#3b82f6'),
+            ('Tarde',       slots['afternoon'], slots_total, '#22c55e'),
+            ('Día completo',slots['full_day'],  slots_total, '#6366f1'),
+        ])
+        pay_donut = build_donut([
+            ('Bold',  payment['bold'], payment_total, '#f59e0b'),
+            ('Plan',  payment['plan'], payment_total, '#6366f1'),
+        ])
+
+        # ── top 5 clientes ─────────────────────────────────────────────
+        counter = Counter(b.partner_id.id for b in all_bk)
+        top_clients = []
+        for pid, cnt in counter.most_common(5):
+            partner = self.env['res.partner'].browse(pid)
+            rev = sum(b.amount_total for b in all_bk
+                      if b.partner_id.id == pid and b.payment_mode == 'bold' and b.paid)
+            top_clients.append({'name': partner.name or '—', 'count': cnt, 'revenue': rev})
+
+        return {
+            'monthly':       monthly,
+            'offices':       office_stats,
+            'slots_donut':   slots_donut,
+            'pay_donut':     pay_donut,
+            'slots':         slots,
+            'payment':       payment,
+            'top_clients':   top_clients,
+            'donut_circ':    C,
+            'totals': {
+                'this_bookings': len(this_bk),
+                'this_revenue':  this_rev,
+                'prev_bookings': len(prev_bk),
+                'prev_revenue':  prev_rev,
+            },
+            'currency': self.env.company.currency_id.symbol or '$',
+        }
+
     # ── Scheduled reminder ────────────────────────────────────────────────
     @api.model
     def _cron_send_booking_reminders(self):

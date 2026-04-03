@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+<t t-name="spoot_office_booking.SpootAnalyticsDashboard">
+<div class="an-root">
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════════ -->
+  <div class="an-header">
+    <div>
+      <div class="an-header__title">Reportes y analíticas</div>
+      <div class="an-header__sub">Últimos 6 meses · <t t-esc="new Date().toLocaleDateString('es-CO',{month:'long',year:'numeric'})"/></div>
+    </div>
+    <div class="an-header__actions">
+      <button class="an-btn an-btn--ghost" t-on-click="openBookings">Ver reservas →</button>
+      <button class="an-btn an-btn--export" t-on-click="exportCsv">⬇ Exportar CSV</button>
+    </div>
+  </div>
+
+  <!-- filtros de exportación (colapsables) -->
+  <t t-if="state.showExport">
+    <div class="an-export-panel">
+      <div class="an-export-panel__title">Exportar reservas a CSV</div>
+      <div class="an-export-panel__row">
+        <label>Desde
+          <input type="date" class="an-input" t-model="state.exportFrom"/>
+        </label>
+        <label>Hasta
+          <input type="date" class="an-input" t-model="state.exportTo"/>
+        </label>
+        <label>Estado
+          <select class="an-input" t-model="state.exportState">
+            <option value="all">Todos</option>
+            <option value="confirmed">Confirmadas</option>
+            <option value="pending_payment">Pendiente pago</option>
+            <option value="cancelled">Canceladas</option>
+          </select>
+        </label>
+        <a class="an-btn an-btn--primary" t-att-href="exportUrl()">Descargar</a>
+        <button class="an-btn an-btn--ghost" t-on-click="() => { this.state.showExport = false; }">Cerrar</button>
+      </div>
+    </div>
+  </t>
+
+  <!-- ══ LOADING ══════════════════════════════════════════════════════ -->
+  <t t-if="state.loading">
+    <div class="an-card an-loading">
+      <div class="an-loading__bar"/>
+      <div class="an-loading__bar an-loading__bar--short"/>
+      <div class="an-loading__text">Cargando datos…</div>
+    </div>
+  </t>
+
+  <t t-if="!state.loading and state.data">
+    <t t-set="d" t-value="state.data"/>
+
+    <!-- ══ KPI CARDS ════════════════════════════════════════════════ -->
+    <div class="an-kpis">
+
+      <!-- Reservas este mes -->
+      <div class="an-kpi an-kpi--blue">
+        <div class="an-kpi__label">Reservas este mes</div>
+        <div class="an-kpi__value"><t t-esc="d.totals.this_bookings"/></div>
+        <div t-att-class="'an-diff ' + diff(d.totals.this_bookings, d.totals.prev_bookings).cls">
+          <t t-esc="diff(d.totals.this_bookings, d.totals.prev_bookings).label"/>
+          vs mes anterior
+        </div>
+      </div>
+
+      <!-- Ingresos Bold este mes -->
+      <div class="an-kpi an-kpi--green">
+        <div class="an-kpi__label">Ingresos Bold este mes</div>
+        <div class="an-kpi__value an-kpi__value--sm">
+          <t t-esc="fmtMoney(d.totals.this_revenue)"/>
+        </div>
+        <div t-att-class="'an-diff ' + diff(d.totals.this_revenue, d.totals.prev_revenue).cls">
+          <t t-esc="diff(d.totals.this_revenue, d.totals.prev_revenue).label"/>
+          vs mes anterior
+        </div>
+      </div>
+
+      <!-- Reservas mes anterior -->
+      <div class="an-kpi an-kpi--slate">
+        <div class="an-kpi__label">Reservas mes anterior</div>
+        <div class="an-kpi__value"><t t-esc="d.totals.prev_bookings"/></div>
+        <div class="an-diff">referencia comparativa</div>
+      </div>
+
+      <!-- Ingresos Bold mes anterior -->
+      <div class="an-kpi an-kpi--slate">
+        <div class="an-kpi__label">Ingresos Bold mes anterior</div>
+        <div class="an-kpi__value an-kpi__value--sm">
+          <t t-esc="fmtMoney(d.totals.prev_revenue)"/>
+        </div>
+        <div class="an-diff">referencia comparativa</div>
+      </div>
+
+    </div>
+
+    <!-- ══ FILA 2: gráfico de barras ════════════════════════════════ -->
+    <div class="an-card an-chart-card">
+      <div class="an-card__title">Reservas por mes (últimos 6 meses)</div>
+      <div class="an-bar-chart">
+        <t t-foreach="d.monthly" t-as="m" t-key="m.label">
+          <div class="an-bar-col">
+            <div class="an-bar-wrap">
+              <div class="an-bar-tip">
+                <t t-esc="m.bookings"/> reservas<br/>
+                <t t-esc="fmtMoney(m.revenue)"/>
+              </div>
+              <div class="an-bar an-bar--blue"
+                   t-att-style="'height:' + barPct(m.bookings, 'bookings') + '%'"/>
+              <t t-if="m.cancelled">
+                <div class="an-bar an-bar--red"
+                     t-att-style="'height:' + barPct(m.cancelled, 'bookings') + '%;margin-top:2px'"/>
+              </t>
+            </div>
+            <div class="an-bar-label"><t t-esc="m.label"/></div>
+          </div>
+        </t>
+      </div>
+      <div class="an-bar-legend">
+        <span><span class="an-dot" style="background:#3b82f6"/> Confirmadas</span>
+        <span><span class="an-dot" style="background:#ef4444"/> Canceladas</span>
+      </div>
+    </div>
+
+    <!-- ══ FILA 3: Ocupación + Donuts ═══════════════════════════════ -->
+    <div class="an-row-3">
+
+      <!-- Ocupación por oficina -->
+      <div class="an-card">
+        <div class="an-card__title">Ocupación por oficina (mes actual)</div>
+        <t t-if="d.offices.length === 0">
+          <div class="an-empty">Sin datos</div>
+        </t>
+        <t t-else="">
+          <div class="an-occ-list">
+            <t t-foreach="d.offices" t-as="o" t-key="o.name">
+              <div class="an-occ-item">
+                <div class="an-occ-header">
+                  <span class="an-occ-name"><t t-esc="o.name"/></span>
+                  <span class="an-occ-pct"><t t-esc="o.rate"/>%</span>
+                </div>
+                <div class="an-progress">
+                  <div class="an-progress__bar"
+                       t-att-style="'width:' + o.rate + '%;background:' + (o.rate >= 75 ? '#22c55e' : o.rate >= 40 ? '#f59e0b' : '#94a3b8')"/>
+                </div>
+                <div class="an-occ-sub">
+                  <t t-esc="o.consumed"/> de <t t-esc="o.total"/> franjas ocupadas
+                </div>
+              </div>
+            </t>
+          </div>
+        </t>
+      </div>
+
+      <!-- Donut: franjas horarias -->
+      <div class="an-card an-donut-card">
+        <div class="an-card__title">Distribución por franja</div>
+        <div class="an-donut-wrap">
+          <svg viewBox="0 0 100 100" class="an-donut-svg">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" stroke-width="14"/>
+            <t t-foreach="d.slots_donut" t-as="seg" t-key="seg.label">
+              <circle cx="50" cy="50" r="40" fill="none"
+                t-att-stroke="seg.color"
+                stroke-width="14"
+                t-att-style="'stroke-dasharray:' + seg.arc + ' 251.327; transform:rotate(' + seg.rotate + 'deg); transform-origin:50% 50%;'"/>
+            </t>
+          </svg>
+          <div class="an-donut-legend">
+            <t t-foreach="d.slots_donut" t-as="seg" t-key="seg.label">
+              <div class="an-donut-legend-item">
+                <span class="an-dot" t-att-style="'background:' + seg.color"/>
+                <span><t t-esc="seg.label"/></span>
+                <span class="an-donut-pct"><t t-esc="seg.pct"/>%</span>
+              </div>
+            </t>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut: método de pago -->
+      <div class="an-card an-donut-card">
+        <div class="an-card__title">Método de pago</div>
+        <div class="an-donut-wrap">
+          <svg viewBox="0 0 100 100" class="an-donut-svg">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" stroke-width="14"/>
+            <t t-foreach="d.pay_donut" t-as="seg" t-key="seg.label">
+              <circle cx="50" cy="50" r="40" fill="none"
+                t-att-stroke="seg.color"
+                stroke-width="14"
+                t-att-style="'stroke-dasharray:' + seg.arc + ' 251.327; transform:rotate(' + seg.rotate + 'deg); transform-origin:50% 50%;'"/>
+            </t>
+          </svg>
+          <div class="an-donut-legend">
+            <t t-foreach="d.pay_donut" t-as="seg" t-key="seg.label">
+              <div class="an-donut-legend-item">
+                <span class="an-dot" t-att-style="'background:' + seg.color"/>
+                <span><t t-esc="seg.label"/></span>
+                <span class="an-donut-pct"><t t-esc="seg.pct"/>%</span>
+              </div>
+            </t>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ FILA 4: Top clientes ══════════════════════════════════════ -->
+    <div class="an-card">
+      <div class="an-card__title">Top clientes (últimos 6 meses)</div>
+      <t t-if="d.top_clients.length === 0">
+        <div class="an-empty">Sin datos</div>
+      </t>
+      <t t-else="">
+        <table class="an-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Cliente</th>
+              <th class="text-center">Reservas</th>
+              <th class="text-end">Ingresos Bold</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="d.top_clients" t-as="c" t-key="c.name">
+              <tr>
+                <td class="an-rank"><t t-esc="c_index + 1"/></td>
+                <td class="an-client-name"><t t-esc="c.name"/></td>
+                <td class="text-center">
+                  <span class="an-badge"><t t-esc="c.count"/></span>
+                </td>
+                <td class="text-end an-revenue">
+                  <t t-esc="fmtMoney(c.revenue)"/>
+                </td>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+      </t>
+    </div>
+
+  </t><!-- /!loading -->
+
+</div>
+</t>
+
+</templates>

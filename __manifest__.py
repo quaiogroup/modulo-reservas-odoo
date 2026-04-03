@@ -48,6 +48,9 @@
         "spoot_office_booking/static/src/js/availability_dashboard.js",
         "spoot_office_booking/static/src/xml/availability_dashboard.xml",
         "spoot_office_booking/static/src/css/admin_availability.css",
+        "spoot_office_booking/static/src/js/analytics_dashboard.js",
+        "spoot_office_booking/static/src/xml/analytics_dashboard.xml",
+        "spoot_office_booking/static/src/css/analytics_dashboard.css",
     ],
     },
 

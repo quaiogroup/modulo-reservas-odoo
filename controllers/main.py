@@ -1,7 +1,9 @@
 # -- coding: utf-8 --
 import base64
+import csv
 import hashlib
 import hmac
+import io
 import json
 import logging
 from datetime import timedelta
@@ -948,3 +950,77 @@ class SpootOfficePortal(CustomerPortal):
             'calendar_events_json': Markup(safe_json),
         })
         return request.render("spoot_office_booking.my_coworking_dashboard", values)
+
+
+class SpootExportController(http.Controller):
+
+    _SLOT_LABELS = {
+        'morning':   'Mañana (8-12)',
+        'afternoon': 'Tarde (14-18)',
+        'full_day':  'Día completo (8-18)',
+    }
+    _STATE_LABELS = {
+        'draft':           'Borrador',
+        'pending_payment': 'Pendiente pago',
+        'confirmed':       'Confirmada',
+        'cancelled':       'Cancelada',
+    }
+
+    @http.route('/spoot/export/bookings', type='http', auth='user', methods=['GET'])
+    def export_bookings(self, date_from=None, date_to=None, state=None, **kw):
+        """Descarga todas las reservas como CSV. Solo para usuarios internos."""
+        env = request.env
+        if not env.user.has_group('base.group_user'):
+            return request.not_found()
+
+        domain = []
+        if date_from:
+            domain.append(('date', '>=', date_from))
+        if date_to:
+            domain.append(('date', '<=', date_to))
+        if state and state != 'all':
+            domain.append(('state', '=', state))
+
+        bookings = env['spoot.office.booking'].sudo().search(
+            domain, order='date desc, id desc'
+        )
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+
+        # Header
+        writer.writerow([
+            'Referencia', 'Oficina', 'Cliente', 'Email cliente',
+            'Fecha', 'Franja', 'Estado',
+            'Método pago', 'Pagado', 'Importe',
+            'Plan', 'Días plan consumidos',
+            'Creada el',
+        ])
+
+        for b in bookings:
+            writer.writerow([
+                b.name or '',
+                b.office_id.name or '',
+                b.partner_id.name or '',
+                b.partner_id.email or '',
+                str(b.date) if b.date else '',
+                self._SLOT_LABELS.get(b.slot_type, b.slot_type or ''),
+                self._STATE_LABELS.get(b.state, b.state or ''),
+                'Bold' if b.payment_mode == 'bold' else 'Plan',
+                'Sí' if b.paid else 'No',
+                str(round(b.amount_total or 0)),
+                b.subscription_id.plan_id.name if b.subscription_id else '',
+                str(b.plan_days_consumed or ''),
+                str(b.create_date)[:19] if b.create_date else '',
+            ])
+
+        csv_content = '\ufeff' + output.getvalue()  # BOM para Excel
+        filename = 'reservas_spoot.csv'
+
+        return request.make_response(
+            csv_content,
+            headers=[
+                ('Content-Type', 'text/csv; charset=utf-8'),
+                ('Content-Disposition', f'attachment; filename="{filename}"'),
+            ]
+        )

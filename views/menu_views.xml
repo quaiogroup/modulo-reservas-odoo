@@ -88,4 +88,16 @@
               action="action_spoot_availability_dashboard"
               sequence="40"/>
 
+    <!-- Analíticas -->
+    <record id="action_spoot_analytics_dashboard" model="ir.actions.client">
+        <field name="name">Analíticas</field>
+        <field name="tag">spoot_office_booking.analytics_dashboard</field>
+    </record>
+
+    <menuitem id="menu_spoot_analytics"
+              name="Analíticas"
+              parent="menu_spoot_office_root"
+              action="action_spoot_analytics_dashboard"
+              sequence="50"/>
+
 </odoo>
