@@ -58,15 +58,12 @@ class SpootBoldController(http.Controller):
             })
 
         # Order ID único (máx 60 chars, alfanumérico, _ y -)
-        order_id = booking._get_or_create_bold_order_id()
+        order_id = booking._ensure_bold_order_id()
 
         integrity = self._integrity_signature(order_id, amount_int, currency, secret_key)
 
         base_url = self._icp().get_param("web.base.url")
         redirection_url = f"{base_url}/bold/retorno"
-
-        # Marca como pendiente/procesando en tu lógica
-        booking.sudo().write({"payment_state": "pending"})
 
         return request.render("spoot_office_booking.bold_pay_page", {
             "booking": booking,

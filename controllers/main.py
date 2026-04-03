@@ -970,7 +970,7 @@ class SpootExportController(http.Controller):
     def export_bookings(self, date_from=None, date_to=None, state=None, **kw):
         """Descarga todas las reservas como CSV. Solo para usuarios internos."""
         env = request.env
-        if not env.user.has_group('base.group_user'):
+        if not env.user.has_group('base.group_system'):
             return request.not_found()
 
         domain = []

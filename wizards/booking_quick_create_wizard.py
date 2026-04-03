@@ -44,7 +44,9 @@ class SpootBookingQuickCreateWizard(models.TransientModel):
             days = 1.0 if self.slot_type == "full_day" else 0.5
             vals["subscription_id"]    = self.subscription_id.id
             vals["plan_days_consumed"] = days
-            self.subscription_id.sudo().remaining_days -= days
+            self.subscription_id.sudo().write({
+                "remaining_days": self.subscription_id.remaining_days - days
+            })
 
         booking = self.env["spoot.office.booking"].sudo().create(vals)
 

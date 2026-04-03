@@ -271,7 +271,9 @@ class SpootOfficeBooking(models.Model):
     def _ensure_bold_order_id(self):
         self.ensure_one()
         if not self.bold_order_id:
-            self.bold_order_id = f"SPPOT-BOOK-{self.id}-{uuid.uuid4().hex[:10]}"
+            self.sudo().write({
+                "bold_order_id": f"SPPOT-BOOK-{self.id}-{uuid.uuid4().hex[:10]}"
+            })
         return self.bold_order_id
 
     def action_mark_paid(self, tx_id=None):

@@ -180,8 +180,7 @@ class SpootCoworkingSubscription(models.Model):
     # ── Legacy helpers (kept for backward compat) ─────────────────────────
 
     def consume_slot(self, slot_type):
-        """
-        Consume plan balance for a given slot type.
+        """Consume plan balance for a given slot type.
         slot_type: 'morning' | 'afternoon' → 0.5 days
                    'full_day'              → 1.0 day
         Returns True if successful, False if insufficient balance.
@@ -190,16 +189,16 @@ class SpootCoworkingSubscription(models.Model):
         cost = 1.0 if slot_type == "full_day" else 0.5
         if self.remaining_days < cost:
             return False
-        self.remaining_days -= cost
+        self.sudo().write({"remaining_days": self.remaining_days - cost})
         return True
 
     def consume_day(self):
         """Legacy helper — kept for backward compatibility."""
-        for rec in self:
-            if rec.remaining_days < 1.0:
-                return False
-            rec.remaining_days -= 1.0
-            return True
+        self.ensure_one()
+        if self.remaining_days < 1.0:
+            return False
+        self.sudo().write({"remaining_days": self.remaining_days - 1.0})
+        return True
 
     def create_from_plan(self, partner, plan):
         """Create an already-active subscription (used without payment flow)."""
