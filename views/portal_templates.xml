@@ -349,6 +349,18 @@
                             ></script>
                     </t>
 
+<!-- Comprobante PDF -->
+<t t-if="booking.paid or booking.payment_mode == 'plan'">
+    <div class="px-3 pb-2">
+        <a t-att-href="'/my/office-bookings/%s/receipt.pdf' % booking.id"
+           target="_blank"
+           class="btn btn-sm btn-outline-success rounded-pill px-3"
+           style="font-size:.82rem;">
+            &#8595; Descargar comprobante PDF
+        </a>
+    </div>
+</t>
+
   <!-- Agregar al calendario (solo reservas confirmadas) -->
 <t t-if="gcal_url">
     <div class="px-3 pb-3">

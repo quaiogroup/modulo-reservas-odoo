@@ -17,7 +17,39 @@ class SpootOfficeBooking(models.Model):
     _description = "Reserva de oficina"
     _order = "date, office_id, slot_type"
 
-    
+    # ── Slot-conflict constraint ──────────────────────────────────────────
+    @api.constrains("office_id", "date", "slot_type", "state")
+    def _check_no_double_booking(self):
+        """Prevent two overlapping bookings for the same office+date.
+        Runs inside the DB transaction — acts as a race-condition guard."""
+        _CONFLICTS = {
+            "morning":   ["morning",   "full_day"],
+            "afternoon": ["afternoon", "full_day"],
+            "full_day":  ["morning",   "afternoon", "full_day"],
+        }
+        for rec in self:
+            if rec.state == "cancelled":
+                continue
+            if not rec.office_id or not rec.date or not rec.slot_type:
+                continue
+            conflicting_slots = _CONFLICTS.get(rec.slot_type, [rec.slot_type])
+            conflict = self.sudo().search([
+                ("id",        "!=", rec.id),
+                ("office_id", "=",  rec.office_id.id),
+                ("date",      "=",  rec.date),
+                ("slot_type", "in", conflicting_slots),
+                ("state",     "!=", "cancelled"),
+            ], limit=1)
+            if conflict:
+                raise ValidationError(_(
+                    "La franja %(slot)s de %(office)s el %(date)s ya está reservada. "
+                    "Por favor elige otra franja u otra fecha.",
+                    slot=dict(self._fields["slot_type"].selection).get(rec.slot_type, rec.slot_type),
+                    office=rec.office_id.name,
+                    date=rec.date,
+                ))
+
+
 
     name = fields.Char(
         string="Referencia",

@@ -12,6 +12,7 @@ from markupsafe import Markup
 from werkzeug.utils import redirect
 
 from odoo import http, _
+from odoo.exceptions import ValidationError
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
 from odoo.fields import Date, Datetime
 from odoo.http import request, Response
@@ -138,17 +139,20 @@ class SpootOfficeWebsite(http.Controller):
                     ))
 
                 new_remaining = subscription.remaining_days - cost
-                booking = request.env["spoot.office.booking"].sudo().create({
-                    "office_id": office.id,
-                    "partner_id": partner.id,
-                    "date": date,
-                    "slot_type": slot_type,
-                    "state": "confirmed",
-                    "payment_mode": "plan",
-                    "paid": True,
-                    "subscription_id": subscription.id,
-                    "plan_days_consumed": cost,
-                })
+                try:
+                    booking = request.env["spoot.office.booking"].sudo().create({
+                        "office_id": office.id,
+                        "partner_id": partner.id,
+                        "date": date,
+                        "slot_type": slot_type,
+                        "state": "confirmed",
+                        "payment_mode": "plan",
+                        "paid": True,
+                        "subscription_id": subscription.id,
+                        "plan_days_consumed": cost,
+                    })
+                except ValidationError as e:
+                    return _render_detail(str(e))
                 subscription.sudo().write({"remaining_days": new_remaining})
                 _logger.info(
                     "[PLAN BOOKING] booking id=%s confirmed — slot=%s cost=%.1f "
@@ -166,14 +170,17 @@ class SpootOfficeWebsite(http.Controller):
                 })
 
             # ── BOLD PAYMENT MODE ──────────────────────────────────────────
-            booking = request.env["spoot.office.booking"].sudo().create({
-                "office_id": office.id,
-                "partner_id": partner.id,
-                "date": date,
-                "slot_type": slot_type,
-                "state": "pending_payment",
-                "payment_mode": "bold",
-            })
+            try:
+                booking = request.env["spoot.office.booking"].sudo().create({
+                    "office_id": office.id,
+                    "partner_id": partner.id,
+                    "date": date,
+                    "slot_type": slot_type,
+                    "state": "pending_payment",
+                    "payment_mode": "bold",
+                })
+            except ValidationError as e:
+                return _render_detail(str(e))
             # Notify customer (pending payment) and admin (new booking)
             booking._notify_customer("spoot_office_booking.mail_template_booking_pending_payment")
             booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
@@ -656,6 +663,31 @@ class SpootOfficePortal(CustomerPortal):
             headers={
                 "Content-Type": "text/calendar; charset=utf-8",
                 "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+
+    @http.route(
+        "/my/office-bookings/<int:booking_id>/receipt.pdf",
+        type="http", auth="user", website=True,
+    )
+    def portal_booking_receipt(self, booking_id, **kw):
+        booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
+        if not booking or booking.partner_id != request.env.user.partner_id:
+            return request.redirect("/my")
+        if not booking.paid and booking.payment_mode != "plan":
+            return request.redirect(f"/my/office-bookings/{booking_id}")
+
+        pdf_content, _ = request.env['ir.actions.report'].sudo()._render_qweb_pdf(
+            'spoot_office_booking.action_report_booking_receipt',
+            res_ids=[booking.id],
+        )
+        filename = f"comprobante_{booking.name or booking_id}.pdf"
+        return Response(
+            pdf_content,
+            status=200,
+            headers={
+                "Content-Type": "application/pdf",
+                "Content-Disposition": f'inline; filename="{filename}"',
             },
         )
 

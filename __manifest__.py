@@ -19,6 +19,9 @@
     'security/ir.model.access.csv',
     'security/ir_rules.xml',
 
+    # REPORTES
+    'reports/booking_receipt.xml',
+
     # DATOS (templates y crons) — antes de las vistas
     'data/mail_templates.xml',
     'data/ir_cron_data.xml',
