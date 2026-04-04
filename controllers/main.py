@@ -437,20 +437,38 @@ class SpootOfficePortal(CustomerPortal):
         return values
     
 
+    _BOOKING_FILTERS = {
+        "all":       {"label": "Todas",             "domain": []},
+        "upcoming":  {"label": "Próximas",          "domain": [("date", ">=", Date.today()), ("state", "!=", "cancelled")]},
+        "confirmed": {"label": "Confirmadas",       "domain": [("state", "=", "confirmed")]},
+        "pending":   {"label": "Pendiente de pago", "domain": [("state", "=", "pending_payment")]},
+        "cancelled": {"label": "Canceladas",        "domain": [("state", "=", "cancelled")]},
+    }
+
     @http.route(
         ["/my/office-bookings", "/my/office-bookings/page/<int:page>"],
         type="http",
         auth="user",
         website=True,
     )
-    def portal_my_bookings(self, page=1, **kw):
+    def portal_my_bookings(self, page=1, filterby="all", **kw):
         partner = request.env.user.partner_id
         Booking = request.env["spoot.office.booking"].sudo()
 
-        domain = [("partner_id", "=", partner.id)]
+        if filterby not in self._BOOKING_FILTERS:
+            filterby = "all"
+
+        base_domain = [("partner_id", "=", partner.id)]
+        filter_domain = self._BOOKING_FILTERS[filterby]["domain"]
+        domain = base_domain + filter_domain
+
         booking_count = Booking.search_count(domain)
 
-        pager = portal_pager(url="/my/office-bookings", total=booking_count, page=page, step=20)
+        pager = portal_pager(
+            url="/my/office-bookings",
+            url_args={"filterby": filterby},
+            total=booking_count, page=page, step=20,
+        )
 
         bookings = Booking.search(domain, order="date desc", limit=20, offset=pager["offset"])
         bold_ui_map = {}
@@ -483,12 +501,13 @@ class SpootOfficePortal(CustomerPortal):
 
         values = self._prepare_portal_layout_values()
         values.update({
-    "bookings": bookings,
-    "page_name": "office_bookings",
-    "pager": pager,
-    "bold_ui_map": bold_ui_map,
-})
-        values.update({"dbg_api_len": len(api_key), "dbg_sec_len": len(secret_key)})
+            "bookings":          bookings,
+            "page_name":         "office_bookings",
+            "pager":             pager,
+            "bold_ui_map":       bold_ui_map,
+            "searchbar_filters": self._BOOKING_FILTERS,
+            "filterby":          filterby,
+        })
         return request.render("spoot_office_booking.portal_my_bookings", values)
     @http.route("/my/office-bookings/<int:booking_id>", type="http", auth="user", website=True)
     def portal_booking_detail(self, booking_id, cancel_error=None, cancel_msg=None, bold_ok=None, **kw):
@@ -1004,6 +1023,12 @@ class SpootOfficePortal(CustomerPortal):
         safe_json = json.dumps(calendar_events, ensure_ascii=True)
         safe_json = safe_json.replace('</', '<\\/')   # prevent </script> injection
 
+        # Past/expired subscriptions for history section
+        past_subscriptions = request.env['spoot.coworking.subscription'].sudo().search([
+            ('partner_id', '=', partner.id),
+            ('state',      'in', ['expired', 'cancelled']),
+        ], order="end_date desc")
+
         # Plan usage history: bookings that consumed days from the active plan
         plan_bookings = False
         if subscription:
@@ -1015,9 +1040,10 @@ class SpootOfficePortal(CustomerPortal):
 
         values = self._prepare_portal_layout_values()
         values.update({
-            'subscription': subscription,
-            'bookings': bookings,
-            'plan_bookings': plan_bookings,
+            'subscription':       subscription,
+            'past_subscriptions': past_subscriptions,
+            'bookings':           bookings,
+            'plan_bookings':      plan_bookings,
             'today': Date.today(),
             'page_name': 'coworking',
             'plan_ok': plan_ok,

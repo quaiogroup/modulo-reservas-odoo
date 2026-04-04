@@ -28,5 +28,21 @@
         <field name="user_id" ref="base.user_root"/>
     </record>
 
+    <!--
+        Hourly cron: cancels pending_payment bookings that:
+        - are Bold-mode and have been waiting more than 2 hours without payment, OR
+        - have a start_datetime that has already passed.
+    -->
+    <record id="ir_cron_cancel_expired_bookings" model="ir.cron">
+        <field name="name">Spoot: Cancelar reservas vencidas/sin pago</field>
+        <field name="model_id" ref="model_spoot_office_booking"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_cancel_expired_bookings()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+    </record>
+
   </data>
 </odoo>

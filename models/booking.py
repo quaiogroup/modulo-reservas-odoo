@@ -516,6 +516,42 @@ class SpootOfficeBooking(models.Model):
 
     # ── Scheduled reminder ────────────────────────────────────────────────
     @api.model
+    def _cron_cancel_expired_bookings(self):
+        """Hourly cron: cancel pending_payment bookings that:
+        1. Are Bold-mode and unpaid for more than 2 hours (payment timeout).
+        2. Have a start_datetime that has already passed (slot gone by).
+        """
+        now = fields.Datetime.now()
+        two_hours_ago = now - timedelta(hours=2)
+
+        # Bold bookings with payment pending for > 2 h
+        expired_bold = self.search([
+            ("state",        "=",  "pending_payment"),
+            ("payment_mode", "=",  "bold"),
+            ("create_date",  "<=", fields.Datetime.to_string(two_hours_ago)),
+        ])
+
+        # Any pending booking whose slot start has already passed
+        expired_date = self.search([
+            ("state",           "=",  "pending_payment"),
+            ("start_datetime",  "<",  fields.Datetime.to_string(now)),
+        ])
+
+        to_cancel = expired_bold | expired_date
+        if not to_cancel:
+            return
+
+        _logger.info(
+            "[CRON EXPIRE] cancelling %d expired/unpaid booking(s): %s",
+            len(to_cancel), to_cancel.ids,
+        )
+        for booking in to_cancel:
+            booking.write({"state": "cancelled"})
+            booking._notify_customer(
+                "spoot_office_booking.mail_template_booking_cancelled_user"
+            )
+
+    @api.model
     def _cron_send_booking_reminders(self):
         """Daily cron: send a reminder email for every confirmed booking scheduled for tomorrow.
         Uses reminder_sent flag to guarantee exactly-once delivery.

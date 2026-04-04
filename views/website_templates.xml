@@ -1509,6 +1509,61 @@
       </t>
       <!-- ────────────────────────────────────────────────────────── -->
 
+      <!-- ── HISTORIAL DE PLANES ANTERIORES ─────────────────────── -->
+      <t t-if="past_subscriptions">
+        <div class="mt-5">
+          <h5 class="fw-bold mb-3">Planes anteriores</h5>
+          <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead style="background:#f8fafc;">
+                  <tr>
+                    <th class="ps-4 py-3 text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Plan</th>
+                    <th class="py-3 text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Inicio</th>
+                    <th class="py-3 text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Vencimiento</th>
+                    <th class="py-3 text-center text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Días usados</th>
+                    <th class="py-3 text-center text-muted fw-semibold small text-uppercase"
+                        style="letter-spacing:.05em;">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <t t-foreach="past_subscriptions" t-as="ps">
+                    <tr style="opacity:.8;">
+                      <td class="ps-4 fw-semibold"><t t-esc="ps.plan_id.name"/></td>
+                      <td><t t-esc="ps.start_date"/></td>
+                      <td><t t-esc="ps.end_date"/></td>
+                      <td class="text-center">
+                        <t t-esc="'%.1f' % (ps.total_days - ps.remaining_days)"/>
+                        <span class="text-muted"> / <t t-esc="ps.total_days"/></span>
+                      </td>
+                      <td class="text-center">
+                        <t t-if="ps.state == 'expired'">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#f3f4f6; color:#6b7280; font-size:.75rem;">
+                            Vencido
+                          </span>
+                        </t>
+                        <t t-else="">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#fee2e2; color:#991b1b; font-size:.75rem;">
+                            Cancelado
+                          </span>
+                        </t>
+                      </td>
+                    </tr>
+                  </t>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </t>
+      <!-- ────────────────────────────────────────────────────────── -->
+
     </div>
   </t>
 </template>

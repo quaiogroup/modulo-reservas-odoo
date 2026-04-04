@@ -19,6 +19,16 @@
                         </a>
                     </div>
 
+                    <!-- Filtros -->
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <t t-foreach="searchbar_filters.items()" t-as="item">
+                            <a t-att-href="'/my/office-bookings?filterby=%s' % item[0]"
+                               t-att-class="'btn btn-sm rounded-pill px-3 ' + ('btn-primary' if filterby == item[0] else 'btn-outline-secondary')">
+                                <t t-esc="item[1]['label']"/>
+                            </a>
+                        </t>
+                    </div>
+
                     <!-- Si hay reservas -->
                     <t t-if="bookings">
                         <div class="table-responsive">
@@ -145,13 +155,21 @@
                     <!-- Si NO hay reservas -->
                     <t t-else="">
                         <div class="alert alert-info mt-3">
-                            <h5 class="alert-heading">Todavía no tienes reservas 📅</h5>
-                            <p class="mb-2">
-                                Cuando reserves una oficina desde la web, aparecerá aquí para que puedas
-                                consultarla y gestionarla.
-                            </p>
+                            <t t-if="filterby != 'all'">
+                                <h5 class="alert-heading">Sin resultados</h5>
+                                <p class="mb-2">No tienes reservas con ese filtro.</p>
+                                <a href="/my/office-bookings" class="btn btn-outline-secondary btn-sm me-2">
+                                    Ver todas
+                                </a>
+                            </t>
+                            <t t-else="">
+                                <h5 class="alert-heading">Todavía no tienes reservas</h5>
+                                <p class="mb-2">
+                                    Cuando reserves una oficina desde la web, aparecerá aquí.
+                                </p>
+                            </t>
                             <a href="/offices" class="btn btn-primary btn-sm">
-                                Reservar mi primera oficina
+                                Reservar una oficina
                             </a>
                         </div>
                     </t>
