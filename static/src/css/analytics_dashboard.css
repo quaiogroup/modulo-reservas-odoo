@@ -346,6 +346,14 @@
 }
 .an-table tbody tr:last-child td { border-bottom: none; }
 .an-table tbody tr:hover { background: #f8fafc; }
+.an-client-row:hover { background: #f0fdf4 !important; }
+.an-client-link {
+  color: #065f46;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s;
+}
+.an-client-row:hover .an-client-link { text-decoration-color: #065f46; }
 .an-rank {
   font-size: 12px;
   font-weight: 700;

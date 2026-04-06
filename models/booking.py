@@ -523,7 +523,7 @@ class SpootOfficeBooking(models.Model):
             partner = self.env['res.partner'].browse(pid)
             rev = sum(b.amount_total for b in all_bk
                       if b.partner_id.id == pid and b.payment_mode == 'bold' and b.paid)
-            top_clients.append({'name': partner.name or '—', 'count': cnt, 'revenue': rev})
+            top_clients.append({'id': pid, 'name': partner.name or '—', 'count': cnt, 'revenue': rev})
 
         return {
             'monthly':       monthly,

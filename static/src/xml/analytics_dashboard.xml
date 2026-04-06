@@ -224,9 +224,12 @@
           </thead>
           <tbody>
             <t t-foreach="d.top_clients" t-as="c" t-key="c.name">
-              <tr>
+              <tr class="an-client-row" t-on-click="() => this.openClient(c.id)"
+                  style="cursor:pointer;">
                 <td class="an-rank"><t t-esc="c_index + 1"/></td>
-                <td class="an-client-name"><t t-esc="c.name"/></td>
+                <td class="an-client-name">
+                  <span class="an-client-link"><t t-esc="c.name"/></span>
+                </td>
                 <td class="text-center">
                   <span class="an-badge"><t t-esc="c.count"/></span>
                 </td>

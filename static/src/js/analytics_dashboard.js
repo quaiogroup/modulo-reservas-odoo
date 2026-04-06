@@ -77,6 +77,19 @@ class SpootAnalyticsDashboard extends Component {
       target: "current",
     });
   }
+
+  /* ── open client form ───────────────────────────────────────────── */
+  openClient(partnerId) {
+    this.actionService.doAction({
+      type: "ir.actions.act_window",
+      name: "Cliente",
+      res_model: "res.partner",
+      res_id: partnerId,
+      views: [[false, "form"]],
+      target: "current",
+      context: { form_view_ref: "spoot_office_booking.view_spoot_client_form" },
+    });
+  }
 }
 
 SpootAnalyticsDashboard.template =
