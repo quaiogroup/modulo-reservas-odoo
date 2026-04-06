@@ -686,8 +686,8 @@ class SpootOfficePortal(CustomerPortal):
         )
 
     @http.route(
-        "/my/office-bookings/<int:booking_id>/receipt.pdf",
-        type="http", auth="user", website=True,
+        "/my/office-bookings/<int:booking_id>/comprobante",
+        type="http", auth="user", website=True, methods=["GET"],
     )
     def portal_booking_receipt(self, booking_id, **kw):
         booking = request.env["spoot.office.booking"].sudo().browse(booking_id).exists()
@@ -700,13 +700,13 @@ class SpootOfficePortal(CustomerPortal):
             'spoot_office_booking.action_report_booking_receipt',
             res_ids=[booking.id],
         )
-        filename = f"comprobante_{booking.name or booking_id}.pdf"
+        filename = "comprobante_{}.pdf".format(booking.name or booking_id)
         return Response(
             pdf_content,
             status=200,
             headers={
                 "Content-Type": "application/pdf",
-                "Content-Disposition": f'inline; filename="{filename}"',
+                "Content-Disposition": 'attachment; filename="{}"'.format(filename),
             },
         )
 

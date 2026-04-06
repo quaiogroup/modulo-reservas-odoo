@@ -370,7 +370,7 @@
 <!-- Comprobante PDF -->
 <t t-if="booking.paid or booking.payment_mode == 'plan'">
     <div class="px-3 pb-2">
-        <a t-att-href="'/my/office-bookings/%s/receipt.pdf' % booking.id"
+        <a t-att-href="'/my/office-bookings/%s/comprobante' % booking.id"
            target="_blank"
            class="btn btn-sm btn-outline-success rounded-pill px-3"
            style="font-size:.82rem;">
