@@ -60,6 +60,13 @@
               action="spoot_office_booking.action_spoot_office_service"
               sequence="12"/>
 
+    <!-- Clientes -->
+    <menuitem id="menu_spoot_clients"
+              name="Clientes"
+              parent="menu_spoot_office_root"
+              action="spoot_office_booking.action_spoot_clients"
+              sequence="11"/>
+
     <!-- Planes -->
     <menuitem id="menu_spoot_coworking_plan"
               name="Planes"

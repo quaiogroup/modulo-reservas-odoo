@@ -160,6 +160,12 @@ class SpootOfficeBooking(models.Model):
         help="Se puede usar para sincronizar con Google Calendar u otros.",
     )
 
+    partner_whatsapp_url = fields.Char(
+        string="WhatsApp del cliente",
+        related="partner_id.whatsapp_url",
+        readonly=True,
+    )
+
     notes = fields.Text(string="Notas internas")
     # ---------------------------
     # BOLD (checkout externo)
@@ -326,6 +332,29 @@ class SpootOfficeBooking(models.Model):
             "res_model": "spoot.coworking.subscription",
             "view_mode": "form",
             "res_id": self.subscription_id.id,
+            "target": "current",
+        }
+
+    def action_whatsapp_client(self):
+        """Open WhatsApp chat for the booking's client."""
+        self.ensure_one()
+        url = self.partner_id.whatsapp_url
+        if not url:
+            return False
+        return {
+            "type": "ir.actions.act_url",
+            "url": url,
+            "target": "new",
+        }
+
+    def action_view_client(self):
+        """Open the client (res.partner) form from the booking."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "res.partner",
+            "view_mode": "form",
+            "res_id": self.partner_id.id,
             "target": "current",
         }
 

@@ -6,3 +6,4 @@ from . import office_service
 from . import coworking_plan
 from . import coworking_subscription
 from . import office_block
+from . import client

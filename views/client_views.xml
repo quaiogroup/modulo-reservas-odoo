@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         LIST VIEW — Clientes Spoot
+         ══════════════════════════════════════════════════════════════ -->
+    <record id="view_spoot_client_list" model="ir.ui.view">
+        <field name="name">spoot.client.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="Clientes"
+                  default_order="name asc"
+                  decoration-success="spoot_active_subscription_id != False">
+
+                <field name="name"                      string="Cliente"/>
+                <field name="email"                     string="Correo"/>
+                <field name="phone"                     string="Teléfono"/>
+                <field name="whatsapp"                  string="WhatsApp"/>
+                <field name="spoot_booking_count"       string="Reservas" readonly="1"/>
+                <field name="spoot_last_booking_date"   string="Última reserva" readonly="1"/>
+                <field name="spoot_active_subscription_id" string="Plan activo" readonly="1"/>
+
+                <!-- Botón WhatsApp inline -->
+                <button name="action_open_whatsapp"
+                        type="object"
+                        string="WhatsApp"
+                        icon="fa-whatsapp"
+                        invisible="not whatsapp_url"
+                        class="btn-success btn-sm"/>
+
+            </list>
+        </field>
+    </record>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         FORM VIEW — Cliente Spoot
+         ══════════════════════════════════════════════════════════════ -->
+    <record id="view_spoot_client_form" model="ir.ui.view">
+        <field name="name">spoot.client.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form string="Cliente">
+                <sheet>
+
+                    <!-- Smart buttons -->
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object"
+                                name="action_open_whatsapp"
+                                class="oe_stat_button"
+                                icon="fa-whatsapp"
+                                invisible="not whatsapp_url">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Abrir</span>
+                                <span class="o_stat_value">WhatsApp</span>
+                            </div>
+                        </button>
+
+                        <button type="object"
+                                name="action_spoot_bookings"
+                                class="oe_stat_button"
+                                icon="fa-calendar">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="spoot_booking_count" nolabel="1"/>
+                                </span>
+                                <span class="o_stat_text">Reservas</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Avatar + nombre -->
+                    <field name="image_1920" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Nombre del cliente"/></h1>
+                    </div>
+
+                    <!-- Datos de contacto -->
+                    <group string="Contacto" col="2">
+                        <group>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="whatsapp"
+                                   placeholder="+573001234567"/>
+                        </group>
+                        <group>
+                            <field name="spoot_active_subscription_id"
+                                   string="Plan activo"
+                                   readonly="1"/>
+                            <field name="spoot_last_booking_date"
+                                   string="Última reserva"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Historial de reservas -->
+                    <notebook>
+                        <page string="Reservas" name="page_bookings">
+                            <field name="spoot_booking_ids"
+                                   domain="[('state', '!=', 'cancelled')]"
+                                   readonly="1">
+                                <list default_order="date desc"
+                                      decoration-success="state == 'confirmed'"
+                                      decoration-warning="state == 'pending_payment'">
+                                    <field name="name"      string="Ref."/>
+                                    <field name="office_id" string="Oficina"/>
+                                    <field name="date"      string="Fecha"/>
+                                    <field name="slot_type" string="Franja"
+                                           widget="badge"
+                                           decoration-info="slot_type == 'morning'"
+                                           decoration-warning="slot_type == 'afternoon'"
+                                           decoration-primary="slot_type == 'full_day'"/>
+                                    <field name="state"     string="Estado"
+                                           widget="badge"
+                                           decoration-success="state == 'confirmed'"
+                                           decoration-warning="state == 'pending_payment'"
+                                           decoration-muted="state == 'cancelled'"/>
+                                    <field name="payment_mode" string="Pago"
+                                           widget="badge"
+                                           decoration-success="payment_mode == 'plan'"
+                                           decoration-info="payment_mode == 'bold'"/>
+                                    <field name="amount_total" string="Valor"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Todas (incluye canceladas)" name="page_all_bookings">
+                            <field name="spoot_booking_ids" readonly="1">
+                                <list default_order="date desc"
+                                      decoration-muted="state == 'cancelled'"
+                                      decoration-success="state == 'confirmed'"
+                                      decoration-warning="state == 'pending_payment'">
+                                    <field name="name"      string="Ref."/>
+                                    <field name="office_id" string="Oficina"/>
+                                    <field name="date"      string="Fecha"/>
+                                    <field name="slot_type" string="Franja" widget="badge"/>
+                                    <field name="state"     string="Estado" widget="badge"
+                                           decoration-success="state == 'confirmed'"
+                                           decoration-warning="state == 'pending_payment'"
+                                           decoration-muted="state == 'cancelled'"/>
+                                    <field name="amount_total" string="Valor"
+                                           widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SEARCH VIEW
+         ══════════════════════════════════════════════════════════════ -->
+    <record id="view_spoot_client_search" model="ir.ui.view">
+        <field name="name">spoot.client.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search string="Buscar clientes">
+                <field name="name"    string="Nombre"/>
+                <field name="email"   string="Correo"/>
+                <field name="phone"   string="Teléfono"/>
+                <field name="whatsapp" string="WhatsApp"/>
+                <filter string="Con WhatsApp" name="filter_whatsapp"
+                        domain="[('whatsapp', '!=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ACTION
+         ══════════════════════════════════════════════════════════════ -->
+    <record id="action_spoot_clients" model="ir.actions.act_window">
+        <field name="name">Clientes</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('spoot_booking_count', '>', 0)]</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_spoot_client_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_spoot_client_form')}),
+        ]"/>
+        <field name="search_view_id" ref="view_spoot_client_search"/>
+        <field name="context">{'default_customer_rank': 1}</field>
+    </record>
+
+</odoo>

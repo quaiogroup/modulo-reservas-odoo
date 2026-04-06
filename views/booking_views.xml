@@ -195,6 +195,30 @@
                                 </span>
                             </div>
                         </button>
+
+                        <button name="action_whatsapp_client"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-whatsapp"
+                                invisible="not partner_id or not partner_whatsapp_url">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Contactar</span>
+                                <span class="o_stat_value">WhatsApp</span>
+                            </div>
+                        </button>
+
+                        <button name="action_view_client"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-user"
+                                invisible="not partner_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">Ver cliente</span>
+                                <span class="o_stat_value">
+                                    <field name="partner_id" nolabel="1" readonly="1"/>
+                                </span>
+                            </div>
+                        </button>
                     </div>
 
                     <!-- ── Title ─────────────────────────────────────── -->
@@ -209,7 +233,7 @@
                     <group string="Datos de la reserva" col="2">
                         <group>
                             <field name="office_id"/>
-                            <field name="partner_id"/>
+                            <field name="partner_id" options="{'no_create': True}"/>
                             <field name="date"/>
                             <field name="slot_type"/>
                         </group>
