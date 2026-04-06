@@ -7,3 +7,4 @@ from . import coworking_plan
 from . import coworking_subscription
 from . import office_block
 from . import client
+from . import settings

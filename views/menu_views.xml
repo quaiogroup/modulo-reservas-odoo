@@ -102,6 +102,13 @@
               action="action_spoot_availability_dashboard"
               sequence="40"/>
 
+    <!-- Configuración -->
+    <menuitem id="menu_spoot_settings"
+              name="Configuración"
+              parent="menu_spoot_office_root"
+              action="spoot_office_booking.action_spoot_office_settings"
+              sequence="99"/>
+
     <!-- Analíticas -->
     <record id="action_spoot_analytics_dashboard" model="ir.actions.client">
         <field name="name">Analíticas</field>

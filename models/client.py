@@ -24,19 +24,19 @@ class SpootResPartner(models.Model):
 
     spoot_booking_count = fields.Integer(
         string="Reservas",
-        compute="_compute_spoot_stats",
+        compute="_compute_spoot_booking_count",
         store=True,
     )
 
     spoot_active_subscription_id = fields.Many2one(
         "spoot.coworking.subscription",
         string="Plan activo",
-        compute="_compute_spoot_stats",
+        compute="_compute_spoot_live",
     )
 
     spoot_last_booking_date = fields.Date(
         string="Última reserva",
-        compute="_compute_spoot_stats",
+        compute="_compute_spoot_live",
     )
 
     @api.depends("whatsapp", "phone")
@@ -66,17 +66,20 @@ class SpootResPartner(models.Model):
             "context": {"default_partner_id": self.id},
         }
 
-    @api.depends("spoot_booking_ids", "spoot_booking_ids.state", "spoot_booking_ids.date")
-    def _compute_spoot_stats(self):
-        Booking = self.env["spoot.office.booking"]
-        Sub = self.env["spoot.coworking.subscription"]
+    @api.depends("spoot_booking_ids", "spoot_booking_ids.state")
+    def _compute_spoot_booking_count(self):
         for rec in self:
-            bookings = Booking.search([
-                ("partner_id", "=", rec.id),
-                ("state", "!=", "cancelled"),
-            ])
-            rec.spoot_booking_count = len(bookings)
-            dates = bookings.filtered("date").mapped("date")
+            rec.spoot_booking_count = len(
+                rec.spoot_booking_ids.filtered(lambda b: b.state != "cancelled")
+            )
+
+    def _compute_spoot_live(self):
+        Sub = self.env["spoot.coworking.subscription"].sudo()
+        for rec in self:
+            bookings = rec.spoot_booking_ids.filtered(
+                lambda b: b.state != "cancelled" and b.date
+            )
+            dates = bookings.mapped("date")
             rec.spoot_last_booking_date = max(dates) if dates else False
             active_sub = Sub.search([
                 ("partner_id", "=", rec.id),
