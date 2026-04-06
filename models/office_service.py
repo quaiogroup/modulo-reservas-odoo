@@ -12,11 +12,27 @@ class SpootOfficeService(models.Model):
     # Para “defaults”
     is_default = fields.Boolean(string="Servicio por defecto", default=False)
 
-    # Para mostrar bonito en web
-    icon = fields.Char(
-        string="Icono (FontAwesome)",
-        help="Ej: fa-wifi, fa-mug-hot, fa-video"
-    )
+    # Para mostrar bonito en web — solo íconos FA4 (los que incluye Odoo)
+    icon = fields.Selection([
+        ("fa-wifi",          "WiFi"),
+        ("fa-coffee",        "Café / Bebidas"),
+        ("fa-print",         "Impresora"),
+        ("fa-desktop",       "Computador"),
+        ("fa-television",    "Pantalla / TV"),
+        ("fa-video-camera",  "Videoconferencia"),
+        ("fa-phone",         "Teléfono"),
+        ("fa-users",         "Sala de reuniones"),
+        ("fa-car",           "Parqueadero"),
+        ("fa-snowflake-o",   "Aire acondicionado"),
+        ("fa-lock",          "Casillero / Seguridad"),
+        ("fa-cutlery",       "Cocina / Comedor"),
+        ("fa-bolt",          "Cargadores"),
+        ("fa-music",         "Zona de descanso"),
+        ("fa-building",      "Recepción"),
+        ("fa-clock-o",       "Acceso 24/7"),
+        ("fa-shower",        "Ducha"),
+        ("fa-wheelchair",    "Acceso accesible"),
+    ], string="Icono")
     description = fields.Char(string="Descripción corta")
 
 

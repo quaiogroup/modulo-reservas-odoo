@@ -1,6 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
+    <!-- ─── Servicios de oficina ─────────────────────────── -->
+    <record id="view_spoot_office_service_list" model="ir.ui.view">
+        <field name="name">spoot.office.service.list</field>
+        <field name="model">spoot.office.service</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="icon"/>
+                <field name="description"/>
+                <field name="is_default"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_spoot_office_service_form" model="ir.ui.view">
+        <field name="name">spoot.office.service.form</field>
+        <field name="model">spoot.office.service</field>
+        <field name="arch" type="xml">
+            <form string="Servicio de oficina">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="icon" widget="selection"/>
+                        <field name="description"/>
+                        <field name="is_default"/>
+                        <field name="sequence"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_spoot_office_service" model="ir.actions.act_window">
+        <field name="name">Servicios de oficina</field>
+        <field name="res_model">spoot.office.service</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ─── Oficinas ─────────────────────────────────────── -->
     <record id="view_spoot_office_tree" model="ir.ui.view">
         <field name="name">spoot.office.tree</field>
         <field name="model">spoot.office</field>

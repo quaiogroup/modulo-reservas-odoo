@@ -53,6 +53,13 @@
               action="action_spoot_office"
               sequence="10"/>
 
+    <!-- Servicios -->
+    <menuitem id="menu_spoot_office_service"
+              name="Servicios"
+              parent="menu_spoot_office_root"
+              action="spoot_office_booking.action_spoot_office_service"
+              sequence="12"/>
+
     <!-- Planes -->
     <menuitem id="menu_spoot_coworking_plan"
               name="Planes"

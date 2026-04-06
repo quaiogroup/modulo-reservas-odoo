@@ -41,6 +41,33 @@
                     <t t-esc="office.short_description or office.location or ''"/>
                   </p>
 
+                  <!-- Íconos de servicios -->
+                  <t t-if="office.service_ids">
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                      <t t-foreach="office.service_ids[:6]" t-as="srv" t-key="srv.id">
+                        <t t-if="srv.icon">
+                          <span class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                style="width:28px;height:28px;background:#f0fdf4;border:1px solid #bbf7d0;"
+                                t-att-title="srv.name">
+                            <i t-att-class="'fa ' + srv.icon" style="font-size:.7rem;color:#065f46;"/>
+                          </span>
+                        </t>
+                        <t t-else="">
+                          <span class="badge rounded-pill"
+                                style="background:#f0fdf4;color:#065f46;font-size:.7rem;border:1px solid #bbf7d0;">
+                            <t t-esc="srv.name"/>
+                          </span>
+                        </t>
+                      </t>
+                      <t t-if="len(office.service_ids) > 6">
+                        <span class="badge rounded-pill"
+                              style="background:#f3f4f6;color:#6b7280;font-size:.7rem;">
+                          +<t t-esc="len(office.service_ids) - 6"/>
+                        </span>
+                      </t>
+                    </div>
+                  </t>
+
                   <div class="mt-auto d-flex justify-content-between align-items-center">
                     <small class="text-muted">
                       <t t-if="office.capacity">
@@ -135,6 +162,24 @@
                   </div>
                 </t>
 
+                <!-- Servicios incluidos -->
+                <t t-if="office.service_ids">
+                  <div class="mb-3">
+                    <h6 class="fw-bold mb-2">Servicios incluidos</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                      <t t-foreach="office.service_ids" t-as="srv" t-key="srv.id">
+                        <span class="badge rounded-pill px-3 py-2"
+                              style="background:#f0fdf4; color:#065f46; border:1px solid #bbf7d0; font-size:.8rem;">
+                          <t t-if="srv.icon">
+                            <i t-att-class="'fa ' + srv.icon + ' me-1'"/>
+                          </t>
+                          <t t-esc="srv.name"/>
+                        </span>
+                      </t>
+                    </div>
+                  </div>
+                </t>
+
                 <!-- Precios -->
                 <div class="bg-light rounded-4 p-3">
                   <h6 class="mb-2">Precios</h6>
@@ -172,29 +217,6 @@
 
           <!-- COLUMNA DERECHA: reserva + agenda -->
           <div class="col-12 col-lg-5">
-
-            <!-- Agenda / ocupación (placeholder visual) -->
-             <t t-if="office.service_ids">
-  <div class="spootServices">
-    <h4 class="spootServices__title">Servicios incluidos</h4>
-
-    <div class="spootServices__grid">
-      <t t-foreach="office.service_ids" t-as="srv" t-key="srv.id">
-        <div class="spootServices__item">
-          <t t-if="srv.icon">
-            <i t-att-class="'fa ' + srv.icon + ' spootServices__icon'"/>
-          </t>
-          <div class="spootServices__text">
-            <div class="spootServices__name"><t t-esc="srv.name"/></div>
-            <t t-if="srv.description">
-              <div class="spootServices__desc"><t t-esc="srv.description"/></div>
-            </t>
-          </div>
-        </div>
-      </t>
-    </div>
-  </div>
-</t>
 
 
 
