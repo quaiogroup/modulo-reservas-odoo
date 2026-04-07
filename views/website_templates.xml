@@ -392,6 +392,26 @@
                   </t>
                   <!-- ─────────────────────────────────────────────── -->
 
+                  <!-- ── CÓDIGO DE DESCUENTO ────────────────────────── -->
+                  <div class="mb-3" id="discount_section" style="display:none;">
+                    <label class="form-label" style="font-size:.82rem;font-weight:600;">
+                      ¿Tienes un código de descuento?
+                    </label>
+                    <div class="input-group input-group-sm">
+                      <input type="text" id="discount_code_input"
+                             name="discount_code"
+                             class="form-control text-uppercase"
+                             placeholder="Ej: PROMO10"
+                             style="text-transform:uppercase;"/>
+                      <button type="button" id="discount_apply_btn"
+                              class="btn btn-outline-secondary">
+                        Aplicar
+                      </button>
+                    </div>
+                    <div id="discount_feedback" class="form-text" style="display:none;"></div>
+                  </div>
+                  <!-- ─────────────────────────────────────────────── -->
+
                   <button type="submit" id="spoot_submit_btn" disabled="disabled"
                           class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
                     Confirmar reserva
@@ -669,6 +689,83 @@
               });
               if (radioPlan) radioPlan.addEventListener('change', updatePaymentUI);
               if (radioBold) radioBold.addEventListener('change', updatePaymentUI);
+
+              /* ── Código de descuento ──────────────────────────────── */
+              var discountSection = document.getElementById('discount_section');
+              var discountInput   = document.getElementById('discount_code_input');
+              var discountApply   = document.getElementById('discount_apply_btn');
+              var discountFeedback= document.getElementById('discount_feedback');
+
+              // Mostrar sección cuando hay franja + modo Bold seleccionado
+              function toggleDiscountSection() {
+                if (!discountSection) return;
+                var slot = slotHidden.value;
+                var isBold = !radioPlan || !radioPlan.checked;
+                discountSection.style.display = (slot &amp;&amp; isBold) ? 'block' : 'none';
+              }
+
+              if (radioPlan) radioPlan.addEventListener('change', toggleDiscountSection);
+              if (radioBold) radioBold.addEventListener('change', toggleDiscountSection);
+
+              if (discountApply) {
+                discountApply.addEventListener('click', function() {
+                  var code = discountInput ? discountInput.value.trim().toUpperCase() : '';
+                  var slot = slotHidden.value;
+                  if (!code) return;
+                  discountApply.disabled = true;
+                  discountApply.textContent = '...';
+
+                  fetch('/web/dataset/call_kw', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                      jsonrpc: '2.0', method: 'call', id: 1,
+                      params: {
+                        model: 'spoot.discount.code',
+                        method: 'search_read',
+                        args: [],
+                        kwargs: {}
+                      }
+                    })
+                  });
+
+                  // Llamada al endpoint propio
+                  fetch('/spoot/discount/validate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                      jsonrpc: '2.0', method: 'call', id: 1,
+                      params: { code: code, office_id: officeId, slot_type: slot }
+                    })
+                  })
+                  .then(r => r.json())
+                  .then(function(resp) {
+                    discountApply.disabled = false;
+                    discountApply.textContent = 'Aplicar';
+                    var result = resp.result || {};
+                    discountFeedback.style.display = 'block';
+                    if (result.ok) {
+                      discountFeedback.style.color = '#065f46';
+                      discountFeedback.textContent = '✓ Descuento aplicado: ' + result.label
+                        + ' → Total: ' + currency + ' ' + Math.round(result.final).toLocaleString('es-CO');
+                      discountInput.readOnly = true;
+                      discountApply.disabled = true;
+                    } else {
+                      discountFeedback.style.color = '#dc2626';
+                      discountFeedback.textContent = '✗ ' + (result.error || 'Código no válido');
+                    }
+                  })
+                  .catch(function() {
+                    discountApply.disabled = false;
+                    discountApply.textContent = 'Aplicar';
+                    if (discountFeedback) {
+                      discountFeedback.style.display = 'block';
+                      discountFeedback.style.color = '#dc2626';
+                      discountFeedback.textContent = 'Error al validar el código.';
+                    }
+                  });
+                });
+              }
 
               /* ── Init ──────────────────────────────────────────────── */
               function loadAndRender() {

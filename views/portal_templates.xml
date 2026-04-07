@@ -41,6 +41,7 @@
                                         <th>Franja</th>
                                         <th class="text-center">Estado</th>
                                         <th class="text-center">Pagado</th>
+                                        <th class="text-center">Check-in</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
@@ -106,6 +107,26 @@
                                                 </t>
                                                 <t t-else="">
                                                     <span class="badge bg-danger">Pendiente</span>
+                                                </t>
+                                            </td>
+
+                                            <!-- Check-in -->
+                                            <td class="text-center">
+                                                <t t-if="booking.checked_in">
+                                                    <span class="badge rounded-pill"
+                                                          style="background:#d1fae5;color:#065f46;">
+                                                        <i class="fa fa-check me-1"/>
+                                                        <t t-if="booking.checkin_datetime">
+                                                            <t t-esc="booking.checkin_datetime.strftime('%H:%M')"/>
+                                                        </t>
+                                                        <t t-else="">Sí</t>
+                                                    </span>
+                                                </t>
+                                                <t t-elif="booking.state == 'confirmed'">
+                                                    <span class="text-muted" style="font-size:.75rem;">Pendiente</span>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="text-muted">—</span>
                                                 </t>
                                             </td>
 

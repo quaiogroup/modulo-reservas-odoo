@@ -67,6 +67,13 @@ class SpootAnalyticsDashboard extends Component {
     return "/spoot/export/bookings?" + p.toString();
   }
 
+  occupancyUrl() {
+    const p = new URLSearchParams();
+    if (this.state.exportFrom) p.set("date_from", this.state.exportFrom);
+    if (this.state.exportTo)   p.set("date_to",   this.state.exportTo);
+    return "/spoot/export/occupancy?" + p.toString();
+  }
+
   /* ── open bookings list ─────────────────────────────────────────── */
   openBookings() {
     this.actionService.doAction({

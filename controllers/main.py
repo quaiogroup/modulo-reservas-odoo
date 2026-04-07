@@ -106,6 +106,15 @@ class SpootOfficeWebsite(http.Controller):
             date = post.get("date")
             slot_type = post.get("slot_type")
             payment_mode = post.get("payment_mode", "bold")  # 'plan' or 'bold'
+            discount_code_raw = (post.get("discount_code") or "").strip().upper()
+
+            # Resolve discount code
+            discount_rec = False
+            discount_amount = 0.0
+            if discount_code_raw:
+                discount_rec = request.env["spoot.discount.code"].sudo().search(
+                    [("code", "=", discount_code_raw), ("active", "=", True)], limit=1
+                )
 
             if not date or not slot_type:
                 return _render_detail(_("Debes seleccionar una fecha y una franja horaria."))
@@ -150,6 +159,8 @@ class SpootOfficeWebsite(http.Controller):
                         "paid": True,
                         "subscription_id": subscription.id,
                         "plan_days_consumed": cost,
+                        "discount_code_id": discount_rec.id if discount_rec else False,
+                        "discount_amount": discount_amount,
                     })
                 except ValidationError as e:
                     return _render_detail(str(e))
@@ -170,6 +181,18 @@ class SpootOfficeWebsite(http.Controller):
                 })
 
             # ── BOLD PAYMENT MODE ──────────────────────────────────────────
+            # Apply discount if code provided
+            if discount_rec:
+                try:
+                    base_amt = float(
+                        office.price_morning if slot_type == "morning"
+                        else office.price_afternoon if slot_type == "afternoon"
+                        else office.price_full_day or 0
+                    )
+                    discount_amount = discount_rec.validate_for_booking(base_amt)
+                except ValidationError as e:
+                    return _render_detail(str(e))
+
             try:
                 booking = request.env["spoot.office.booking"].sudo().create({
                     "office_id": office.id,
@@ -178,15 +201,55 @@ class SpootOfficeWebsite(http.Controller):
                     "slot_type": slot_type,
                     "state": "pending_payment",
                     "payment_mode": "bold",
+                    "discount_code_id": discount_rec.id if discount_rec else False,
+                    "discount_amount": discount_amount,
                 })
             except ValidationError as e:
                 return _render_detail(str(e))
+            if discount_rec:
+                discount_rec.apply_use()
             # Notify customer (pending payment) and admin (new booking)
             booking._notify_customer("spoot_office_booking.mail_template_booking_pending_payment")
             booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
             return redirect("/my/coworking")
 
         return _render_detail()
+
+    # ── JSON: validar código de descuento ──────────────────────────────────
+    @http.route("/spoot/discount/validate", type="jsonrpc", auth="user", website=True)
+    def validate_discount_code(self, code=None, office_id=None, slot_type=None, **kw):
+        if not code:
+            return {"ok": False, "error": "Código vacío."}
+        discount = request.env["spoot.discount.code"].sudo().search(
+            [("code", "=", code.strip().upper()), ("active", "=", True)], limit=1
+        )
+        if not discount:
+            return {"ok": False, "error": "Código no válido."}
+
+        # Calcular monto base para mostrar descuento
+        base = 0.0
+        if office_id and slot_type:
+            office = request.env["spoot.office"].sudo().browse(int(office_id))
+            if slot_type == "morning":
+                base = float(office.price_morning or 0)
+            elif slot_type == "afternoon":
+                base = float(office.price_afternoon or 0)
+            else:
+                base = float(office.price_full_day or 0)
+
+        try:
+            discount_amount = discount.validate_for_booking(base)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+        label = (f"-{discount.discount_value}%" if discount.discount_type == "percent"
+                 else f"-${discount.discount_value:,.0f}")
+        return {
+            "ok": True,
+            "discount_amount": discount_amount,
+            "label": label,
+            "final": max(base - discount_amount, 0),
+        }
 
     # ── JSON: disponibilidad mensual para el calendario de reserva ──────────
     @http.route("/spoot/office/month-availability", type="jsonrpc", auth="public", website=True)
@@ -1100,6 +1163,7 @@ class SpootExportController(http.Controller):
             'Fecha', 'Franja', 'Estado',
             'Método pago', 'Pagado', 'Importe',
             'Plan', 'Días plan consumidos',
+            'Check-in', 'Hora check-in',
             'Creada el',
         ])
 
@@ -1117,6 +1181,8 @@ class SpootExportController(http.Controller):
                 str(round(b.amount_total or 0)),
                 b.subscription_id.plan_id.name if b.subscription_id else '',
                 str(b.plan_days_consumed or ''),
+                'Sí' if b.checked_in else 'No',
+                str(b.checkin_datetime)[:19] if b.checkin_datetime else '',
                 str(b.create_date)[:19] if b.create_date else '',
             ])
 
@@ -1128,5 +1194,87 @@ class SpootExportController(http.Controller):
             headers=[
                 ('Content-Type', 'text/csv; charset=utf-8'),
                 ('Content-Disposition', f'attachment; filename="{filename}"'),
+            ]
+        )
+
+    @http.route('/spoot/export/occupancy', type='http', auth='user', methods=['GET'])
+    def export_occupancy(self, date_from=None, date_to=None, office_id=None, **kw):
+        """Reporte de ocupación por oficina y mes. Solo para usuarios internos."""
+        import calendar as _cal
+        from datetime import date as _date, timedelta as _td
+
+        env = request.env
+        if not env.user.has_group('base.group_system'):
+            return request.not_found()
+
+        # Rango de fechas
+        try:
+            d_from = fields.Date.from_string(date_from) if date_from else _date.today().replace(day=1)
+            d_to   = fields.Date.from_string(date_to)   if date_to   else _date.today()
+        except Exception:
+            d_from = _date.today().replace(day=1)
+            d_to   = _date.today()
+
+        # Oficinas
+        office_domain = [('active', '=', True)]
+        if office_id:
+            try:
+                office_domain.append(('id', '=', int(office_id)))
+            except Exception:
+                pass
+        offices = env['spoot.office'].sudo().search(office_domain, order='name')
+
+        # Reservas en el rango
+        domain = [
+            ('date', '>=', d_from),
+            ('date', '<=', d_to),
+            ('state', '!=', 'cancelled'),
+        ]
+        bookings = env['spoot.office.booking'].sudo().search(domain)
+
+        # Agrupar por oficina + mes
+        from collections import defaultdict
+        data = defaultdict(lambda: {'total': 0, 'morning': 0, 'afternoon': 0, 'full_day': 0,
+                                    'checkins': 0, 'bold_revenue': 0.0})
+        for b in bookings:
+            key = (b.office_id.id, b.office_id.name, b.date.year, b.date.month)
+            data[key]['total'] += 1
+            data[key][b.slot_type or 'full_day'] += 1
+            if b.checked_in:
+                data[key]['checkins'] += 1
+            if b.payment_mode == 'bold' and b.paid:
+                data[key]['bold_revenue'] += float(b.amount_total or 0)
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+        writer.writerow([
+            'Oficina', 'Año', 'Mes',
+            'Total reservas', 'Mañana', 'Tarde', 'Día completo',
+            'Check-ins realizados', 'Tasa asistencia %',
+            'Ingresos Bold',
+        ])
+
+        MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+        for (oid, oname, year, month), d in sorted(data.items(), key=lambda x: (x[0][2], x[0][3], x[0][1])):
+            total = d['total'] or 1
+            writer.writerow([
+                oname,
+                year,
+                MONTHS[month - 1],
+                d['total'],
+                d['morning'],
+                d['afternoon'],
+                d['full_day'],
+                d['checkins'],
+                round(d['checkins'] / total * 100, 1),
+                round(d['bold_revenue'], 0),
+            ])
+
+        csv_content = '\ufeff' + output.getvalue()
+        return request.make_response(
+            csv_content,
+            headers=[
+                ('Content-Type', 'text/csv; charset=utf-8'),
+                ('Content-Disposition', 'attachment; filename="ocupacion_spoot.csv"'),
             ]
         )

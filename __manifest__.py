@@ -13,7 +13,6 @@
         "website",
         "portal",
         "calendar",
-        "payment",  # preparado para pagos
     ],
 'data': [
     'security/ir.model.access.csv',
@@ -33,6 +32,7 @@
     'views/coworking_plan_views.xml',
     'views/coworking_subscription_views.xml',
     'views/availability_views.xml',
+        'views/discount_views.xml',
         'views/settings_views.xml',
         'views/client_views.xml',
         'views/portal_templates.xml',

@@ -130,10 +130,11 @@ class SpootOfficeBooking(models.Model):
         store=True,
     )
 
-    @api.depends("slot_type", "office_id")
+    @api.depends("slot_type", "office_id", "discount_amount")
     def _compute_amount_total(self):
         for rec in self:
-            rec.amount_total = rec._get_amount_to_pay()
+            base = rec._get_base_amount()
+            rec.amount_total = max(base - (rec.discount_amount or 0.0), 0.0)
 
     start_datetime = fields.Datetime(string="Inicio", compute="_compute_datetimes", store=True)
     end_datetime = fields.Datetime(string="Fin", compute="_compute_datetimes", store=True)
@@ -202,6 +203,153 @@ class SpootOfficeBooking(models.Model):
         copy=False,
         digits=(6, 1),
     )
+
+    # ── Recurrencia ────────────────────────────────────────────────
+    recurrence_type = fields.Selection([
+        ("none",      "Sin recurrencia"),
+        ("weekly",    "Semanal"),
+        ("biweekly",  "Quincenal"),
+        ("monthly",   "Mensual"),
+    ], string="Recurrencia", default="none", copy=False)
+
+    recurrence_end_date = fields.Date(
+        string="Repetir hasta",
+        copy=False,
+        help="Última fecha en la que se generará una reserva recurrente.",
+    )
+
+    recurrence_group_id = fields.Char(
+        string="Grupo de recurrencia",
+        copy=False,
+        index=True,
+        help="UUID que agrupa todas las reservas de una misma serie recurrente.",
+    )
+
+    recurrence_count = fields.Integer(
+        string="Reservas en la serie",
+        compute="_compute_recurrence_count",
+    )
+
+    def _compute_recurrence_count(self):
+        for rec in self:
+            if rec.recurrence_group_id:
+                rec.recurrence_count = self.search_count([
+                    ("recurrence_group_id", "=", rec.recurrence_group_id)
+                ])
+            else:
+                rec.recurrence_count = 0
+
+    def action_create_recurrent_bookings(self):
+        """Genera las reservas futuras de la serie a partir de esta reserva."""
+        self.ensure_one()
+        if self.recurrence_type == "none" or not self.recurrence_end_date:
+            raise UserError(_("Define el tipo de recurrencia y la fecha límite."))
+        if self.recurrence_end_date <= self.date:
+            raise UserError(_("La fecha límite debe ser posterior a la fecha de esta reserva."))
+
+        import uuid as _uuid
+        from datetime import timedelta as _td
+
+        group_id = self.recurrence_group_id or _uuid.uuid4().hex
+        self.sudo().write({"recurrence_group_id": group_id})
+
+        deltas = {"weekly": 7, "biweekly": 14, "monthly": 0}
+        next_date = self.date
+        created = 0
+
+        while True:
+            if self.recurrence_type == "monthly":
+                m, y = next_date.month + 1, next_date.year
+                if m > 12:
+                    m, y = 1, y + 1
+                import calendar as _cal
+                last_day = _cal.monthrange(y, m)[1]
+                next_date = next_date.replace(year=y, month=m, day=min(next_date.day, last_day))
+            else:
+                next_date = next_date + _td(days=deltas[self.recurrence_type])
+
+            if next_date > self.recurrence_end_date:
+                break
+
+            avail = self.get_availability(self.office_id.id, str(next_date))
+            if self.slot_type not in avail.get("available", []):
+                continue  # slot ocupado ese día, se salta
+
+            self.sudo().copy({
+                "date":                next_date,
+                "state":               self.state,
+                "paid":                self.paid,
+                "payment_mode":        self.payment_mode,
+                "subscription_id":     self.subscription_id.id if self.subscription_id else False,
+                "plan_days_consumed":  self.plan_days_consumed,
+                "recurrence_type":     self.recurrence_type,
+                "recurrence_end_date": self.recurrence_end_date,
+                "recurrence_group_id": group_id,
+            })
+            created += 1
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Serie creada",
+                "message": f"Se generaron {created} reserva(s) adicionales.",
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    def action_view_recurrence_series(self):
+        """Muestra todas las reservas del mismo grupo recurrente."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Serie de reservas",
+            "res_model": "spoot.office.booking",
+            "view_mode": "list,form",
+            "domain": [("recurrence_group_id", "=", self.recurrence_group_id)],
+        }
+
+    # ── Descuento ─────────────────────────────────────────────────
+    discount_code_id = fields.Many2one(
+        "spoot.discount.code",
+        string="Código de descuento",
+        ondelete="set null",
+        copy=False,
+    )
+    discount_amount = fields.Monetary(
+        string="Descuento aplicado",
+        currency_field="currency_id",
+        default=0.0,
+        readonly=True,
+        copy=False,
+    )
+
+    # ── Check-in ───────────────────────────────────────────────────
+    checked_in = fields.Boolean(
+        string="Check-in realizado",
+        default=False,
+        copy=False,
+        tracking=True,
+    )
+    checkin_datetime = fields.Datetime(
+        string="Hora de check-in",
+        readonly=True,
+        copy=False,
+    )
+
+    def action_check_in(self):
+        """Marca el check-in del cliente para esta reserva."""
+        for rec in self:
+            if rec.state != "confirmed":
+                raise UserError(_("Solo se puede hacer check-in en reservas confirmadas."))
+            if rec.checked_in:
+                raise UserError(_("Esta reserva ya tiene check-in registrado."))
+            rec.write({
+                "checked_in": True,
+                "checkin_datetime": fields.Datetime.now(),
+            })
+            _logger.info("[CHECKIN] booking %s — partner %s", rec.id, rec.partner_id.name)
 
     # ── Email / reminder tracking ──────────────────────────────────
     reminder_sent = fields.Boolean(
@@ -631,7 +779,7 @@ class SpootOfficeBooking(models.Model):
         company = getattr(self.office_id, "company_id", False) or self.env.company
         return company.currency_id
 
-    def _get_amount_to_pay(self):
+    def _get_base_amount(self):
         self.ensure_one()
         office = self.office_id
         if self.slot_type == "morning":
@@ -639,6 +787,10 @@ class SpootOfficeBooking(models.Model):
         if self.slot_type == "afternoon":
             return float(office.price_afternoon or 0.0)
         return float(office.price_full_day or 0.0)
+
+    def _get_amount_to_pay(self):
+        self.ensure_one()
+        return max(self._get_base_amount() - (self.discount_amount or 0.0), 0.0)
 
     
     

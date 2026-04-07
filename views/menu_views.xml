@@ -53,6 +53,13 @@
               action="action_spoot_office"
               sequence="10"/>
 
+    <!-- Códigos de descuento -->
+    <menuitem id="menu_spoot_discount_codes"
+              name="Descuentos"
+              parent="menu_spoot_office_root"
+              action="spoot_office_booking.action_spoot_discount_codes"
+              sequence="13"/>
+
     <!-- Servicios -->
     <menuitem id="menu_spoot_office_service"
               name="Servicios"

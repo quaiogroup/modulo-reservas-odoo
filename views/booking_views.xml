@@ -141,9 +141,22 @@
                 <field name="subscription_id" string="Plan"
                        optional="hide"/>
 
+                <!-- Check-in -->
+                <field name="checked_in" string="Check-in"
+                       widget="boolean_toggle" optional="show"/>
+                <field name="checkin_datetime" string="Hora llegada" optional="hide"/>
+
                 <!-- Audit (ocultos por defecto) -->
                 <field name="bold_payment_status" string="Estado Bold" optional="hide"/>
                 <field name="create_date"         string="Creada el"   optional="hide"/>
+
+                <!-- Botón check-in inline -->
+                <button name="action_check_in"
+                        type="object"
+                        string="Check-in"
+                        icon="fa-sign-in"
+                        invisible="checked_in or state != 'confirmed'"
+                        class="btn-sm btn-success"/>
 
             </list>
         </field>
@@ -161,6 +174,12 @@
 
                 <!-- ── Header: action buttons + statusbar ────────────── -->
                 <header>
+                    <button name="action_check_in"
+                            string="Registrar Check-in"
+                            type="object"
+                            class="btn-primary"
+                            invisible="checked_in or state != 'confirmed'"
+                            confirm="¿Confirmar la llegada del cliente?"/>
                     <button name="action_mark_paid"
                             string="Marcar como pagada"
                             type="object"
@@ -183,6 +202,19 @@
 
                     <!-- ── Smart buttons ─────────────────────────────── -->
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_view_recurrence_series"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-repeat"
+                                invisible="not recurrence_group_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="recurrence_count" nolabel="1"/>
+                                </span>
+                                <span class="o_stat_text">En la serie</span>
+                            </div>
+                        </button>
+
                         <button name="action_view_subscription"
                                 type="object"
                                 class="oe_stat_button"
@@ -291,9 +323,35 @@
 
                         </page>
 
+                        <!-- TAB: Recurrencia -->
+                        <page string="Recurrencia" name="page_recurrence">
+                            <group>
+                                <field name="recurrence_type"     string="Repetir"/>
+                                <field name="recurrence_end_date" string="Hasta"
+                                       invisible="recurrence_type == 'none'"/>
+                                <field name="recurrence_group_id" string="ID de serie"
+                                       readonly="1" invisible="not recurrence_group_id"/>
+                            </group>
+                            <div class="alert alert-info" role="alert"
+                                 invisible="recurrence_type == 'none' or recurrence_group_id">
+                                Guarda la reserva y luego haz clic en
+                                <strong>"Crear serie recurrente"</strong> para generar las reservas siguientes.
+                            </div>
+                            <button name="action_create_recurrent_bookings"
+                                    type="object"
+                                    string="Crear serie recurrente"
+                                    class="btn-primary"
+                                    invisible="recurrence_type == 'none' or recurrence_group_id"
+                                    confirm="¿Generar todas las reservas recurrentes hasta la fecha indicada?"/>
+                        </page>
+
                         <!-- TAB 2: Técnico -->
                         <page string="Técnico" name="page_technical">
-                            <group>
+                            <group string="Check-in">
+                                <field name="checked_in"       string="Check-in realizado" widget="boolean_toggle"/>
+                                <field name="checkin_datetime" string="Hora de llegada" readonly="1"/>
+                            </group>
+                            <group string="Sistema">
                                 <field name="google_event_id"
                                        string="ID evento externo (Google, etc.)"/>
                                 <field name="reminder_sent" string="Recordatorio enviado"/>

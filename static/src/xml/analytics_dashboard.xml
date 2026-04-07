@@ -12,7 +12,8 @@
     </div>
     <div class="an-header__actions">
       <button class="an-btn an-btn--ghost" t-on-click="openBookings">Ver reservas →</button>
-      <button class="an-btn an-btn--export" t-on-click="exportCsv">⬇ Exportar CSV</button>
+      <button class="an-btn an-btn--export" t-on-click="exportCsv">⬇ Reservas CSV</button>
+      <a class="an-btn an-btn--ghost" t-att-href="occupancyUrl()">⬇ Ocupación CSV</a>
     </div>
   </div>
 
