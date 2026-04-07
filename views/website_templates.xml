@@ -601,6 +601,7 @@
 
                 submitBtn.disabled = false;
                 updatePaymentUI();
+                toggleDiscountSection();
               }
 
               /* ── Reset ─────────────────────────────────────────────── */

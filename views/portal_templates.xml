@@ -199,274 +199,315 @@
             </div>
         </t>
     </template>
-        <!-- DETALLE DE RESERVA EN PORTAL (MEJORADO) -->
+  <!-- DETALLE DE RESERVA EN PORTAL -->
   <template id="portal_booking_detail" name="Detalle reserva oficina">
     <t t-call="portal.portal_layout">
-        <t t-set="title">Detalle de la reserva</t>
+      <t t-set="title">Reserva <t t-esc="booking.name"/></t>
 
-        <script type="text/javascript"
-                src="https://checkout.bold.co/library/boldPaymentButton.js"></script>
+      <script type="text/javascript"
+              src="https://checkout.bold.co/library/boldPaymentButton.js"></script>
 
-        <div class="o_portal_wrap">
-            <div class="o_portal_my_doc">
+      <div class="o_portal_wrap">
+        <div class="o_portal_my_doc" style="max-width:720px;">
 
-                <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="mb-1">
-                            Reserva
-                            <t t-esc="booking.name or ('#%s' % booking.id)"/>
-                        </h2>
-                        <small class="text-muted">
-                            Creada el <t t-esc="booking.create_date"/>
-                        </small>
-                    </div>
+          <!-- ── Navegación ───────────────────────────────────────────── -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="/my/office-bookings" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+              &#8592; Mis reservas
+            </a>
+            <span class="text-muted" style="font-size:.78rem;">
+              Creada el <t t-esc="booking.create_date.strftime('%d/%m/%Y') if booking.create_date else ''"/>
+            </span>
+          </div>
 
-                    <a href="/my/office-bookings"
-                       class="btn btn-outline-secondary btn-sm">
-                        ← Volver
-                    </a>
-                </div>
-
-                <!-- Confirmación de pago Bold -->
-                <t t-if="bold_ok == '1'">
-                    <div class="alert alert-success d-flex align-items-start gap-2 rounded-4 mb-4" role="alert">
-                        <span style="font-size:1.3rem;">✅</span>
-                        <div>
-                            <strong>¡Pago confirmado!</strong><br/>
-                            Tu reserva ha sido confirmada. Recibirás un correo de confirmación.
-                        </div>
-                    </div>
+          <!-- ── Alertas contextuales ─────────────────────────────────── -->
+          <t t-if="bold_ok == '1'">
+            <div class="alert alert-success rounded-4 d-flex gap-3 align-items-start mb-4">
+              <span style="font-size:1.4rem;line-height:1;">&#10003;</span>
+              <div>
+                <strong class="d-block mb-1">¡Pago confirmado!</strong>
+                Tu reserva está confirmada. Te enviamos un correo de confirmación.
+              </div>
+            </div>
+          </t>
+          <t t-if="cancel_msg == 'ok'">
+            <div class="alert alert-success rounded-4 d-flex gap-3 align-items-start mb-4">
+              <span style="font-size:1.4rem;line-height:1;">&#10003;</span>
+              <div>
+                <strong class="d-block mb-1">Reserva cancelada.</strong>
+                <t t-if="booking.payment_mode == 'plan' and booking.plan_days_consumed">
+                  Se restauraron <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong> día(s) a tu plan.
                 </t>
+              </div>
+            </div>
+          </t>
+          <t t-if="cancel_msg == 'ya_cancelada'">
+            <div class="alert alert-warning rounded-4 mb-4">Esta reserva ya estaba cancelada.</div>
+          </t>
+          <t t-if="cancel_error">
+            <div class="alert alert-danger rounded-4 mb-4">
+              <strong>No se pudo cancelar:</strong> <t t-esc="cancel_error"/>
+            </div>
+          </t>
 
-                <!-- Mensajes de cancelación -->
-                <t t-if="cancel_error">
-                    <div class="alert alert-danger d-flex align-items-start gap-2 rounded-4 mb-4" role="alert">
-                        <span style="font-size:1.3rem;">🚫</span>
-                        <div>
-                            <strong>No se pudo cancelar la reserva</strong><br/>
-                            <t t-esc="cancel_error"/>
-                        </div>
-                    </div>
-                </t>
-                <t t-if="cancel_msg == 'ok'">
-                    <div class="alert alert-success d-flex align-items-start gap-2 rounded-4 mb-4" role="alert">
-                        <span style="font-size:1.3rem;">✅</span>
-                        <div>
-                            <strong>Reserva cancelada correctamente.</strong><br/>
-                            <t t-if="booking.payment_mode == 'plan' and booking.plan_days_consumed">
-                                Se han restaurado <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong> día(s) a tu plan.
-                            </t>
-                        </div>
-                    </div>
-                </t>
-                <t t-if="cancel_msg == 'ya_cancelada'">
-                    <div class="alert alert-warning rounded-4 mb-4" role="alert">
-                        Esta reserva ya estaba cancelada.
-                    </div>
-                </t>
-
-                <!-- Card principal -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-
-                        <!-- Estado -->
-                        <div class="mb-3">
-                            <strong>Estado:</strong>
-
-                            <t t-if="booking.state == 'confirmed'">
-                                <span class="badge bg-success ms-2">Confirmada</span>
-                            </t>
-                            <t t-elif="booking.state == 'pending_payment'">
-                                <span class="badge bg-warning text-dark ms-2">
-                                    Pendiente de pago
-                                </span>
-                            </t>
-                            <t t-elif="booking.state == 'cancelled'">
-                                <span class="badge bg-secondary ms-2">Cancelada</span>
-                            </t>
-                            <t t-else="">
-                                <span class="badge bg-light text-dark ms-2">
-                                    Borrador
-                                </span>
-                            </t>
-                        </div>
-
-                        <hr/>
-
-                        <!-- Información -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <p><strong>Oficina:</strong>
-                                    <t t-esc="booking.office_id.name"/>
-                                </p>
-                                <p><strong>Fecha:</strong>
-                                    <t t-esc="booking.date"/>
-                                </p>
-                                <p><strong>Franja:</strong>
-                                    <t t-if="booking.slot_type == 'morning'">
-                                        Mañana (8:00 – 12:00)
-                                    </t>
-                                    <t t-elif="booking.slot_type == 'afternoon'">
-                                        Tarde (14:00 – 18:00)
-                                    </t>
-                                    <t t-else="">
-                                        Día completo (8:00 – 18:00)
-                                    </t>
-                                </p>
-                            </div>
-
-                            <div class="col-md-6">
-                                <p><strong>Desde:</strong>
-                                    <t t-esc="booking.start_datetime"/>
-                                </p>
-                                <p><strong>Hasta:</strong>
-                                    <t t-esc="booking.end_datetime"/>
-                                </p>
-                                <p>
-                                    <strong>Pago:</strong>
-                                    <t t-if="booking.payment_mode == 'plan'">
-                                        <span class="text-success fw-semibold">Cubierto por plan</span>
-                                    </t>
-                                    <t t-elif="booking.paid">
-                                        <span class="text-success">Confirmado</span>
-                                    </t>
-                                    <t t-else="">
-                                        <span class="text-warning fw-semibold">Pendiente</span>
-                                    </t>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Plan consumption info -->
-                        <t t-if="booking.payment_mode == 'plan' and booking.subscription_id">
-<div class="rounded-3 p-3 mt-3"
-     style="background:#f0fdf4; border:1px solid #86efac;">
-    <div class="d-flex justify-content-between align-items-center">
-        <span class="fw-semibold text-success" style="font-size:.85rem;">
-            Pagado con plan
-        </span>
-        <span class="badge rounded-pill px-2"
-              style="background:#d1fae5; color:#065f46;">
-            <t t-esc="booking.subscription_id.plan_id.name"/>
-        </span>
-    </div>
-    <div class="text-muted mt-1" style="font-size:.82rem;">
-        Se descontaron <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong>
-        día(s) de tu plan.
-    </div>
-</div>
-                        </t>
-
-                        <!-- Total (Bold payment only) -->
-                        <t t-if="booking.payment_mode == 'bold' and not booking.paid and booking.state != 'cancelled' and bold_amount">
-<div class="alert alert-light border mt-3">
-    <div class="d-flex justify-content-between align-items-center">
-        <span class="fw-bold">Total a pagar:</span>
-        <span class="fs-4 fw-bold text-primary">
-<t t-esc="booking.currency_id.symbol"/>
-<t t-esc="'{:,.0f}'.format(bold_amount).replace(',', '.')"/>
-        </span>
-    </div>
-</div>
-                        </t>
-
-                    </div>
-
-                    <!-- Bold button (only for unpaid Bold-mode bookings) -->
-                    <t t-if="booking.payment_mode != 'plan' and bold_api_key">
-                    <script
-                                data-bold-button="dark-L"
-                                t-att-data-api-key="bold_api_key"
-                                t-att-data-order-id="bold_order_id"
-                                t-att-data-amount="str(bold_amount)"
-                                t-att-data-currency="bold_currency"
-                                t-att-data-integrity-signature="bold_integrity"
-                                t-att-data-redirection-url="bold_redirection_url"
-                                t-att-data-description="bold_description"
-                                data-render-mode="embedded"
-                            ></script>
+          <!-- ── Hero: estado ─────────────────────────────────────────── -->
+          <t t-if="booking.state == 'confirmed'">
+            <div class="rounded-4 px-4 py-3 mb-4 d-flex justify-content-between align-items-center"
+                 style="background:#d1fae5; border:1px solid #6ee7b7;">
+              <div>
+                <span class="fw-bold text-success" style="font-size:1rem;">Reserva confirmada</span>
+                <t t-if="booking.checked_in">
+                  <span class="badge ms-2 rounded-pill"
+                        style="background:#065f46;color:#fff;font-size:.72rem;">
+                    Check-in
+                    <t t-if="booking.checkin_datetime">
+                      <t t-esc="booking.checkin_datetime.strftime('%H:%M')"/>
                     </t>
-
-<!-- Comprobante PDF -->
-<t t-if="booking.paid or booking.payment_mode == 'plan'">
-    <div class="px-3 pb-2">
-        <a t-att-href="'/my/office-bookings/%s/comprobante' % booking.id"
-           target="_blank"
-           class="btn btn-sm btn-outline-success rounded-pill px-3"
-           style="font-size:.82rem;">
-            &#8595; Descargar comprobante PDF
-        </a>
-    </div>
-</t>
-
-  <!-- Agregar al calendario (solo reservas confirmadas) -->
-<t t-if="gcal_url">
-    <div class="px-3 pb-3">
-        <div class="rounded-3 p-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
-            <p class="fw-semibold mb-2" style="font-size:.85rem;">Añadir al calendario</p>
-            <div class="d-flex flex-wrap gap-2">
-                <a t-att-href="gcal_url" target="_blank" rel="noopener"
-                   class="btn btn-sm rounded-pill px-3 fw-semibold"
-                   style="background:#4285f4; color:#fff; border:none; font-size:.82rem;">
-                    Google Calendar
-                </a>
-                <a t-att-href="ics_url"
-                   class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                   style="font-size:.82rem;">
-                    &#8595; .ics — Outlook / Apple
-                </a>
+                  </span>
+                </t>
+              </div>
+              <span style="font-size:1.8rem;line-height:1;">&#10003;</span>
             </div>
-        </div>
-    </div>
-</t>
+          </t>
+          <t t-elif="booking.state == 'pending_payment'">
+            <div class="rounded-4 px-4 py-3 mb-4 d-flex justify-content-between align-items-center"
+                 style="background:#fef9c3; border:1px solid #fde047;">
+              <div>
+                <span class="fw-bold" style="font-size:1rem;color:#854d0e;">Pendiente de pago</span>
+                <p class="mb-0 mt-1" style="font-size:.8rem;color:#713f12;">
+                  Completa el pago para confirmar tu espacio.
+                </p>
+              </div>
+              <span style="font-size:1.8rem;line-height:1;">&#9888;</span>
+            </div>
+          </t>
+          <t t-elif="booking.state == 'cancelled'">
+            <div class="rounded-4 px-4 py-3 mb-4 d-flex justify-content-between align-items-center"
+                 style="background:#f3f4f6; border:1px solid #d1d5db;">
+              <span class="fw-bold text-secondary" style="font-size:1rem;">Reserva cancelada</span>
+              <span style="font-size:1.8rem;line-height:1;color:#9ca3af;">&#10007;</span>
+            </div>
+          </t>
 
-  <!-- Acciones: Cambiar y Cancelar -->
-<t t-if="booking.state != 'cancelled'">
-    <div class="p-3 d-flex flex-wrap gap-2 align-items-start">
+          <!-- ── Tarjeta principal ────────────────────────────────────── -->
+          <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
 
-        <!-- Botón Cambiar fecha/franja -->
-        <a t-att-href="'/my/office-bookings/%s/reschedule' % booking.id"
-           class="btn btn-outline-primary btn-sm rounded-pill px-3">
-            Cambiar fecha / franja
-        </a>
+              <!-- Referencia -->
+              <div class="d-flex justify-content-between align-items-start mb-4 pb-3"
+                   style="border-bottom:1px solid #f0f0f0;">
+                <div>
+                  <p class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;">
+                    Referencia
+                  </p>
+                  <span class="fw-bold" style="font-size:1.15rem;font-family:monospace;color:#065f46;">
+                    <t t-esc="booking.name"/>
+                  </span>
+                </div>
+                <!-- Badge pago -->
+                <t t-if="booking.payment_mode == 'plan'">
+                  <span class="badge rounded-pill px-3 py-2"
+                        style="background:#d1fae5;color:#065f46;font-size:.78rem;">
+                    Pagado con plan
+                  </span>
+                </t>
+                <t t-elif="booking.paid">
+                  <span class="badge rounded-pill px-3 py-2"
+                        style="background:#d1fae5;color:#065f46;font-size:.78rem;">
+                    Pagado
+                  </span>
+                </t>
+                <t t-else="">
+                  <span class="badge rounded-pill px-3 py-2"
+                        style="background:#fef9c3;color:#854d0e;font-size:.78rem;">
+                    Sin pagar
+                  </span>
+                </t>
+              </div>
 
-        <!-- Cancelar: solo si no pagado con Bold -->
-        <t t-if="not booking.paid or booking.payment_mode == 'plan'">
-            <form t-att-action="'/my/office-bookings/%s/cancel' % booking.id"
-                  method="post" style="display:inline;">
-                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                <button type="submit"
-                        class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                        onclick="return confirm('¿Seguro que quieres cancelar? Esta acción no se puede deshacer.');">
-                    Cancelar reserva
-                </button>
-            </form>
-        </t>
+              <!-- Grid de detalles -->
+              <div class="row g-3">
 
-    </div>
-
-    <!-- Aviso si la cancelación restaura días de plan -->
-    <t t-if="booking.payment_mode == 'plan' and booking.plan_days_consumed">
-        <div class="px-3 pb-3">
-            <p class="small text-muted mb-0">
-                Si cancelas, se restaurarán
-                <strong><t t-esc="'%.1f' % booking.plan_days_consumed"/></strong>
-                día(s) a tu plan.
-            </p>
-        </div>
-    </t>
-</t>
-
+                <div class="col-6 col-md-3">
+                  <p class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Oficina</p>
+                  <p class="fw-semibold mb-0" style="font-size:.92rem;">
+                    <t t-esc="booking.office_id.name"/>
+                  </p>
                 </div>
 
+                <div class="col-6 col-md-3">
+                  <p class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Fecha</p>
+                  <p class="fw-semibold mb-0" style="font-size:.92rem;">
+                    <t t-esc="booking.date.strftime('%d %b %Y') if booking.date else ''"/>
+                  </p>
+                </div>
 
+                <div class="col-6 col-md-3">
+                  <p class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Franja</p>
+                  <p class="fw-semibold mb-0" style="font-size:.92rem;">
+                    <t t-if="booking.slot_type == 'morning'">Mañana<br/><span class="text-muted fw-normal" style="font-size:.78rem;">8:00 – 12:00</span></t>
+                    <t t-elif="booking.slot_type == 'afternoon'">Tarde<br/><span class="text-muted fw-normal" style="font-size:.78rem;">14:00 – 18:00</span></t>
+                    <t t-else="">Día completo<br/><span class="text-muted fw-normal" style="font-size:.78rem;">8:00 – 18:00</span></t>
+                  </p>
+                </div>
 
-              
+                <div class="col-6 col-md-3">
+                  <p class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Método de pago</p>
+                  <p class="fw-semibold mb-0" style="font-size:.92rem;">
+                    <t t-if="booking.payment_mode == 'plan'">Plan de días</t>
+                    <t t-else="">Bold</t>
+                  </p>
+                </div>
+
+              </div>
+
+              <!-- Plan info -->
+              <t t-if="booking.payment_mode == 'plan' and booking.subscription_id">
+                <div class="rounded-3 p-3 mt-4"
+                     style="background:#f0fdf4;border:1px solid #bbf7d0;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="fw-semibold text-success d-block" style="font-size:.85rem;">
+                        <t t-esc="booking.subscription_id.plan_id.name"/>
+                      </span>
+                      <span class="text-muted" style="font-size:.78rem;">
+                        <t t-esc="'%.1f' % booking.plan_days_consumed"/> día(s) descontado(s)
+                      </span>
+                    </div>
+                    <i class="fa fa-check-circle text-success" style="font-size:1.4rem;"/>
+                  </div>
+                </div>
+              </t>
+
+              <!-- Descuento aplicado -->
+              <t t-if="booking.discount_code_id and booking.discount_amount">
+                <div class="rounded-3 p-3 mt-3"
+                     style="background:#eff6ff;border:1px solid #bfdbfe;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-size:.82rem;">
+                      Descuento <strong><t t-esc="booking.discount_code_id.code"/></strong>
+                    </span>
+                    <span class="fw-bold text-primary">
+                      −<t t-esc="booking.currency_id.symbol"/>
+                      <t t-esc="'{:,.0f}'.format(booking.discount_amount).replace(',','.')"/>
+                    </span>
+                  </div>
+                </div>
+              </t>
+
+              <!-- Total Bold -->
+              <t t-if="booking.payment_mode == 'bold'">
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3"
+                     style="border-top:2px solid #f0f0f0;">
+                  <span class="text-muted" style="font-size:.85rem;">Total</span>
+                  <span class="fw-bold" style="font-size:1.3rem;">
+                    <t t-esc="booking.currency_id.symbol"/>
+                    <t t-esc="'{:,.0f}'.format(booking.amount_total).replace(',','.')"/>
+                  </span>
+                </div>
+              </t>
+
             </div>
+
+            <!-- ── Botón de pago Bold ───────────────────────────────── -->
+            <t t-if="booking.payment_mode == 'bold' and not booking.paid and booking.state != 'cancelled' and bold_api_key">
+              <div class="px-4 pb-4">
+                <p class="text-muted mb-3" style="font-size:.82rem;">
+                  Haz clic en el botón para completar el pago de forma segura con Bold.
+                </p>
+                <script
+                  data-bold-button="dark-L"
+                  t-att-data-api-key="bold_api_key"
+                  t-att-data-order-id="bold_order_id"
+                  t-att-data-amount="str(bold_amount)"
+                  t-att-data-currency="bold_currency"
+                  t-att-data-integrity-signature="bold_integrity"
+                  t-att-data-redirection-url="bold_redirection_url"
+                  t-att-data-description="bold_description"
+                  data-render-mode="embedded"
+                ></script>
+              </div>
+            </t>
+
+            <!-- ── Sin keys Bold configuradas ─────────────────────── -->
+            <t t-if="booking.payment_mode == 'bold' and not booking.paid and booking.state != 'cancelled' and not bold_api_key">
+              <div class="px-4 pb-4">
+                <div class="alert alert-warning rounded-3 mb-0" style="font-size:.85rem;">
+                  El pago en línea no está disponible en este momento. Contacta al equipo para completar tu reserva.
+                </div>
+              </div>
+            </t>
+
+          </div>
+
+          <!-- ── Añadir al calendario ─────────────────────────────────── -->
+          <t t-if="gcal_url and booking.state == 'confirmed'">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body px-4 py-3">
+                <p class="fw-semibold mb-2" style="font-size:.85rem;">Añadir al calendario</p>
+                <div class="d-flex flex-wrap gap-2">
+                  <a t-att-href="gcal_url" target="_blank" rel="noopener"
+                     class="btn btn-sm rounded-pill px-3 fw-semibold"
+                     style="background:#4285f4;color:#fff;border:none;font-size:.82rem;">
+                    <i class="fa fa-calendar me-1"/>Google Calendar
+                  </a>
+                  <a t-att-href="ics_url"
+                     class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                     style="font-size:.82rem;">
+                    &#8595; Outlook / Apple (.ics)
+                  </a>
+                </div>
+              </div>
+            </div>
+          </t>
+
+          <!-- ── Acciones ─────────────────────────────────────────────── -->
+          <t t-if="booking.state != 'cancelled'">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+
+              <!-- Comprobante PDF -->
+              <t t-if="booking.paid or booking.payment_mode == 'plan'">
+                <a t-att-href="'/my/office-bookings/%s/comprobante' % booking.id"
+                   target="_blank"
+                   class="btn btn-outline-success btn-sm rounded-pill px-3"
+                   style="font-size:.82rem;">
+                  &#8595; Comprobante PDF
+                </a>
+              </t>
+
+              <!-- Cambiar fecha -->
+              <a t-att-href="'/my/office-bookings/%s/reschedule' % booking.id"
+                 class="btn btn-outline-primary btn-sm rounded-pill px-3"
+                 style="font-size:.82rem;">
+                Cambiar fecha / franja
+              </a>
+
+              <!-- Cancelar -->
+              <t t-if="not booking.paid or booking.payment_mode == 'plan'">
+                <form t-att-action="'/my/office-bookings/%s/cancel' % booking.id"
+                      method="post" style="display:inline;">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <button type="submit"
+                          class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                          style="font-size:.82rem;"
+                          onclick="return confirm('¿Cancelar esta reserva?');">
+                    Cancelar reserva
+                  </button>
+                </form>
+                <t t-if="booking.payment_mode == 'plan' and booking.plan_days_consumed">
+                  <span class="align-self-center text-muted" style="font-size:.75rem;">
+                    Se restaurarán <t t-esc="'%.1f' % booking.plan_days_consumed"/> día(s) al cancelar.
+                  </span>
+                </t>
+              </t>
+
+            </div>
+          </t>
+
         </div>
+      </div>
     </t>
-</template>
+  </template>
 
 
   <!-- ══════════════════════════════════════════════════════════════

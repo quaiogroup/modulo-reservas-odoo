@@ -211,7 +211,7 @@ class SpootOfficeWebsite(http.Controller):
             # Notify customer (pending payment) and admin (new booking)
             booking._notify_customer("spoot_office_booking.mail_template_booking_pending_payment")
             booking._notify_admin("spoot_office_booking.mail_template_booking_new_admin")
-            return redirect("/my/coworking")
+            return redirect(f"/my/office-bookings/{booking.id}")
 
         return _render_detail()
 
