@@ -17,7 +17,6 @@
         "calendar",
     ],
     "data": [
-        "security/ir_model_access.xml",
         "security/ir_rules.xml",
 
         # REPORTS
@@ -63,4 +62,5 @@
 
     "installable": True,
     "application": True,
+    "post_init_hook": "post_init_hook",
 }
