@@ -17,7 +17,7 @@
         "calendar",
     ],
     "data": [
-        "security/ir.model.access.csv",
+        "security/ir_model_access.xml",
         "security/ir_rules.xml",
 
         # REPORTS

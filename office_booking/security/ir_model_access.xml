@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+
+    <!-- office.space -->
+    <record id="access_office_space_user" model="ir.model.access">
+      <field name="name">access_office_space_user</field>
+      <field name="model_id" search="[('model','=','office.space')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_space_manager" model="ir.model.access">
+      <field name="name">access_office_space_manager</field>
+      <field name="model_id" search="[('model','=','office.space')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.booking -->
+    <record id="access_office_booking_user" model="ir.model.access">
+      <field name="name">access_office_booking_user</field>
+      <field name="model_id" search="[('model','=','office.booking')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_booking_manager" model="ir.model.access">
+      <field name="name">access_office_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.booking')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.image -->
+    <record id="access_office_image_user" model="ir.model.access">
+      <field name="name">access_office_image_user</field>
+      <field name="model_id" search="[('model','=','office.image')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_image_manager" model="ir.model.access">
+      <field name="name">access_office_image_manager</field>
+      <field name="model_id" search="[('model','=','office.image')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.booking.wizard -->
+    <record id="access_office_booking_wizard" model="ir.model.access">
+      <field name="name">access_office_booking_wizard</field>
+      <field name="model_id" search="[('model','=','office.booking.wizard')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.service -->
+    <record id="access_office_service_user" model="ir.model.access">
+      <field name="name">access_office_service_user</field>
+      <field name="model_id" search="[('model','=','office.service')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_service_manager" model="ir.model.access">
+      <field name="name">access_office_service_manager</field>
+      <field name="model_id" search="[('model','=','office.service')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.subscription -->
+    <record id="access_office_subscription_user" model="ir.model.access">
+      <field name="name">access_office_subscription_user</field>
+      <field name="model_id" search="[('model','=','office.subscription')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_subscription_manager" model="ir.model.access">
+      <field name="name">access_office_subscription_manager</field>
+      <field name="model_id" search="[('model','=','office.subscription')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.plan -->
+    <record id="access_office_plan_user" model="ir.model.access">
+      <field name="name">access_office_plan_user</field>
+      <field name="model_id" search="[('model','=','office.plan')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_plan_manager" model="ir.model.access">
+      <field name="name">access_office_plan_manager</field>
+      <field name="model_id" search="[('model','=','office.plan')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.block -->
+    <record id="access_office_block_user" model="ir.model.access">
+      <field name="name">access_office_block_user</field>
+      <field name="model_id" search="[('model','=','office.block')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_block_manager" model="ir.model.access">
+      <field name="name">access_office_block_manager</field>
+      <field name="model_id" search="[('model','=','office.block')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.availability -->
+    <record id="access_office_availability" model="ir.model.access">
+      <field name="name">access_office_availability</field>
+      <field name="model_id" search="[('model','=','office.availability')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <!-- office.settings -->
+    <record id="access_office_settings" model="ir.model.access">
+      <field name="name">access_office_settings</field>
+      <field name="model_id" search="[('model','=','office.settings')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <!-- office.discount -->
+    <record id="access_office_discount_user" model="ir.model.access">
+      <field name="name">access_office_discount_user</field>
+      <field name="model_id" search="[('model','=','office.discount')]"/>
+      <field name="group_id" ref="base.group_user"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="0"/>
+      <field name="perm_create" eval="0"/>
+      <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_discount_manager" model="ir.model.access">
+      <field name="name">access_office_discount_manager</field>
+      <field name="model_id" search="[('model','=','office.discount')]"/>
+      <field name="group_id" ref="base.group_system"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
+
+  </data>
+</odoo>
