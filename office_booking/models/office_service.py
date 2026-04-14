@@ -41,7 +41,7 @@ class OfficeSpace(models.Model):
 
     service_ids = fields.Many2many(
         "office.service",
-        "spoot_office_service_rel",
+        "office_space_service_rel",
         "office_id",
         "service_id",
         string="Servicios",

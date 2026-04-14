@@ -24,7 +24,7 @@
          ────────────────────────────────────────────────────────────── -->
     <record id="rule_subscription_own_user" model="ir.rule">
       <field name="name">Suscripciones: solo las propias (usuarios)</field>
-      <field name="model_id" ref="model_spoot_coworking_subscription"/>
+      <field name="model_id" ref="model_office_subscription"/>
       <field name="groups" eval="[(4, ref('base.group_user'))]"/>
       <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
       <field name="perm_read"  eval="True"/>

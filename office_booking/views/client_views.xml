@@ -5,7 +5,7 @@
          LIST VIEW — Clientes Spoot
          ══════════════════════════════════════════════════════════════ -->
     <record id="view_spoot_client_list" model="ir.ui.view">
-        <field name="name">spoot.client.list</field>
+        <field name="name">office.client.list</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <list string="Clientes"
@@ -37,7 +37,7 @@
          FORM VIEW — Cliente Spoot
          ══════════════════════════════════════════════════════════════ -->
     <record id="view_spoot_client_form" model="ir.ui.view">
-        <field name="name">spoot.client.form</field>
+        <field name="name">office.client.form</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <form string="Cliente">
@@ -161,7 +161,7 @@
          SEARCH VIEW
          ══════════════════════════════════════════════════════════════ -->
     <record id="view_spoot_client_search" model="ir.ui.view">
-        <field name="name">spoot.client.search</field>
+        <field name="name">office.client.search</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <search string="Buscar clientes">

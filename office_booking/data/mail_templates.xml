@@ -494,7 +494,7 @@
     <!-- 9. Plan activado (cliente) -->
     <record id="mail_template_plan_confirmed_user" model="mail.template">
         <field name="name">Plan coworking – Activado (cliente)</field>
-        <field name="model_id" ref="model_spoot_coworking_subscription"/>
+        <field name="model_id" ref="model_office_subscription"/>
         <field name="subject">✓ Tu plan de coworking está activo – ${object.plan_id.name}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -557,7 +557,7 @@
     <!-- 10. Plan activado (admin) -->
     <record id="mail_template_plan_confirmed_admin" model="mail.template">
         <field name="name">Plan coworking – Activado (admin)</field>
-        <field name="model_id" ref="model_spoot_coworking_subscription"/>
+        <field name="model_id" ref="model_office_subscription"/>
         <field name="subject">[Plan activado] ${object.partner_id.name} – ${object.plan_id.name}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
