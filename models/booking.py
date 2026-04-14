@@ -1026,11 +1026,12 @@ class SpootOfficeBooking(models.Model):
             f"para el día {self.date} en franja {self.slot_type}."
         )
 
+        domain = (self.env['ir.config_parameter'].sudo().get_param('web.base.url') or 'localhost').replace('https://', '').replace('http://', '').split('/')[0]
         ics = f"""BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//SPPOT//OfficeBooking//ES
+PRODID:-//{self.env.company.name}//OfficeBooking//ES
 BEGIN:VEVENT
-UID:{self.id}@spoot.co
+UID:{self.id}@{domain}
 DTSTAMP:{dtstamp}
 DTSTART:{dtstart}
 DTEND:{dtend}
