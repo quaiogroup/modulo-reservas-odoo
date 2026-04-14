@@ -117,3 +117,11 @@ def post_init_hook(env):
             'perm_create': False,
             'perm_unlink': False,
         })
+
+    # Bind report to model (optional field, set after model is guaranteed to exist)
+    if booking_model:
+        report = env['ir.actions.report'].search(
+            [('report_name', '=', 'office_booking.report_booking_receipt_template')], limit=1
+        )
+        if report and not report.binding_model_id:
+            report.binding_model_id = booking_model.id
