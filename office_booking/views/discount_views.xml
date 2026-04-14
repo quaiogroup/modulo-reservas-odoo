@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_spoot_discount_code_list" model="ir.ui.view">
+        <field name="name">office.discount.list</field>
+        <field name="model">office.discount</field>
+        <field name="arch" type="xml">
+            <list string="Códigos de descuento"
+                  decoration-muted="not active"
+                  decoration-success="active">
+                <field name="name"           string="Descripción"/>
+                <field name="code"           string="Código"/>
+                <field name="discount_type"  string="Tipo" widget="badge"
+                       decoration-info="discount_type == 'percent'"
+                       decoration-warning="discount_type == 'fixed'"/>
+                <field name="discount_value" string="Valor"/>
+                <field name="max_uses"       string="Usos máx."/>
+                <field name="used_count"     string="Usados" readonly="1"/>
+                <field name="valid_from"     string="Desde"  optional="show"/>
+                <field name="valid_until"    string="Hasta"/>
+                <field name="active"         string="Activo" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_spoot_discount_code_form" model="ir.ui.view">
+        <field name="name">office.discount.form</field>
+        <field name="model">office.discount</field>
+        <field name="arch" type="xml">
+            <form string="Código de descuento">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-bar-chart" type="object"
+                                name="action_view_bookings">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="used_count" nolabel="1"/>
+                                </span>
+                                <span class="o_stat_text">Usos</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <group>
+                        <field name="name"           string="Descripción"/>
+                        <field name="code"           string="Código"
+                               placeholder="Ej: PROMO10"
+                               help="El cliente lo escribirá en el formulario de reserva. Mayúsculas recomendado."/>
+                        <field name="active"         string="Activo" widget="boolean_toggle"/>
+                    </group>
+
+                    <group string="Descuento">
+                        <field name="discount_type"  string="Tipo"/>
+                        <field name="discount_value" string="Valor"
+                               help="Para porcentaje: 0–100. Para valor fijo: monto a descontar."/>
+                    </group>
+
+                    <group string="Restricciones">
+                        <field name="max_uses"    string="Usos máximos (0 = ilimitado)"/>
+                        <field name="used_count"  string="Veces usado" readonly="1"/>
+                        <field name="valid_from"  string="Válido desde"/>
+                        <field name="valid_until" string="Válido hasta"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Reservas con este código">
+                            <field name="booking_ids" readonly="1">
+                                <list>
+                                    <field name="name"       string="Ref."/>
+                                    <field name="partner_id" string="Cliente"/>
+                                    <field name="date"       string="Fecha"/>
+                                    <field name="state"      string="Estado" widget="badge"
+                                           decoration-success="state == 'confirmed'"
+                                           decoration-warning="state == 'pending_payment'"
+                                           decoration-muted="state == 'cancelled'"/>
+                                    <field name="discount_amount" string="Descuento" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="True"/>
+                                    <field name="amount_total"    string="Total final" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_spoot_discount_codes" model="ir.actions.act_window">
+        <field name="name">Códigos de descuento</field>
+        <field name="res_model">office.discount</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

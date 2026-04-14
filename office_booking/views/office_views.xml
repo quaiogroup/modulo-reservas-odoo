@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ─── Servicios de oficina ─────────────────────────── -->
+    <record id="view_spoot_office_service_list" model="ir.ui.view">
+        <field name="name">office.service.list</field>
+        <field name="model">office.service</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="icon"/>
+                <field name="description"/>
+                <field name="is_default"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_spoot_office_service_form" model="ir.ui.view">
+        <field name="name">office.service.form</field>
+        <field name="model">office.service</field>
+        <field name="arch" type="xml">
+            <form string="Servicio de oficina">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="icon" widget="selection"/>
+                        <field name="description"/>
+                        <field name="is_default"/>
+                        <field name="sequence"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_spoot_office_service" model="ir.actions.act_window">
+        <field name="name">Servicios de oficina</field>
+        <field name="res_model">office.service</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ─── Oficinas ─────────────────────────────────────── -->
+    <record id="view_spoot_office_tree" model="ir.ui.view">
+        <field name="name">office.space.tree</field>
+        <field name="model">office.space</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="location"/>
+                <field name="capacity"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_spoot_office_form" model="ir.ui.view">
+        <field name="name">office.space.form</field>
+        <field name="model">office.space</field>
+        <field name="arch" type="xml">
+<form string="Oficina">
+  <sheet>
+    <group>
+      <field name="name"/>
+      <field name="image_1920" widget="image" class="oe_avatar"/>
+    </group>
+
+    <group>
+      <field name="short_description"/>
+    </group>
+
+    <group>
+      <field name="description"/>
+    </group>
+
+    <group>
+      <field name="location"/>
+      <field name="capacity"/>
+    </group>
+
+    <group string="Precios">
+      <field name="price_morning"/>
+      <field name="price_afternoon"/>
+      <field name="price_full_day"/>
+      <field name="currency_id"/>
+    </group>
+
+    <group string="Política de cambios y cancelaciones">
+      <field name="modification_limit_hours"
+             string="Horas mínimas de anticipación para modificar/cancelar"
+             help="El cliente puede modificar o cancelar su reserva hasta este número de horas antes del inicio. 0 = sin restricción."/>
+    </group>
+
+    <group>
+      <field name="active"/>
+    </group>
+
+    <notebook>
+      <page string="Galería">
+        <field name="image_ids">
+          <list editable="bottom">
+            <field name="sequence"/>
+            <field name="name"/>
+            <field name="image_1920" widget="image" options="{'size': [128, 128]}"/>
+          </list>
+        </field>
+      </page>
+        <page string="Servicios">
+    <group>
+      <field name="service_ids" widget="many2many_tags"
+             options="{'no_create_edit': False}"
+             placeholder="Selecciona los servicios..."/>
+    </group>
+
+    <group string="Vista previa (web)">
+      <field name="service_ids" nolabel="1">
+        <kanban class="o_kanban_small_column">
+<templates>
+  <t t-name="card">
+
+              <div class="oe_kanban_card">
+                <div class="d-flex align-items-center gap-2">
+<t t-if="record.icon &amp;&amp; (record.icon.value || record.icon.raw_value)">
+  <i t-att-class="'fa ' + (record.icon.value || record.icon.raw_value)"/>
+</t>
+
+                  <div>
+                    <div><strong><field name="name"/></strong></div>
+                    <div class="text-muted" style="font-size:12px;">
+                      <field name="description"/>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </t>
+          </templates>
+        </kanban>
+      </field>
+    </group>
+  </page>
+    </notebook>
+
+  </sheet>
+</form>
+        </field>
+    </record>
+
+</odoo>

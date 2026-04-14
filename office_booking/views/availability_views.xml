@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+  <record id="view_spoot_office_availability_tree" model="ir.ui.view">
+    <field name="name">office.availability.tree</field>
+    <field name="model">office.availability</field>
+    <field name="arch" type="xml">
+      <list string="Disponibilidad (semanal)" create="false" delete="false">
+        <field name="office_id"/>
+        <field name="week_start"/>
+
+        <field name="d0_m_state" widget="badge"
+               decoration-success="d0_m_state == 'free'"
+               decoration-warning="d0_m_state == 'pending'"
+               decoration-danger="d0_m_state == 'busy'"/>
+        <field name="d0_a_state" widget="badge"
+               decoration-success="d0_a_state == 'free'"
+               decoration-warning="d0_a_state == 'pending'"
+               decoration-danger="d0_a_state == 'busy'"/>
+
+        <field name="d1_m_state" widget="badge" decoration-success="d1_m_state == 'free'" decoration-warning="d1_m_state == 'pending'" decoration-danger="d1_m_state == 'busy'"/>
+        <field name="d1_a_state" widget="badge" decoration-success="d1_a_state == 'free'" decoration-warning="d1_a_state == 'pending'" decoration-danger="d1_a_state == 'busy'"/>
+
+        <field name="d2_m_state" widget="badge" decoration-success="d2_m_state == 'free'" decoration-warning="d2_m_state == 'pending'" decoration-danger="d2_m_state == 'busy'"/>
+        <field name="d2_a_state" widget="badge" decoration-success="d2_a_state == 'free'" decoration-warning="d2_a_state == 'pending'" decoration-danger="d2_a_state == 'busy'"/>
+
+        <field name="d3_m_state" widget="badge" decoration-success="d3_m_state == 'free'" decoration-warning="d3_m_state == 'pending'" decoration-danger="d3_m_state == 'busy'"/>
+        <field name="d3_a_state" widget="badge" decoration-success="d3_a_state == 'free'" decoration-warning="d3_a_state == 'pending'" decoration-danger="d3_a_state == 'busy'"/>
+
+        <field name="d4_m_state" widget="badge" decoration-success="d4_m_state == 'free'" decoration-warning="d4_m_state == 'pending'" decoration-danger="d4_m_state == 'busy'"/>
+        <field name="d4_a_state" widget="badge" decoration-success="d4_a_state == 'free'" decoration-warning="d4_a_state == 'pending'" decoration-danger="d4_a_state == 'busy'"/>
+
+        <field name="d5_m_state" widget="badge" decoration-success="d5_m_state == 'free'" decoration-warning="d5_m_state == 'pending'" decoration-danger="d5_m_state == 'busy'"/>
+        <field name="d5_a_state" widget="badge" decoration-success="d5_a_state == 'free'" decoration-warning="d5_a_state == 'pending'" decoration-danger="d5_a_state == 'busy'"/>
+
+        <field name="d6_m_state" widget="badge" decoration-success="d6_m_state == 'free'" decoration-warning="d6_m_state == 'pending'" decoration-danger="d6_m_state == 'busy'"/>
+        <field name="d6_a_state" widget="badge" decoration-success="d6_a_state == 'free'" decoration-warning="d6_a_state == 'pending'" decoration-danger="d6_a_state == 'busy'"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="action_spoot_availability" model="ir.actions.act_window">
+    <field name="name">Disponibilidadd</field>
+    <field name="res_model">office.availability</field>
+    <field name="view_mode">list</field>
+    <field name="target">current</field>
+    <field name="context">{}</field>
+  </record>
+
+
+</odoo>

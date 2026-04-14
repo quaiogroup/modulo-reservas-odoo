@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data noupdate="1">
+
+    <!-- Secuencia para referencias de reserva: SPT000001, SPT000002, … -->
+    <record id="seq_office_booking" model="ir.sequence">
+        <field name="name">Referencia de Reserva Spoot</field>
+        <field name="code">office.booking</field>
+        <field name="prefix">SPT</field>
+        <field name="padding" eval="6"/>
+        <field name="number_next" eval="1"/>
+        <field name="number_increment" eval="1"/>
+    </record>
+
+    <!--
+        Daily cron: sends a reminder email to every customer with a confirmed booking
+        scheduled for the next day. Uses the `reminder_sent` boolean flag on
+        office.booking to guarantee exactly-once delivery.
+    -->
+    <record id="ir_cron_booking_reminder" model="ir.cron">
+        <field name="name">Spoot: Recordatorios de reservas próximas</field>
+        <field name="model_id" ref="model_office_booking"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_send_booking_reminders()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+<field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+    </record>
+
+    <!--
+        Hourly cron: cancels pending_payment bookings that:
+        - are Bold-mode and have been waiting more than 2 hours without payment, OR
+        - have a start_datetime that has already passed.
+    -->
+    <record id="ir_cron_cancel_expired_bookings" model="ir.cron">
+        <field name="name">Spoot: Cancelar reservas vencidas/sin pago</field>
+        <field name="model_id" ref="model_office_booking"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_cancel_expired_bookings()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+    </record>
+
+  </data>
+</odoo>

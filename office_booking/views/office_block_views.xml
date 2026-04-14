@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ── LIST VIEW ──────────────────────────────────────────────────── -->
+    <record id="view_spoot_office_block_list" model="ir.ui.view">
+        <field name="name">office.block.list</field>
+        <field name="model">office.block</field>
+        <field name="arch" type="xml">
+            <list string="Bloqueos de fechas"
+                  decoration-muted="not active">
+
+                <field name="name"       string="Motivo"/>
+                <field name="office_id"  string="Oficina"
+                       optional="show"
+                       placeholder="Todas las oficinas"/>
+                <field name="date_start" string="Desde"/>
+                <field name="date_end"   string="Hasta"/>
+                <field name="note"       string="Nota para el usuario" optional="show"/>
+                <field name="active"     string="Activo" widget="boolean_toggle"/>
+
+            </list>
+        </field>
+    </record>
+
+    <!-- ── FORM VIEW ──────────────────────────────────────────────────── -->
+    <record id="view_spoot_office_block_form" model="ir.ui.view">
+        <field name="name">office.block.form</field>
+        <field name="model">office.block</field>
+        <field name="arch" type="xml">
+            <form string="Bloqueo de fecha">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Ej: Mantenimiento, Festivo…"/>
+                        </h1>
+                    </div>
+
+                    <group col="2">
+                        <group string="Alcance">
+                            <field name="office_id"
+                                   placeholder="Vacío = aplica a todas las oficinas"
+                                   options="{'no_create': True}"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                        <group string="Fechas">
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                    </group>
+
+                    <group string="Mensaje para el usuario">
+                        <field name="note"
+                               nolabel="1"
+                               colspan="2"
+                               placeholder="Ej: Oficina en mantenimiento. Disculpa los inconvenientes."/>
+                    </group>
+
+                    <div class="alert alert-warning mt-2" role="alert"
+                         invisible="office_id != False">
+                        <strong>Bloqueo global:</strong> este bloqueo aplica a
+                        <em>todas</em> las oficinas en el rango de fechas indicado.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── ACTION ─────────────────────────────────────────────────────── -->
+    <record id="action_spoot_office_block" model="ir.actions.act_window">
+        <field name="name">Bloqueos de fechas</field>
+        <field name="res_model">office.block</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Sin bloqueos activos.
+            </p>
+            <p>
+                Crea un bloqueo para cerrar una oficina (o todas) durante un rango de
+                fechas: mantenimiento, festivos, eventos especiales…
+            </p>
+        </field>
+    </record>
+
+</odoo>
