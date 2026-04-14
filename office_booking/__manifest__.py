@@ -17,7 +17,6 @@
         "calendar",
     ],
     "data": [
-        "security/ir_rules.xml",
 
         # REPORTS
         "reports/booking_receipt.xml",

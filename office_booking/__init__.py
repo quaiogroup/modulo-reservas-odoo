@@ -47,3 +47,32 @@ def post_init_hook(env):
                 'perm_create': bool(c),
                 'perm_unlink': bool(d),
             })
+
+    # Security rules
+    IrRule = env['ir.rule']
+    booking_model = IrModel.search([('model', '=', 'office.booking')], limit=1)
+    subscription_model = IrModel.search([('model', '=', 'office.subscription')], limit=1)
+
+    if booking_model and not IrRule.search([('name', '=', 'Reservas: solo las propias (usuarios)')], limit=1):
+        IrRule.create({
+            'name': 'Reservas: solo las propias (usuarios)',
+            'model_id': booking_model.id,
+            'groups': [(4, group_user.id)],
+            'domain_force': "[('partner_id', '=', user.partner_id.id)]",
+            'perm_read': True,
+            'perm_write': True,
+            'perm_create': False,
+            'perm_unlink': False,
+        })
+
+    if subscription_model and not IrRule.search([('name', '=', 'Suscripciones: solo las propias (usuarios)')], limit=1):
+        IrRule.create({
+            'name': 'Suscripciones: solo las propias (usuarios)',
+            'model_id': subscription_model.id,
+            'groups': [(4, group_user.id)],
+            'domain_force': "[('partner_id', '=', user.partner_id.id)]",
+            'perm_read': True,
+            'perm_write': False,
+            'perm_create': False,
+            'perm_unlink': False,
+        })
