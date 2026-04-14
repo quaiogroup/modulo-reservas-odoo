@@ -21,10 +21,6 @@
         # REPORTS
         "reports/booking_receipt.xml",
 
-        # DATA (templates & crons) — before views
-        "data/mail_templates.xml",
-        "data/ir_cron_data.xml",
-
         # VIEWS
         "views/office_views.xml",
         "views/booking_views.xml",

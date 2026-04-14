@@ -45,7 +45,16 @@ def pre_init_hook(env):
 
 
 def post_init_hook(env):
-    """Create model access rules after installation (works for ZIP upload too)."""
+    """Load model-dependent data and create access rules after installation."""
+    import os
+    from odoo.tools.convert import convert_file
+
+    module_path = os.path.dirname(os.path.abspath(__file__))
+    for filename in ['data/mail_templates.xml', 'data/ir_cron_data.xml']:
+        convert_file(
+            env, 'office_booking', filename, {}, 'init', False,
+            pathname=os.path.join(module_path, filename.replace('/', os.sep)),
+        )
     IrModel = env['ir.model']
     IrModelAccess = env['ir.model.access']
     group_user = env.ref('base.group_user')
