@@ -3,6 +3,47 @@ from . import controllers
 from . import wizards
 
 
+def pre_init_hook(env):
+    """Register ir.model records + external IDs before data files are loaded.
+    Needed for ZIP upload where _reflect() hasn't run yet."""
+    IrModel = env['ir.model']
+    IrModelData = env['ir.model.data']
+
+    models_info = [
+        ('office.booking',        'Office Booking',        'model_office_booking'),
+        ('office.space',          'Office Space',          'model_office_space'),
+        ('office.plan',           'Office Plan',           'model_office_plan'),
+        ('office.subscription',   'Office Subscription',   'model_office_subscription'),
+        ('office.service',        'Office Service',        'model_office_service'),
+        ('office.block',          'Office Block',          'model_office_block'),
+        ('office.image',          'Office Image',          'model_office_image'),
+        ('office.availability',   'Office Availability',   'model_office_availability'),
+        ('office.settings',       'Office Settings',       'model_office_settings'),
+        ('office.discount',       'Office Discount',       'model_office_discount'),
+        ('office.booking.wizard', 'Office Booking Wizard', 'model_office_booking_wizard'),
+    ]
+
+    for model_name, display_name, xml_id in models_info:
+        model_rec = IrModel.sudo().search([('model', '=', model_name)], limit=1)
+        if not model_rec:
+            model_rec = IrModel.sudo().create({
+                'name': display_name,
+                'model': model_name,
+                'state': 'base',
+            })
+        existing = IrModelData.sudo().search([
+            ('module', '=', 'office_booking'), ('name', '=', xml_id)
+        ], limit=1)
+        if not existing:
+            IrModelData.sudo().create({
+                'module': 'office_booking',
+                'name': xml_id,
+                'model': 'ir.model',
+                'res_id': model_rec.id,
+                'noupdate': False,
+            })
+
+
 def post_init_hook(env):
     """Create model access rules after installation (works for ZIP upload too)."""
     IrModel = env['ir.model']
