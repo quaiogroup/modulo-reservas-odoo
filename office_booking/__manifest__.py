@@ -16,27 +16,8 @@
         "portal",
         "calendar",
     ],
-    "data": [
-
-        # REPORTS
-        "reports/booking_receipt.xml",
-
-        # VIEWS
-        "views/office_views.xml",
-        "views/booking_views.xml",
-        "views/office_block_views.xml",
-        "views/coworking_plan_views.xml",
-        "views/coworking_subscription_views.xml",
-        "views/availability_views.xml",
-        "views/discount_views.xml",
-        "views/settings_views.xml",
-        "views/client_views.xml",
-        "views/portal_templates.xml",
-        "views/website_templates.xml",
-
-        # MENUS LAST
-        "views/menu_views.xml",
-    ],
+    # All data loaded in post_init_hook so models are registered first
+    "data": [],
 
     "assets": {
         "web.assets_frontend": [
@@ -57,6 +38,5 @@
 
     "installable": True,
     "application": True,
-    "pre_init_hook": "pre_init_hook",
     "post_init_hook": "post_init_hook",
 }
