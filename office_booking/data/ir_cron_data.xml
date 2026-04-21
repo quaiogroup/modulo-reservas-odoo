@@ -19,7 +19,7 @@
     -->
     <record id="ir_cron_booking_reminder" model="ir.cron">
         <field name="name">Spoot: Recordatorios de reservas próximas</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="state">code</field>
         <field name="code">model._cron_send_booking_reminders()</field>
         <field name="interval_number">1</field>
@@ -35,7 +35,7 @@
     -->
     <record id="ir_cron_cancel_expired_bookings" model="ir.cron">
         <field name="name">Spoot: Cancelar reservas vencidas/sin pago</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="state">code</field>
         <field name="code">model._cron_cancel_expired_bookings()</field>
         <field name="interval_number">1</field>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data noupdate="0">
+    <record id="model_spoot_test_item" model="ir.model">
+      <field name="name">Spoot Test Item</field>
+      <field name="model">spoot.test.item</field>
+      <field name="state">base</field>
+    </record>
+  </data>
+</odoo>

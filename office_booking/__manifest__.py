@@ -16,8 +16,27 @@
         "portal",
         "calendar",
     ],
-    # All data loaded in post_init_hook so models are registered first
-    "data": [],
+    "data": [
+        'data/models_init.xml',
+        'security/ir_model_access.xml',
+        'security/ir_rules.xml',
+        'reports/booking_receipt.xml',
+        'data/mail_templates.xml',
+        'data/ir_cron_data.xml',
+        'views/office_views.xml',
+        'views/booking_views.xml',
+        'views/office_block_views.xml',
+        'views/coworking_plan_views.xml',
+        'views/coworking_subscription_views.xml',
+        'views/availability_views.xml',
+        'views/discount_views.xml',
+        'views/settings_views.xml',
+        'views/client_views.xml',
+        'views/portal_templates.xml',
+        'views/website_templates.xml',
+        'views/menu_views.xml',
+        'wizards/booking_quick_create_wizard_views.xml',
+    ],
 
     "assets": {
         "web.assets_frontend": [
@@ -38,5 +57,4 @@
 
     "installable": True,
     "application": True,
-    "post_init_hook": "post_init_hook",
 }

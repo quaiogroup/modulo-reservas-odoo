@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!--
+    Pre-creates ir.model records so all subsequent data files can reference
+    custom models via search=. Required for ZIP installs (base_import_module
+    does not run ORM reflection before loading data files).
+    In normal installs these records already exist and are simply updated.
+  -->
+  <data noupdate="0">
+
+    <record id="model_office_booking" model="ir.model">
+      <field name="name">Office Booking</field>
+      <field name="model">office.booking</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_space" model="ir.model">
+      <field name="name">Office Space</field>
+      <field name="model">office.space</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_plan" model="ir.model">
+      <field name="name">Office Plan</field>
+      <field name="model">office.plan</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_subscription" model="ir.model">
+      <field name="name">Office Subscription</field>
+      <field name="model">office.subscription</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_service" model="ir.model">
+      <field name="name">Office Service</field>
+      <field name="model">office.service</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_block" model="ir.model">
+      <field name="name">Office Block</field>
+      <field name="model">office.block</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_image" model="ir.model">
+      <field name="name">Office Image</field>
+      <field name="model">office.image</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_availability" model="ir.model">
+      <field name="name">Office Availability</field>
+      <field name="model">office.availability</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_settings" model="ir.model">
+      <field name="name">Office Settings</field>
+      <field name="model">office.settings</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_discount" model="ir.model">
+      <field name="name">Office Discount</field>
+      <field name="model">office.discount</field>
+      <field name="state">base</field>
+    </record>
+
+    <record id="model_office_booking_wizard" model="ir.model">
+      <field name="name">Office Booking Wizard</field>
+      <field name="model">office.booking.wizard</field>
+      <field name="state">base</field>
+      <field name="transient" eval="True"/>
+    </record>
+
+  </data>
+</odoo>
