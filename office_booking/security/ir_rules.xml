@@ -13,6 +13,18 @@
       <field name="perm_unlink" eval="False"/>
     </record>
 
+    <!-- El administrador de reservas ve todas las reservas (se combina con OR con la regla de usuario) -->
+    <record id="rule_booking_all_manager" model="ir.rule">
+      <field name="name">Reservas: todas (administrador de reservas)</field>
+      <field name="model_id" search="[('model','=','office.booking')]"/>
+      <field name="groups" eval="[(4, ref('office_booking.group_booking_manager'))]"/>
+      <field name="domain_force">[(1, '=', 1)]</field>
+      <field name="perm_read"  eval="True"/>
+      <field name="perm_write" eval="True"/>
+      <field name="perm_create" eval="True"/>
+      <field name="perm_unlink" eval="True"/>
+    </record>
+
     <record id="rule_subscription_own_user" model="ir.rule">
       <field name="name">Suscripciones: solo las propias (usuarios)</field>
       <field name="model_id" search="[('model','=','office.subscription')]"/>
@@ -22,6 +34,18 @@
       <field name="perm_write" eval="False"/>
       <field name="perm_create" eval="False"/>
       <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- El administrador de reservas ve todas las suscripciones -->
+    <record id="rule_subscription_all_manager" model="ir.rule">
+      <field name="name">Suscripciones: todas (administrador de reservas)</field>
+      <field name="model_id" search="[('model','=','office.subscription')]"/>
+      <field name="groups" eval="[(4, ref('office_booking.group_booking_manager'))]"/>
+      <field name="domain_force">[(1, '=', 1)]</field>
+      <field name="perm_read"  eval="True"/>
+      <field name="perm_write" eval="True"/>
+      <field name="perm_create" eval="True"/>
+      <field name="perm_unlink" eval="True"/>
     </record>
 
   </data>

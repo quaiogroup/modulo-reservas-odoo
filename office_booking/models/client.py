@@ -6,6 +6,26 @@ from odoo import api, fields, models
 class OfficeResPartner(models.Model):
     _inherit = "res.partner"
 
+    # ── Identificación ────────────────────────────────────────────────
+    spoot_document_type = fields.Selection([
+        ("cc",  "Cédula de ciudadanía"),
+        ("nit", "NIT / RUT"),
+        ("ce",  "Cédula de extranjería"),
+        ("pas", "Pasaporte"),
+        ("ti",  "Tarjeta de identidad"),
+        ("rc",  "Registro civil"),
+        ("otro","Otro"),
+    ], string="Tipo de documento")
+
+    spoot_document_number = fields.Char(string="Número de documento")
+
+    # ── Facturación ────────────────────────────────────────────────────
+    spoot_billing_name = fields.Char(
+        string="Razón social / Nombre facturación",
+        help="Nombre o razón social que aparece en la factura. "
+             "Si está vacío se usa el nombre del cliente.",
+    )
+
     whatsapp = fields.Char(
         string="WhatsApp",
         help="Número de WhatsApp con código de país. Ej: +573001234567",

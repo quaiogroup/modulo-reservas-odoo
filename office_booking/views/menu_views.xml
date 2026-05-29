@@ -109,11 +109,12 @@
               action="action_spoot_availability_dashboard"
               sequence="40"/>
 
-    <!-- Configuración -->
+    <!-- Configuración (solo admin del sistema) -->
     <menuitem id="menu_spoot_settings"
               name="Configuración"
               parent="menu_spoot_office_root"
               action="office_booking.action_spoot_office_settings"
+              groups="base.group_system"
               sequence="99"/>
 
     <!-- Analíticas -->

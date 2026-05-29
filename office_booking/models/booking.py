@@ -17,37 +17,79 @@ class OfficeBooking(models.Model):
     _description = "Reserva de oficina"
     _order = "date, office_id, slot_type"
 
-    # ── Slot-conflict constraint ──────────────────────────────────────────
-    @api.constrains("office_id", "date", "slot_type", "state")
+    # ── Slot-conflict / time-overlap constraint ───────────────────────────
+    @api.constrains("office_id", "date", "slot_type", "hour_start", "hour_end", "state")
     def _check_no_double_booking(self):
-        """Prevent two overlapping bookings for the same office+date.
-        Runs inside the DB transaction — acts as a race-condition guard."""
-        _CONFLICTS = {
-            "morning":   ["morning",   "full_day"],
-            "afternoon": ["afternoon", "full_day"],
-            "full_day":  ["morning",   "afternoon", "full_day"],
-        }
+        """Prevent overbooking beyond office quantity for the same office+date."""
+
+        def _fmt(h):
+            hh = int(h)
+            mm = int(round((h - hh) * 60))
+            return f"{hh:02d}:{mm:02d}"
+
         for rec in self:
             if rec.state == "cancelled":
                 continue
-            if not rec.office_id or not rec.date or not rec.slot_type:
+            if not rec.office_id or not rec.date:
                 continue
-            conflicting_slots = _CONFLICTS.get(rec.slot_type, [rec.slot_type])
-            conflict = self.sudo().search([
+
+            quantity = rec.office_id.quantity or 1
+            mode = rec.office_id.pricing_mode
+            base_domain = [
                 ("id",        "!=", rec.id),
                 ("office_id", "=",  rec.office_id.id),
                 ("date",      "=",  rec.date),
-                ("slot_type", "in", conflicting_slots),
                 ("state",     "!=", "cancelled"),
-            ], limit=1)
-            if conflict:
-                raise ValidationError(_(
-                    "La franja %(slot)s de %(office)s el %(date)s ya está reservada. "
-                    "Por favor elige otra franja u otra fecha.",
-                    slot=dict(self._fields["slot_type"].selection).get(rec.slot_type, rec.slot_type),
-                    office=rec.office_id.name,
-                    date=rec.date,
-                ))
+            ]
+
+            if mode == "hourly":
+                if not rec.hour_start and not rec.hour_end:
+                    continue
+                others = self.sudo().search(base_domain)
+                overlap = sum(
+                    1 for o in others
+                    if rec.hour_start < o.hour_end and rec.hour_end > o.hour_start
+                )
+                if overlap >= quantity:
+                    raise ValidationError(_(
+                        "No quedan unidades disponibles en %(office)s el %(date)s "
+                        "entre %(s)s y %(e)s.",
+                        office=rec.office_id.name,
+                        date=rec.date,
+                        s=_fmt(rec.hour_start),
+                        e=_fmt(rec.hour_end),
+                    ))
+            else:
+                if not rec.slot_type:
+                    continue
+                morning_used = self.sudo().search_count(
+                    base_domain + [("slot_type", "in", ["morning", "full_day"])]
+                )
+                afternoon_used = self.sudo().search_count(
+                    base_domain + [("slot_type", "in", ["afternoon", "full_day"])]
+                )
+                slot_label = dict(self._fields["slot_type"].selection).get(rec.slot_type, rec.slot_type)
+
+                if rec.slot_type == "morning" and morning_used >= quantity:
+                    raise ValidationError(_(
+                        "No quedan unidades disponibles para la mañana en %(office)s "
+                        "el %(date)s (%(q)d/%(q)d reservadas).",
+                        office=rec.office_id.name, date=rec.date, q=quantity,
+                    ))
+                elif rec.slot_type == "afternoon" and afternoon_used >= quantity:
+                    raise ValidationError(_(
+                        "No quedan unidades disponibles para la tarde en %(office)s "
+                        "el %(date)s (%(q)d/%(q)d reservadas).",
+                        office=rec.office_id.name, date=rec.date, q=quantity,
+                    ))
+                elif rec.slot_type == "full_day" and (
+                    morning_used >= quantity or afternoon_used >= quantity
+                ):
+                    raise ValidationError(_(
+                        "No quedan unidades disponibles para el día completo en %(office)s "
+                        "el %(date)s.",
+                        office=rec.office_id.name, date=rec.date,
+                    ))
 
 
 
@@ -93,9 +135,31 @@ class OfficeBooking(models.Model):
             ("full_day", "Todo el día (8:00 - 18:00)"),
         ],
         string="Franja horaria",
-        required=True,
+        required=False,
         tracking=True,
     )
+
+    office_pricing_mode = fields.Selection(
+        related="office_id.pricing_mode",
+        string="Modo de cobro",
+        store=False,
+    )
+    hour_start = fields.Float(string="Hora inicio", digits=(4, 2))
+    hour_end   = fields.Float(string="Hora fin",    digits=(4, 2))
+    duration_hours = fields.Float(
+        string="Duración (horas)",
+        compute="_compute_duration_hours",
+        store=True,
+        digits=(6, 2),
+    )
+
+    @api.depends("hour_start", "hour_end", "office_id.pricing_mode")
+    def _compute_duration_hours(self):
+        for rec in self:
+            if rec.office_id.pricing_mode == "hourly":
+                rec.duration_hours = max((rec.hour_end or 0.0) - (rec.hour_start or 0.0), 0.0)
+            else:
+                rec.duration_hours = 0.0
 
     state = fields.Selection(
         [
@@ -130,7 +194,7 @@ class OfficeBooking(models.Model):
         store=True,
     )
 
-    @api.depends("slot_type", "office_id", "discount_amount")
+    @api.depends("slot_type", "office_id", "discount_amount", "hour_start", "hour_end", "office_id.pricing_mode")
     def _compute_amount_total(self):
         for rec in self:
             base = rec._get_base_amount()
@@ -139,7 +203,7 @@ class OfficeBooking(models.Model):
     start_datetime = fields.Datetime(string="Inicio", compute="_compute_datetimes", store=True)
     end_datetime = fields.Datetime(string="Fin", compute="_compute_datetimes", store=True)
 
-    @api.depends("date", "slot_type")
+    @api.depends("date", "slot_type", "hour_start", "hour_end", "office_id.pricing_mode")
     def _compute_datetimes(self):
         _slot_hours = {
             "morning":   (8, 0,  12, 0),
@@ -147,14 +211,22 @@ class OfficeBooking(models.Model):
             "full_day":  (8, 0,  18, 0),
         }
         for rec in self:
-            times = _slot_hours.get(rec.slot_type) if rec.slot_type else None
-            if rec.date and times:
-                sh, sm, eh, em = times
+            if rec.office_id.pricing_mode == "hourly" and rec.date and rec.hour_start and rec.hour_end:
+                sh = int(rec.hour_start)
+                sm = int(round((rec.hour_start - sh) * 60))
+                eh = int(rec.hour_end)
+                em = int(round((rec.hour_end - eh) * 60))
                 rec.start_datetime = datetime.combine(rec.date, time(sh, sm))
                 rec.end_datetime   = datetime.combine(rec.date, time(eh, em))
             else:
-                rec.start_datetime = False
-                rec.end_datetime   = False
+                times = _slot_hours.get(rec.slot_type) if rec.slot_type else None
+                if rec.date and times:
+                    sh, sm, eh, em = times
+                    rec.start_datetime = datetime.combine(rec.date, time(sh, sm))
+                    rec.end_datetime   = datetime.combine(rec.date, time(eh, em))
+                else:
+                    rec.start_datetime = False
+                    rec.end_datetime   = False
 
     google_event_id = fields.Char(
         string="ID evento calendario (externo)",
@@ -361,8 +433,11 @@ class OfficeBooking(models.Model):
     )
 
     def _get_plan_days_cost(self):
-        """Returns plan days cost for this booking's slot type: 0.5 or 1.0."""
+        """Returns plan days cost for this booking: hours/8 for hourly, 0.5 or 1.0 for jornada."""
         self.ensure_one()
+        if self.office_id.pricing_mode == "hourly":
+            hours = max((self.hour_end or 0.0) - (self.hour_start or 0.0), 0.0)
+            return round(hours / 8.0, 2)
         return 1.0 if self.slot_type == "full_day" else 0.5
 
     def action_confirm_with_plan(self, subscription):
@@ -750,6 +825,22 @@ class OfficeBooking(models.Model):
         if bookings:
             _logger.info("[CRON REMINDER] sent %d reminder(s)", len(bookings))
 
+    @api.constrains("office_id", "slot_type", "hour_start", "hour_end")
+    def _check_pricing_fields(self):
+        for rec in self:
+            if not rec.office_id:
+                continue
+            if rec.office_id.pricing_mode == "hourly":
+                if rec.hour_end and rec.hour_start and rec.hour_end <= rec.hour_start:
+                    raise ValidationError(_("La hora de fin debe ser mayor que la hora de inicio."))
+                if rec.hour_end and rec.hour_start and rec.hour_start < 0:
+                    raise ValidationError(_("La hora de inicio no puede ser negativa."))
+                if rec.hour_end and rec.hour_end > 24:
+                    raise ValidationError(_("La hora de fin no puede superar las 24:00."))
+            else:
+                if not rec.slot_type:
+                    raise ValidationError(_("Debes seleccionar una franja horaria."))
+
     def _get_booking_amount(self):
         """Calcula el monto según la franja."""
         self.ensure_one()
@@ -782,6 +873,9 @@ class OfficeBooking(models.Model):
     def _get_base_amount(self):
         self.ensure_one()
         office = self.office_id
+        if office.pricing_mode == "hourly":
+            hours = max((self.hour_end or 0.0) - (self.hour_start or 0.0), 0.0)
+            return float(office.price_per_hour or 0.0) * hours
         if self.slot_type == "morning":
             return float(office.price_morning or 0.0)
         if self.slot_type == "afternoon":
@@ -823,10 +917,11 @@ class OfficeBooking(models.Model):
     def get_availability(self, office_id, date_str, exclude_id=None):
         """
         Returns available/taken slots for office_id on date_str.
+        Respects office.quantity for multi-unit offices.
         exclude_id: booking id to ignore (used when rescheduling).
         """
         if not office_id or not date_str:
-            return {"available": [], "taken": []}
+            return {"available": [], "taken": [], "remaining": {}, "quantity": 1}
 
         date = fields.Date.from_string(date_str)
 
@@ -838,7 +933,12 @@ class OfficeBooking(models.Model):
                 "taken": [],
                 "blocked": True,
                 "block_reason": reason,
+                "remaining": {"morning": 0, "afternoon": 0, "full_day": 0},
+                "quantity": 1,
             }
+
+        office = self.env["office.space"].sudo().browse(int(office_id))
+        quantity = office.quantity or 1
 
         domain = [
             ("office_id", "=", int(office_id)),
@@ -848,22 +948,34 @@ class OfficeBooking(models.Model):
         if exclude_id:
             domain.append(("id", "!=", int(exclude_id)))
 
-        taken = self.sudo().search(domain).mapped("slot_type")
+        bookings = self.sudo().search(domain)
+        slot_types = bookings.mapped("slot_type")
+        taken_set = set(slot_types)
 
-        taken_set = set(taken)
+        morning_used = sum(1 for s in slot_types if s in ("morning", "full_day"))
+        afternoon_used = sum(1 for s in slot_types if s in ("afternoon", "full_day"))
+        morning_rem = max(quantity - morning_used, 0)
+        afternoon_rem = max(quantity - afternoon_used, 0)
+        full_day_rem = min(morning_rem, afternoon_rem)
+
         available = []
+        if morning_rem > 0:
+            available.append("morning")
+        if afternoon_rem > 0:
+            available.append("afternoon")
+        if full_day_rem > 0:
+            available.append("full_day")
 
-        if "full_day" in taken_set:
-            available = []
-        else:
-            if "morning" not in taken_set:
-                available.append("morning")
-            if "afternoon" not in taken_set:
-                available.append("afternoon")
-            if "morning" not in taken_set and "afternoon" not in taken_set:
-                available.append("full_day")
-
-        return {"available": available, "taken": list(taken_set)}
+        return {
+            "available": available,
+            "taken": list(taken_set),
+            "remaining": {
+                "morning":   morning_rem,
+                "afternoon": afternoon_rem,
+                "full_day":  full_day_rem,
+            },
+            "quantity": quantity,
+        }
 
     # -------------------------------------------------------------------------
     # MATRIZ ADMIN (igual a tu código)
@@ -1110,6 +1222,59 @@ END:VCALENDAR
             }
         )
         return attachment
+
+    def action_resend_emails(self):
+        """Reenvía manualmente los correos de notificación de esta reserva."""
+        self.ensure_one()
+        if self.state == "cancelled":
+            raise UserError(_("No se pueden reenviar correos de una reserva cancelada."))
+
+        sent_to = []
+        errors = []
+
+        # Elegir template según el estado actual
+        if self.state == "confirmed":
+            if self.payment_mode == "plan":
+                tpl_user = "office_booking.mail_template_booking_confirmed_plan"
+            else:
+                tpl_user = "office_booking.mail_template_booking_confirmed_bold"
+            tpl_admin = "office_booking.mail_template_booking_confirmed_admin"
+        else:
+            tpl_user = "office_booking.mail_template_booking_pending_payment"
+            tpl_admin = "office_booking.mail_template_booking_new_admin"
+
+        ok_user = self._notify_customer(tpl_user)
+        if ok_user:
+            sent_to.append(self.partner_id.email)
+        else:
+            errors.append(f"Cliente ({self.partner_id.email or 'sin email'})")
+
+        ok_admin = self._notify_admin(tpl_admin)
+        admin_addr = self._get_admin_email()
+        if ok_admin:
+            sent_to.append(admin_addr)
+        else:
+            errors.append(f"Admin ({admin_addr or 'sin email'})")
+
+        if sent_to:
+            msg = "Correos enviados a: " + ", ".join(sent_to)
+            if errors:
+                msg += "\nFallaron: " + ", ".join(errors)
+            msg_type = "warning" if errors else "success"
+        else:
+            msg = "No se pudo enviar ningún correo. Verifica la configuración SMTP."
+            msg_type = "danger"
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Reenvío de correos",
+                "message": msg,
+                "type": msg_type,
+                "sticky": True,
+            },
+        }
 
     def action_send_emails(self):
         """Envía correos a cliente y admin con ICS adjunto."""

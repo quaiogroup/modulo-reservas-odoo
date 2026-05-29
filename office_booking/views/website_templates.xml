@@ -324,14 +324,17 @@
                       <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-morning">
                         <div class="slot-time">8:00 – 12:00</div>
                         <div class="slot-name">Mañana</div>
+                        <div class="slot-avail" id="spoot-bk-avail-morning"></div>
                       </button>
                       <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-afternoon">
                         <div class="slot-time">14:00 – 18:00</div>
                         <div class="slot-name">Tarde</div>
+                        <div class="slot-avail" id="spoot-bk-avail-afternoon"></div>
                       </button>
                       <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-full_day">
                         <div class="slot-time">8:00 – 18:00</div>
                         <div class="slot-name">Día completo</div>
+                        <div class="slot-avail" id="spoot-bk-avail-full_day"></div>
                       </button>
                     </div>
                   </div>
@@ -411,6 +414,39 @@
                     <div id="discount_feedback" class="form-text" style="display:none;"></div>
                   </div>
                   <!-- ─────────────────────────────────────────────── -->
+
+                  <!-- ── DATOS DE DOCUMENTO (solo si el cliente no los tiene) ── -->
+                  <t t-if="not request.env.user.partner_id.spoot_document_number">
+                    <div class="rounded-4 p-3 mb-3"
+                         style="background:#fffbeb;border:1px solid #fcd34d;">
+                      <div class="fw-semibold mb-2" style="font-size:.82rem;color:#92400e;">
+                        Datos para la factura
+                        <span class="fw-normal text-muted ms-1" style="font-size:.75rem;">(opcional, se guarda en tu perfil)</span>
+                      </div>
+                      <div class="d-flex gap-2 mb-1">
+                        <select name="doc_type" class="form-select form-select-sm"
+                                style="max-width:155px;border-radius:8px;">
+                          <option value="">Tipo doc.</option>
+                          <option value="cc">Cédula (CC)</option>
+                          <option value="nit">NIT / RUT</option>
+                          <option value="ce">Cédula ext. (CE)</option>
+                          <option value="pas">Pasaporte</option>
+                          <option value="ti">Tarjeta identidad</option>
+                          <option value="rc">Registro civil</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                        <input type="text" name="doc_number"
+                               class="form-control form-control-sm"
+                               placeholder="Número de documento"
+                               style="border-radius:8px;"/>
+                      </div>
+                      <div style="font-size:.7rem;color:#78350f;">
+                        Puedes completar tu dirección de facturación en
+                        <a href="/my/datos" style="color:#92400e;font-weight:600;">Mis datos</a>.
+                      </div>
+                    </div>
+                  </t>
+                  <!-- ─────────────────────────────────────────────────────── -->
 
                   <button type="submit" id="spoot_submit_btn" disabled="disabled"
                           class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
@@ -569,6 +605,9 @@
                 slotsPanel.classList.remove('d-none');
                 summaryPanel.classList.add('d-none');
 
+                var qty      = info.quantity || 1;
+                var rem      = info.remaining || {};
+
                 SLOT_IDS.forEach(function(s){
                   var btn = document.getElementById('spoot-bk-btn-' + s);
                   if (!btn) return;
@@ -576,6 +615,25 @@
                   btn.disabled = !avail;
                   btn.classList.toggle('unavail', !avail);
                   btn.classList.remove('active');
+
+                  // Mostrar cupos solo cuando hay más de 1 unidad
+                  var availEl = document.getElementById('spoot-bk-avail-' + s);
+                  if (availEl) {
+                    if (qty > 1) {
+                      var left = rem[s] !== undefined ? rem[s] : (avail ? qty : 0);
+                      availEl.style.display = 'block';
+                      if (!avail) {
+                        availEl.textContent = 'Sin disponibilidad';
+                        availEl.style.color = '#dc2626';
+                      } else {
+                        availEl.textContent = 'Quedan ' + left + ' de ' + qty;
+                        availEl.style.color = left === 1 ? '#d97706' : '#059669';
+                      }
+                    } else {
+                      availEl.style.display = 'none';
+                      availEl.textContent = '';
+                    }
+                  }
                 });
 
                 renderCalendar();
@@ -1130,9 +1188,14 @@
             Bienvenido, <strong><t t-esc="request.env.user.name"/></strong>
           </p>
         </div>
-        <a href="/offices" class="btn btn-primary rounded-pill px-4">
-          Reservar espacio
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="/offices" class="btn btn-primary rounded-pill px-4">
+            Reservar espacio
+          </a>
+          <a href="/my/datos" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa fa-id-card me-1"/>Mis datos
+          </a>
+        </div>
       </div>
 
       <!-- Plan activado tras pago Bold -->

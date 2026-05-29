@@ -17,7 +17,13 @@ class OfficeSpace(models.Model):
     description = fields.Text(string="Descripción")
     # QUITA: image = fields.Binary(...)
     location = fields.Char(string="Ubicación")
-    capacity = fields.Integer(string="Capacidad")
+    capacity = fields.Integer(string="Capacidad (personas)")
+    quantity = fields.Integer(
+        string="Unidades disponibles",
+        default=1,
+        help="Número de unidades idénticas de esta oficina. "
+             "Si hay más de 1, se pueden hacer reservas simultáneas hasta agotar el stock.",
+    )
 
     price_morning = fields.Monetary(string="Precio mañana")
     price_afternoon = fields.Monetary(string="Precio tarde")
@@ -31,6 +37,19 @@ class OfficeSpace(models.Model):
 
     active = fields.Boolean(string="Activo", default=True)
     short_description = fields.Char(string="Descripción corta para web")
+
+    pricing_mode = fields.Selection(
+        [
+            ("jornada", "Por jornadas"),
+            ("hourly",  "Por horas"),
+        ],
+        string="Modo de cobro",
+        default="jornada",
+        required=True,
+        help="Jornadas: precio fijo por franja (mañana/tarde/día). "
+             "Por horas: precio × horas reservadas.",
+    )
+    price_per_hour = fields.Monetary(string="Precio por hora")
 
     modification_limit_hours = fields.Integer(
         string="Límite para cambios/cancelaciones (horas)",

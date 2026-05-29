@@ -13,9 +13,12 @@
                   decoration-success="spoot_active_subscription_id != False">
 
                 <field name="name"                      string="Cliente"/>
+                <field name="spoot_document_type"       string="Tipo doc." widget="badge" optional="show"/>
+                <field name="spoot_document_number"     string="Nro. documento" optional="show"/>
                 <field name="email"                     string="Correo"/>
                 <field name="phone"                     string="Teléfono"/>
                 <field name="whatsapp"                  string="WhatsApp"/>
+                <field name="city"                      string="Ciudad" optional="show"/>
                 <field name="spoot_booking_count"       string="Reservas" readonly="1"/>
                 <field name="spoot_last_booking_date"   string="Última reserva" readonly="1"/>
                 <field name="spoot_active_subscription_id" string="Plan activo" readonly="1"/>
@@ -76,21 +79,50 @@
                         <h1><field name="name" placeholder="Nombre del cliente"/></h1>
                     </div>
 
+                    <!-- Identificación -->
+                    <group string="Identificación" col="2">
+                        <group>
+                            <field name="spoot_document_type" string="Tipo de documento"/>
+                            <field name="spoot_document_number" string="Número de documento"
+                                   placeholder="Ej: 1234567890"/>
+                        </group>
+                        <group>
+                            <field name="vat" string="NIT / RUT"
+                                   placeholder="Ej: 900123456-1"
+                                   help="Número de identificación tributaria. Para personas naturales puede ser la cédula."/>
+                        </group>
+                    </group>
+
                     <!-- Datos de contacto -->
                     <group string="Contacto" col="2">
                         <group>
                             <field name="email"/>
                             <field name="phone"/>
-                            <field name="whatsapp"
-                                   placeholder="+573001234567"/>
+                            <field name="whatsapp" placeholder="+573001234567"/>
                         </group>
                         <group>
                             <field name="spoot_active_subscription_id"
-                                   string="Plan activo"
-                                   readonly="1"/>
+                                   string="Plan activo" readonly="1"/>
                             <field name="spoot_last_booking_date"
-                                   string="Última reserva"
-                                   readonly="1"/>
+                                   string="Última reserva" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Datos de facturación -->
+                    <group string="Datos de facturación" col="2">
+                        <group>
+                            <field name="spoot_billing_name"
+                                   placeholder="Solo si difiere del nombre del cliente"/>
+                            <field name="street"   string="Dirección" placeholder="Calle 123 # 45-67"/>
+                            <field name="street2"  string="Complemento" placeholder="Apto 301, Torre B"/>
+                            <field name="city"     string="Ciudad" placeholder="Bogotá"/>
+                        </group>
+                        <group>
+                            <field name="state_id"   string="Departamento"
+                                   options="{'no_create': True}"/>
+                            <field name="country_id" string="País"
+                                   options="{'no_create': True}"/>
+                            <field name="zip"        string="Código postal"/>
                         </group>
                     </group>
 
@@ -165,12 +197,26 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <search string="Buscar clientes">
-                <field name="name"    string="Nombre"/>
-                <field name="email"   string="Correo"/>
-                <field name="phone"   string="Teléfono"/>
-                <field name="whatsapp" string="WhatsApp"/>
+                <field name="name"                  string="Nombre"/>
+                <field name="email"                 string="Correo"/>
+                <field name="phone"                 string="Teléfono"/>
+                <field name="whatsapp"              string="WhatsApp"/>
+                <field name="spoot_document_number" string="Nro. documento"/>
+                <field name="vat"                   string="NIT / RUT"/>
+                <field name="city"                  string="Ciudad"/>
+                <separator/>
+                <filter string="Con documento" name="filter_document"
+                        domain="[('spoot_document_number', '!=', False)]"/>
                 <filter string="Con WhatsApp" name="filter_whatsapp"
                         domain="[('whatsapp', '!=', False)]"/>
+                <filter string="Con datos de facturación" name="filter_billing"
+                        domain="[('street', '!=', False)]"/>
+                <group>
+                    <filter string="Tipo de documento" name="group_doc_type"
+                            context="{'group_by': 'spoot_document_type'}"/>
+                    <filter string="Ciudad" name="group_city"
+                            context="{'group_by': 'city'}"/>
+                </group>
             </search>
         </field>
     </record>

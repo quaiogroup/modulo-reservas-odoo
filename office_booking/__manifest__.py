@@ -18,6 +18,7 @@
     ],
     "data": [
         'data/models_init.xml',
+        'security/security_groups.xml',
         'security/ir_model_access.xml',
         'security/ir_rules.xml',
         'reports/booking_receipt.xml',

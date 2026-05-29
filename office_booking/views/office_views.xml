@@ -51,6 +51,8 @@
                 <field name="name"/>
                 <field name="location"/>
                 <field name="capacity"/>
+                <field name="quantity" string="Unidades"/>
+                <field name="pricing_mode" widget="badge"/>
                 <field name="active"/>
             </list>
         </field>
@@ -77,13 +79,17 @@
 
     <group>
       <field name="location"/>
-      <field name="capacity"/>
+      <field name="capacity" string="Capacidad (personas)"/>
+      <field name="quantity" string="Unidades disponibles"
+             help="Cuántas de esta misma oficina existen. Con más de 1 se permiten reservas simultáneas."/>
     </group>
 
     <group string="Precios">
-      <field name="price_morning"/>
-      <field name="price_afternoon"/>
-      <field name="price_full_day"/>
+      <field name="pricing_mode" widget="radio"/>
+      <field name="price_morning"   invisible="pricing_mode == 'hourly'"/>
+      <field name="price_afternoon" invisible="pricing_mode == 'hourly'"/>
+      <field name="price_full_day"  invisible="pricing_mode == 'hourly'"/>
+      <field name="price_per_hour"  invisible="pricing_mode != 'hourly'"/>
       <field name="currency_id"/>
     </group>
 

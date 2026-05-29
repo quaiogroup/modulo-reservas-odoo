@@ -826,5 +826,158 @@
     </t>
   </template>
 
+
+  <!-- ══════════════════════════════════════════════════════════════
+       MIS DATOS DE FACTURACIÓN
+       ══════════════════════════════════════════════════════════════ -->
+  <template id="portal_my_data" name="Mis datos de facturación">
+    <t t-call="portal.portal_layout">
+      <t t-set="title">Mis datos de facturación</t>
+
+      <div class="container py-4" style="max-width:680px;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">Mis datos de facturación</h3>
+            <p class="text-muted mb-0" style="font-size:.9rem;">
+              Estos datos se usan para generar tus facturas y comprobantes de pago.
+            </p>
+          </div>
+          <a href="/my/coworking" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            &#8592; Mi coworking
+          </a>
+        </div>
+
+        <!-- Mensaje guardado -->
+        <t t-if="saved">
+          <div class="alert alert-success rounded-4 d-flex align-items-center gap-2 mb-4" role="alert">
+            <span style="font-size:1.2rem;">✅</span>
+            <span>Datos guardados correctamente.</span>
+          </div>
+        </t>
+
+        <form method="post" action="/my/datos" class="needs-validation">
+          <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
+
+          <!-- ── Identificación ───────────────────────────────── -->
+          <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+              <h6 class="fw-bold mb-3" style="color:#374151;">
+                <i class="fa fa-id-card me-2 text-primary"/>Identificación
+              </h6>
+
+              <div class="row g-3">
+                <div class="col-12 col-sm-5">
+                  <label class="form-label small fw-semibold">Tipo de documento</label>
+                  <select name="spoot_document_type" class="form-select">
+                    <option value="">— Selecciona —</option>
+                    <option value="cc"   t-att-selected="'selected' if partner.spoot_document_type == 'cc'   else None">Cédula de ciudadanía (CC)</option>
+                    <option value="nit"  t-att-selected="'selected' if partner.spoot_document_type == 'nit'  else None">NIT / RUT</option>
+                    <option value="ce"   t-att-selected="'selected' if partner.spoot_document_type == 'ce'   else None">Cédula de extranjería (CE)</option>
+                    <option value="pas"  t-att-selected="'selected' if partner.spoot_document_type == 'pas'  else None">Pasaporte</option>
+                    <option value="ti"   t-att-selected="'selected' if partner.spoot_document_type == 'ti'   else None">Tarjeta de identidad</option>
+                    <option value="rc"   t-att-selected="'selected' if partner.spoot_document_type == 'rc'   else None">Registro civil</option>
+                    <option value="otro" t-att-selected="'selected' if partner.spoot_document_type == 'otro' else None">Otro</option>
+                  </select>
+                </div>
+                <div class="col-12 col-sm-7">
+                  <label class="form-label small fw-semibold">Número de documento</label>
+                  <input type="text" name="spoot_document_number" class="form-control"
+                         placeholder="Ej: 1234567890"
+                         t-att-value="partner.spoot_document_number or ''"/>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">NIT / RUT <span class="text-muted fw-normal">(si aplica)</span></label>
+                  <input type="text" name="vat" class="form-control"
+                         placeholder="Ej: 900123456-1"
+                         t-att-value="partner.vat or ''"/>
+                  <div class="form-text">Para empresas o personas naturales con actividad económica.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Datos de facturación ─────────────────────────── -->
+          <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+              <h6 class="fw-bold mb-3" style="color:#374151;">
+                <i class="fa fa-file-text-o me-2 text-primary"/>Datos de facturación
+              </h6>
+
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">
+                    Razón social / Nombre en factura
+                    <span class="text-muted fw-normal">(si difiere de tu nombre de usuario)</span>
+                  </label>
+                  <input type="text" name="spoot_billing_name" class="form-control"
+                         placeholder="Ej: Empresa S.A.S."
+                         t-att-value="partner.spoot_billing_name or ''"/>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Dirección</label>
+                  <input type="text" name="street" class="form-control"
+                         placeholder="Calle 123 # 45-67"
+                         t-att-value="partner.street or ''"/>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold">Complemento <span class="text-muted fw-normal">(Apto, Torre, Oficina…)</span></label>
+                  <input type="text" name="street2" class="form-control"
+                         placeholder="Apto 301, Torre B"
+                         t-att-value="partner.street2 or ''"/>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold">Ciudad</label>
+                  <input type="text" name="city" class="form-control"
+                         placeholder="Bogotá"
+                         t-att-value="partner.city or ''"/>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold">Código postal</label>
+                  <input type="text" name="zip" class="form-control"
+                         placeholder="110111"
+                         t-att-value="partner.zip or ''"/>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold">Departamento</label>
+                  <select name="state_id" class="form-select">
+                    <option value="">— Selecciona —</option>
+                    <t t-foreach="states" t-as="st">
+                      <option t-att-value="st.id"
+                              t-att-selected="'selected' if partner.state_id and partner.state_id.id == st.id else None">
+                        <t t-esc="st.name"/>
+                      </option>
+                    </t>
+                  </select>
+                </div>
+                <div class="col-12 col-sm-6">
+                  <label class="form-label small fw-semibold">País</label>
+                  <select name="country_id" class="form-select">
+                    <option value="">— Selecciona —</option>
+                    <t t-foreach="countries" t-as="co">
+                      <option t-att-value="co.id"
+                              t-att-selected="'selected' if partner.country_id and partner.country_id.id == co.id else None">
+                        <t t-esc="co.name"/>
+                      </option>
+                    </t>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="/my/coworking" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-semibold">
+              Guardar datos
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </t>
+  </template>
+
 </data>
 </odoo>
