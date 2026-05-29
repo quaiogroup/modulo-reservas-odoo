@@ -12,6 +12,15 @@
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
     </record>
+    <record id="access_office_space_booking_manager" model="ir.model.access">
+      <field name="name">access_office_space_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.space')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
     <record id="access_office_space_manager" model="ir.model.access">
       <field name="name">access_office_space_manager</field>
       <field name="model_id" search="[('model','=','office.space')]"/>
@@ -32,6 +41,15 @@
       <field name="perm_create" eval="1"/>
       <field name="perm_unlink" eval="0"/>
     </record>
+    <record id="access_office_booking_booking_manager" model="ir.model.access">
+      <field name="name">access_office_booking_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.booking')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
     <record id="access_office_booking_manager" model="ir.model.access">
       <field name="name">access_office_booking_manager</field>
       <field name="model_id" search="[('model','=','office.booking')]"/>
@@ -51,6 +69,15 @@
       <field name="perm_write"  eval="0"/>
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_image_booking_manager" model="ir.model.access">
+      <field name="name">access_office_image_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.image')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
     </record>
     <record id="access_office_image_manager" model="ir.model.access">
       <field name="name">access_office_image_manager</field>
@@ -83,6 +110,15 @@
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
     </record>
+    <record id="access_office_service_booking_manager" model="ir.model.access">
+      <field name="name">access_office_service_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.service')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
     <record id="access_office_service_manager" model="ir.model.access">
       <field name="name">access_office_service_manager</field>
       <field name="model_id" search="[('model','=','office.service')]"/>
@@ -102,6 +138,15 @@
       <field name="perm_write"  eval="0"/>
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_subscription_booking_manager" model="ir.model.access">
+      <field name="name">access_office_subscription_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.subscription')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
     </record>
     <record id="access_office_subscription_manager" model="ir.model.access">
       <field name="name">access_office_subscription_manager</field>
@@ -123,6 +168,15 @@
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
     </record>
+    <record id="access_office_plan_booking_manager" model="ir.model.access">
+      <field name="name">access_office_plan_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.plan')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
     <record id="access_office_plan_manager" model="ir.model.access">
       <field name="name">access_office_plan_manager</field>
       <field name="model_id" search="[('model','=','office.plan')]"/>
@@ -142,6 +196,15 @@
       <field name="perm_write"  eval="0"/>
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_block_booking_manager" model="ir.model.access">
+      <field name="name">access_office_block_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.block')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
     </record>
     <record id="access_office_block_manager" model="ir.model.access">
       <field name="name">access_office_block_manager</field>
@@ -163,8 +226,17 @@
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
     </record>
+    <record id="access_office_availability_booking_manager" model="ir.model.access">
+      <field name="name">access_office_availability_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.availability')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
+    </record>
 
-    <!-- office.settings -->
+    <!-- office.settings (solo admin del sistema) -->
     <record id="access_office_settings" model="ir.model.access">
       <field name="name">access_office_settings</field>
       <field name="model_id" search="[('model','=','office.settings')]"/>
@@ -184,6 +256,15 @@
       <field name="perm_write"  eval="0"/>
       <field name="perm_create" eval="0"/>
       <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_office_discount_booking_manager" model="ir.model.access">
+      <field name="name">access_office_discount_booking_manager</field>
+      <field name="model_id" search="[('model','=','office.discount')]"/>
+      <field name="group_id" ref="office_booking.group_booking_manager"/>
+      <field name="perm_read"   eval="1"/>
+      <field name="perm_write"  eval="1"/>
+      <field name="perm_create" eval="1"/>
+      <field name="perm_unlink" eval="1"/>
     </record>
     <record id="access_office_discount_manager" model="ir.model.access">
       <field name="name">access_office_discount_manager</field>

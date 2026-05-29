@@ -668,6 +668,13 @@ button.btn {
   margin-top: 2px;
 }
 
+.spoot-bk-slot-btn .slot-avail {
+  font-size: .62rem;
+  margin-top: 3px;
+  font-weight: 600;
+  display: none;
+}
+
 .spoot-bk-slot-btn:hover:not(:disabled):not(.unavail) {
   border-color: #3b82f6;
   background: #eff6ff;

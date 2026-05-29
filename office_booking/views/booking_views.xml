@@ -192,6 +192,12 @@
                             class="btn-secondary"
                             invisible="state == 'cancelled'"
                             confirm="¿Cancelar reserva? Si fue pagada con plan se restaurarán los días consumidos."/>
+                    <button name="action_resend_emails"
+                            string="Reenviar correos"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state == 'cancelled'"
+                            title="Reenvía las notificaciones de esta reserva al cliente y al administrador"/>
                     <field name="state"
                            widget="statusbar"
                            statusbar_visible="draft,pending_payment,confirmed,cancelled"
@@ -265,9 +271,28 @@
                     <group string="Datos de la reserva" col="2">
                         <group>
                             <field name="office_id"/>
+                            <field name="office_pricing_mode" invisible="1"/>
                             <field name="partner_id" options="{'no_create': True}"/>
                             <field name="date"/>
-                            <field name="slot_type"/>
+                            <!-- Modo jornadas -->
+                            <field name="slot_type"
+                                   invisible="office_pricing_mode == 'hourly'"
+                                   required="office_pricing_mode != 'hourly'"/>
+                            <!-- Modo por horas -->
+                            <field name="hour_start"
+                                   invisible="office_pricing_mode != 'hourly'"
+                                   required="office_pricing_mode == 'hourly'"
+                                   widget="float_time"
+                                   string="Hora inicio"/>
+                            <field name="hour_end"
+                                   invisible="office_pricing_mode != 'hourly'"
+                                   required="office_pricing_mode == 'hourly'"
+                                   widget="float_time"
+                                   string="Hora fin"/>
+                            <field name="duration_hours"
+                                   invisible="office_pricing_mode != 'hourly'"
+                                   readonly="1"
+                                   string="Duración (h)"/>
                         </group>
                         <group>
                             <field name="start_datetime" readonly="1"/>

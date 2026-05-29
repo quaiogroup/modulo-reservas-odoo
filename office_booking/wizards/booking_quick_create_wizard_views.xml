@@ -9,9 +9,24 @@
 
           <group string="Datos de la reserva">
             <field name="office_id"/>
+            <field name="office_pricing_mode" invisible="1"/>
             <field name="partner_id"/>
             <field name="date"/>
-            <field name="slot_type"/>
+            <!-- Modo jornadas -->
+            <field name="slot_type"
+                   invisible="office_pricing_mode == 'hourly'"
+                   required="office_pricing_mode != 'hourly'"/>
+            <!-- Modo por horas -->
+            <field name="hour_start"
+                   invisible="office_pricing_mode != 'hourly'"
+                   required="office_pricing_mode == 'hourly'"
+                   widget="float_time"
+                   string="Hora inicio"/>
+            <field name="hour_end"
+                   invisible="office_pricing_mode != 'hourly'"
+                   required="office_pricing_mode == 'hourly'"
+                   widget="float_time"
+                   string="Hora fin"/>
           </group>
 
           <group string="Método de pago">

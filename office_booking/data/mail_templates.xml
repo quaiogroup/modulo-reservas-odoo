@@ -9,7 +9,7 @@
     <!-- 1. Reserva pendiente de pago (Bold) -->
     <record id="mail_template_booking_pending_payment" model="mail.template">
         <field name="name">Reserva – Pendiente de pago (cliente)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">Tu reserva está pendiente de pago – ${object.office_id.name}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -72,7 +72,7 @@
     <!-- 2. Reserva confirmada tras pago Bold -->
     <record id="mail_template_booking_confirmed_bold" model="mail.template">
         <field name="name">Reserva – Confirmada (pago Bold, cliente)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">✓ Reserva confirmada – ${object.office_id.name} · ${object.date}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -139,7 +139,7 @@
     <!-- 3. Reserva confirmada con plan de coworking -->
     <record id="mail_template_booking_confirmed_plan" model="mail.template">
         <field name="name">Reserva – Confirmada (plan coworking, cliente)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">✓ Reserva confirmada con tu plan – ${object.office_id.name} · ${object.date}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -205,7 +205,7 @@
     <!-- 4. Recordatorio 24h antes de la reserva -->
     <record id="mail_template_booking_reminder" model="mail.template">
         <field name="name">Reserva – Recordatorio (cliente)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">Recordatorio: tu reserva en ${object.office_id.name} es mañana</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -263,7 +263,7 @@
     <!-- 5. Reserva cancelada (cliente) -->
     <record id="mail_template_booking_cancelled_user" model="mail.template">
         <field name="name">Reserva – Cancelada (cliente)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">Tu reserva de oficina ha sido cancelada – ${object.office_id.name}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -328,7 +328,7 @@
     <!-- 6. Nueva reserva creada (admin) -->
     <record id="mail_template_booking_new_admin" model="mail.template">
         <field name="name">Reserva – Nueva reserva (admin)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">[Nueva reserva] ${object.partner_id.name} · ${object.office_id.name} · ${object.date}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
@@ -393,7 +393,7 @@
     <!-- 7. Reserva confirmada (admin) -->
     <record id="mail_template_booking_confirmed_admin" model="mail.template">
         <field name="name">Reserva – Confirmada (admin)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">[Confirmada] ${object.partner_id.name} · ${object.office_id.name} · ${object.date}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
@@ -443,7 +443,7 @@
     <!-- 8. Reserva cancelada (admin) -->
     <record id="mail_template_booking_cancelled_admin" model="mail.template">
         <field name="name">Reserva – Cancelada (admin)</field>
-        <field name="model_id" ref="model_office_booking"/>
+        <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="subject">[Cancelada] ${object.partner_id.name} · ${object.office_id.name} · ${object.date}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
@@ -494,7 +494,7 @@
     <!-- 9. Plan activado (cliente) -->
     <record id="mail_template_plan_confirmed_user" model="mail.template">
         <field name="name">Plan coworking – Activado (cliente)</field>
-        <field name="model_id" ref="model_office_subscription"/>
+        <field name="model_id" search="[('model','=','office.subscription')]"/>
         <field name="subject">✓ Tu plan de coworking está activo – ${object.plan_id.name}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.partner_id.email or ''}</field>
@@ -557,7 +557,7 @@
     <!-- 10. Plan activado (admin) -->
     <record id="mail_template_plan_confirmed_admin" model="mail.template">
         <field name="name">Plan coworking – Activado (admin)</field>
-        <field name="model_id" ref="model_office_subscription"/>
+        <field name="model_id" search="[('model','=','office.subscription')]"/>
         <field name="subject">[Plan activado] ${object.partner_id.name} – ${object.plan_id.name}</field>
         <field name="email_from">${object.env.company.email or ''}</field>
         <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>

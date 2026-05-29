@@ -33,6 +33,51 @@
                             </div>
                         </div>
 
+                        <!-- ── SECCIÓN: Diagnóstico ───────────────────── -->
+                        <div class="o_settings_header mt-4">
+                            <h2>Diagnóstico y prueba de correo</h2>
+                            <p class="text-muted" style="font-size:13px;font-weight:normal;">
+                                Verifica que la configuración de email esté lista y envía un correo de prueba.
+                            </p>
+                        </div>
+
+                        <div class="o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button name="action_diagnose_email"
+                                            type="object"
+                                            string="Verificar configuración"
+                                            class="btn btn-outline-primary btn-sm"
+                                            title="Muestra el estado de SMTP, correos configurados y errores en cola"/>
+                                    <button name="action_send_test_email"
+                                            type="object"
+                                            string="Enviar correo de prueba"
+                                            class="btn btn-primary btn-sm"
+                                            title="Envía un email de prueba al correo admin configurado arriba"/>
+                                    <button name="action_view_failed_emails"
+                                            type="object"
+                                            string="Ver correos fallidos"
+                                            class="btn btn-outline-danger btn-sm"
+                                            title="Abre la lista de correos que no pudieron enviarse"/>
+                                    <button name="action_view_all_sent_emails"
+                                            type="object"
+                                            string="Historial de correos"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            title="Muestra todos los correos enviados asociados a reservas"/>
+                                    <button name="action_view_smtp_settings"
+                                            type="object"
+                                            string="Configurar SMTP"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            title="Abre la configuración de servidores de correo saliente"/>
+                                </div>
+                                <div class="text-muted mt-2" style="font-size:12px;">
+                                    Para que los correos salgan, Odoo necesita un servidor SMTP configurado
+                                    en <strong>Ajustes → Técnico → Correo electrónico saliente</strong>
+                                    (o usa el servidor de correo integrado de Odoo).
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="o_settings_header mt-4">
                             <h2>Plantillas de correo</h2>
                             <p class="text-muted" style="font-size:13px;font-weight:normal;">

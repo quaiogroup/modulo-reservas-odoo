@@ -170,6 +170,8 @@ class OfficeWebsite(http.Controller):
                     "remaining_after=%.1f subscription=%s",
                     booking.id, slot_type, cost, new_remaining, subscription.id,
                 )
+                # Save document data if provided and partner doesn't have it yet
+                self._save_partner_doc_from_post(partner, post)
                 # Notify customer (plan confirmation) and admin (new booking)
                 email_sent = booking._notify_customer("office_booking.mail_template_booking_confirmed_plan")
                 booking._notify_admin("office_booking.mail_template_booking_new_admin")
@@ -208,12 +210,29 @@ class OfficeWebsite(http.Controller):
                 return _render_detail(str(e))
             if discount_rec:
                 discount_rec.apply_use()
+            # Save document data if provided and partner doesn't have it yet
+            self._save_partner_doc_from_post(partner, post)
             # Notify customer (pending payment) and admin (new booking)
             booking._notify_customer("office_booking.mail_template_booking_pending_payment")
             booking._notify_admin("office_booking.mail_template_booking_new_admin")
             return redirect(f"/my/office-bookings/{booking.id}")
 
         return _render_detail()
+
+    def _save_partner_doc_from_post(self, partner, post):
+        """Guarda tipo y número de documento del POST si el partner aún no los tiene."""
+        doc_number = (post.get("doc_number") or "").strip()
+        if not doc_number or partner.spoot_document_number:
+            return
+        doc_type = (post.get("doc_type") or "").strip() or False
+        try:
+            partner.sudo().write({
+                "spoot_document_type":   doc_type,
+                "spoot_document_number": doc_number,
+            })
+            _logger.info("[DOC] saved doc type=%s number=%s for partner %s", doc_type, doc_number, partner.id)
+        except Exception as exc:
+            _logger.warning("[DOC] could not save document data: %s", exc)
 
     # ── JSON: validar código de descuento ──────────────────────────────────
     @http.route("/spoot/discount/validate", type="jsonrpc", auth="user", website=True)
@@ -272,6 +291,8 @@ class OfficeWebsite(http.Controller):
 
         Booking = request.env["office.booking"].sudo()
         Block = request.env["office.block"].sudo()
+        office = request.env["office.space"].sudo().browse(office_id)
+        quantity = office.quantity or 1
 
         bk_domain = [
             ("office_id", "=", office_id),
@@ -314,21 +335,25 @@ class OfficeWebsite(http.Controller):
                     "block_reason": block_index[d],
                     "available": [],
                     "taken": [],
+                    "remaining": {"morning": 0, "afternoon": 0, "full_day": 0},
+                    "quantity": quantity,
                 })
                 continue
 
-            taken = set(booking_index.get(d, []))
+            slots = booking_index.get(d, [])
+            morning_used = sum(1 for s in slots if s in ("morning", "full_day"))
+            afternoon_used = sum(1 for s in slots if s in ("afternoon", "full_day"))
+            morning_rem = max(quantity - morning_used, 0)
+            afternoon_rem = max(quantity - afternoon_used, 0)
+            full_day_rem = min(morning_rem, afternoon_rem)
+
             available = []
-            if "full_day" in taken:
-                # full_day ocupa toda la jornada → ningún slot disponible
-                available = []
-            else:
-                if "morning" not in taken:
-                    available.append("morning")
-                if "afternoon" not in taken:
-                    available.append("afternoon")
-                if "morning" not in taken and "afternoon" not in taken:
-                    available.append("full_day")
+            if morning_rem > 0:
+                available.append("morning")
+            if afternoon_rem > 0:
+                available.append("afternoon")
+            if full_day_rem > 0:
+                available.append("full_day")
 
             result.append({
                 "date": str(d),
@@ -336,7 +361,13 @@ class OfficeWebsite(http.Controller):
                 "today": d == today,
                 "blocked": False,
                 "available": available,
-                "taken": list(taken),
+                "taken": list(set(slots)),
+                "remaining": {
+                    "morning":   morning_rem,
+                    "afternoon": afternoon_rem,
+                    "full_day":  full_day_rem,
+                },
+                "quantity": quantity,
             })
 
         return result
@@ -1119,6 +1150,58 @@ class OfficePortal(CustomerPortal):
             'calendar_events_json': Markup(safe_json),
         })
         return request.render("office_booking.my_coworking_dashboard", values)
+
+
+    @http.route(
+        "/my/datos",
+        type="http", auth="user", website=True,
+        methods=["GET", "POST"], csrf=False,
+    )
+    def portal_my_data(self, saved=None, **post):
+        partner = request.env.user.partner_id
+
+        if request.httprequest.method == "POST":
+            vals = {}
+            _STR_FIELDS = [
+                "spoot_document_type", "spoot_document_number",
+                "spoot_billing_name", "vat",
+                "street", "street2", "city", "zip",
+            ]
+            for f in _STR_FIELDS:
+                val = (post.get(f) or "").strip()
+                vals[f] = val or False
+
+            try:
+                state_id = int(post.get("state_id") or 0)
+                vals["state_id"] = state_id or False
+            except (TypeError, ValueError):
+                pass
+            try:
+                country_id = int(post.get("country_id") or 0)
+                vals["country_id"] = country_id or False
+            except (TypeError, ValueError):
+                pass
+
+            partner.sudo().write(vals)
+            return request.redirect("/my/datos?saved=1")
+
+        colombia = request.env["res.country"].sudo().search([("code", "=", "CO")], limit=1)
+        states = request.env["res.country.state"].sudo().search(
+            [("country_id", "=", colombia.id)] if colombia else [],
+            order="name",
+        )
+        countries = request.env["res.country"].sudo().search([], order="name")
+
+        values = self._prepare_portal_layout_values()
+        values.update({
+            "partner":   partner,
+            "states":    states,
+            "countries": countries,
+            "colombia_id": colombia.id if colombia else False,
+            "saved":     saved == "1",
+            "page_name": "my_data",
+        })
+        return request.render("office_booking.portal_my_data", values)
 
 
 class OfficeExportController(http.Controller):
