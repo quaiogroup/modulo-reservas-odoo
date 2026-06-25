@@ -24,6 +24,7 @@
         'reports/booking_receipt.xml',
         'data/mail_templates.xml',
         'data/ir_cron_data.xml',
+        'data/office_services_data.xml',
         'views/office_views.xml',
         'views/booking_views.xml',
         'views/office_block_views.xml',

@@ -71,12 +71,9 @@
                                     </td>
                                 </tr>
                                 <tr style="background: #f9fafb;">
-                                    <td style="padding: 9px 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Franja</td>
+                                    <td style="padding: 9px 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #374151;">Horario</td>
                                     <td style="padding: 9px 12px; border-bottom: 1px solid #e5e7eb; color: #1a1a1a;">
-                                        <t t-if="booking.slot_type == 'morning'">Mañana (8:00–12:00)</t>
-                                        <t t-elif="booking.slot_type == 'afternoon'">Tarde (14:00–18:00)</t>
-                                        <t t-elif="booking.slot_type == 'full_day'">Día completo (8:00–18:00)</t>
-                                        <t t-else=""><t t-esc="booking.slot_type"/></t>
+                                        <t t-esc="booking.slot_label"/>
                                     </td>
                                 </tr>
                                 <tr>

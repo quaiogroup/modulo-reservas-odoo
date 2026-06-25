@@ -32,6 +32,9 @@ class OfficeService(models.Model):
         ("fa-clock-o",       "Acceso 24/7"),
         ("fa-shower",        "Ducha"),
         ("fa-wheelchair",    "Acceso accesible"),
+        ("fa-umbrella",      "Terraza / Aire libre"),
+        ("fa-leaf",          "Plantas / Zona verde"),
+        ("fa-magic",         "Aseo / Limpieza"),
     ], string="Icono")
     description = fields.Char(string="Descripción corta")
 

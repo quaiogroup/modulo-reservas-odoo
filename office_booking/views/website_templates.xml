@@ -232,6 +232,18 @@
                   </div>
                 </t>
 
+                <!-- ── Aviso: el cliente tiene plan pero no aplica aquí ── -->
+                <t t-if="plan_other_office">
+                  <div class="rounded-4 p-3 mb-3 d-flex gap-2 align-items-start"
+                       style="background:#fffbeb;border:1px solid #fcd34d;">
+                    <span style="font-size:1.1rem;line-height:1;">&#9888;</span>
+                    <div style="font-size:.82rem;color:#92400e;">
+                      Tu plan de coworking <strong>no aplica para esta oficina</strong>.
+                      Puedes reservarla pagando con Bold, o usar tu plan en una de las oficinas incluidas.
+                    </div>
+                  </div>
+                </t>
+
                 <!-- ── PLAN BALANCE PANEL ──────────────────────── -->
                 <t t-if="subscription">
                   <div class="rounded-4 p-3 mb-3" id="plan_balance_panel"
@@ -287,11 +299,15 @@
                 <div class="js_spoot_office_detail"
                      t-att-data-office-id="office.id"
                      t-att-data-pm="'%.2f|%.2f|%.2f' % (office.price_morning or 0, office.price_afternoon or 0, office.price_full_day or 0)"
+                     t-att-data-mode="office.pricing_mode"
+                     t-att-data-pph="'%.2f' % (office.price_per_hour or 0)"
                      t-att-data-cur="office.currency_id.symbol or ''">
                 <form method="post" id="spoot-booking-form">
                   <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
-                  <input type="hidden" name="date"      id="spoot_date"/>
-                  <input type="hidden" name="slot_type" id="spoot_slot"/>
+                  <input type="hidden" name="date"       id="spoot_date"/>
+                  <input type="hidden" name="slot_type"  id="spoot_slot"/>
+                  <input type="hidden" name="hour_start" id="spoot_hour_start"/>
+                  <input type="hidden" name="hour_end"   id="spoot_hour_end"/>
 
                   <!-- ── CALENDAR PICKER ─────────────────────────────── -->
                   <div class="spoot-bk-cal mb-3">
@@ -337,6 +353,25 @@
                         <div class="slot-avail" id="spoot-bk-avail-full_day"></div>
                       </button>
                     </div>
+                  </div>
+                  <!-- ─────────────────────────────────────────────────── -->
+
+                  <!-- ── HOUR SELECTOR (solo oficinas por horas) ──────── -->
+                  <div id="spoot-bk-hours" class="d-none mb-3">
+                    <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
+                      Horario para <span id="spoot-bk-sel-date-h" class="text-primary fw-bold"></span>:
+                    </div>
+                    <div class="d-flex gap-2 align-items-end">
+                      <div class="flex-fill">
+                        <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Desde</label>
+                        <select id="spoot-bk-hour-start" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                      </div>
+                      <div class="flex-fill">
+                        <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Hasta</label>
+                        <select id="spoot-bk-hour-end" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                      </div>
+                    </div>
+                    <div id="spoot-bk-hours-feedback" class="form-text mt-1" style="display:none;"></div>
                   </div>
                   <!-- ─────────────────────────────────────────────────── -->
 
@@ -415,6 +450,29 @@
                   </div>
                   <!-- ─────────────────────────────────────────────── -->
 
+                  <!-- ── RECURRENCIA / DÍAS ─────────────────────────── -->
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:.85rem;">
+                      ¿Vas a ir varios días?
+                    </label>
+                    <select name="recurrence_type" id="spoot-recurrence"
+                            class="form-select form-select-sm" style="border-radius:8px;">
+                      <option value="none">Solo este día</option>
+                      <option value="weekly">Cada semana (este mismo día)</option>
+                      <option value="biweekly">Cada 2 semanas</option>
+                      <option value="monthly">Cada mes</option>
+                    </select>
+                    <div id="spoot-recurrence-end" class="mt-2" style="display:none;">
+                      <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Repetir hasta</label>
+                      <input type="date" name="recurrence_end_date" id="spoot-recurrence-end-date"
+                             class="form-control form-control-sm" style="border-radius:8px;"/>
+                      <div class="form-text" style="font-size:.72rem;">
+                        Crearemos una reserva por cada día (la misma franja/horario) hasta esa fecha.
+                      </div>
+                    </div>
+                  </div>
+                  <!-- ─────────────────────────────────────────────── -->
+
                   <!-- ── DATOS DE DOCUMENTO (solo si el cliente no los tiene) ── -->
                   <t t-if="not request.env.user.partner_id.spoot_document_number">
                     <div class="rounded-4 p-3 mb-3"
@@ -472,9 +530,19 @@
               var pmRaw     = (container.dataset.pm || '0|0|0').split('|').map(parseFloat);
               var currency  = container.dataset.cur || '';
               var prices    = {morning: pmRaw[0], afternoon: pmRaw[1], full_day: pmRaw[2]};
+              var pricingMode = container.dataset.mode || 'jornada';
+              var isHourly  = pricingMode === 'hourly';
+              var pricePerHour = parseFloat(container.dataset.pph || '0') || 0;
 
               var dateHidden   = document.getElementById('spoot_date');
               var slotHidden   = document.getElementById('spoot_slot');
+              var hourStartHidden = document.getElementById('spoot_hour_start');
+              var hourEndHidden   = document.getElementById('spoot_hour_end');
+              var hoursPanel   = document.getElementById('spoot-bk-hours');
+              var selDateHEl   = document.getElementById('spoot-bk-sel-date-h');
+              var hourStartSel = document.getElementById('spoot-bk-hour-start');
+              var hourEndSel   = document.getElementById('spoot-bk-hour-end');
+              var hoursFeedback= document.getElementById('spoot-bk-hours-feedback');
               var submitBtn    = document.getElementById('spoot_submit_btn');
               var grid         = document.getElementById('spoot-bk-grid');
               var monthTitle   = document.getElementById('spoot-bk-month-title');
@@ -600,10 +668,21 @@
                 dateHidden.value = '';
                 slotHidden.value = '';
                 submitBtn.disabled = true;
+                summaryPanel.classList.add('d-none');
+
+                // ── Oficinas por horas: mostrar selector de horario ──
+                if (isHourly) {
+                    dateHidden.value = ds;
+                    if (selDateHEl) selDateHEl.textContent = fmtDate(ds);
+                    if (hoursPanel) hoursPanel.classList.remove('d-none');
+                    onHourChange();
+                    renderCalendar();
+                    if (hoursPanel) hoursPanel.scrollIntoView({behavior:'smooth', block:'nearest'});
+                    return;
+                }
 
                 selDateEl.textContent = fmtDate(ds);
                 slotsPanel.classList.remove('d-none');
-                summaryPanel.classList.add('d-none');
 
                 var qty      = info.quantity || 1;
                 var rem      = info.remaining || {};
@@ -662,11 +741,78 @@
                 toggleDiscountSection();
               }
 
+              /* ── Hourly: poblar selects y calcular precio ──────────── */
+              var HOUR_MIN = 6, HOUR_MAX = 22;   // rango horario seleccionable
+              function hourLabel(h){ return pad(h) + ':00'; }
+
+              function buildHourOptions() {
+                if (!hourStartSel || !hourEndSel) return;
+                hourStartSel.innerHTML = '';
+                hourEndSel.innerHTML = '';
+                for (var h = HOUR_MIN; h &lt; HOUR_MAX; h++) {
+                  var o = document.createElement('option');
+                  o.value = h; o.textContent = hourLabel(h);
+                  hourStartSel.appendChild(o);
+                }
+                for (var h2 = HOUR_MIN + 1; h2 &lt;= HOUR_MAX; h2++) {
+                  var o2 = document.createElement('option');
+                  o2.value = h2; o2.textContent = hourLabel(h2);
+                  hourEndSel.appendChild(o2);
+                }
+                hourStartSel.value = '8';
+                hourEndSel.value = '9';
+              }
+
+              function onHourChange() {
+                if (!isHourly || !selectedDate) return;
+                var hs = parseInt(hourStartSel.value || '0', 10);
+                var he = parseInt(hourEndSel.value || '0', 10);
+                var valid = he &gt; hs;
+
+                if (hoursFeedback) {
+                  if (!valid) {
+                    hoursFeedback.style.display = 'block';
+                    hoursFeedback.style.color = '#dc2626';
+                    hoursFeedback.textContent = 'La hora final debe ser mayor que la inicial.';
+                  } else {
+                    hoursFeedback.style.display = 'none';
+                  }
+                }
+
+                if (!valid) {
+                  selectedSlot = null;
+                  hourStartHidden.value = '';
+                  hourEndHidden.value = '';
+                  summaryPanel.classList.add('d-none');
+                  submitBtn.disabled = true;
+                  return;
+                }
+
+                selectedSlot = 'hourly';
+                hourStartHidden.value = hs;
+                hourEndHidden.value = he;
+                var dur = he - hs;
+                var price = pricePerHour * dur;
+
+                summaryText.textContent = fmtDate(selectedDate) + ' · ' + hourLabel(hs) + ' – ' + hourLabel(he)
+                  + ' (' + dur + ' h)';
+                summaryPrice.textContent = price &amp;&amp; price > 0
+                  ? (currency + ' ' + Math.round(price).toLocaleString('es-CO'))
+                  : '';
+                summaryPanel.classList.remove('d-none');
+                submitBtn.disabled = false;
+                updatePaymentUI();
+                toggleDiscountSection();
+              }
+
               /* ── Reset ─────────────────────────────────────────────── */
               function reset() {
                 selectedDate = null; selectedSlot = null;
                 dateHidden.value = ''; slotHidden.value = '';
+                if (hourStartHidden) hourStartHidden.value = '';
+                if (hourEndHidden) hourEndHidden.value = '';
                 slotsPanel.classList.add('d-none');
+                if (hoursPanel) hoursPanel.classList.add('d-none');
                 summaryPanel.classList.add('d-none');
                 submitBtn.disabled = true;
                 if (submitBtn) submitBtn.textContent = 'Confirmar reserva';
@@ -678,15 +824,25 @@
 
               function updatePaymentUI() {
                 if (!radioPlan) return;
-                var slot   = slotHidden.value;
-                var cost   = slotCost(slot);
+                var slot, cost, hasSel;
+                if (isHourly) {
+                  var hs = parseInt(hourStartHidden.value || '0', 10);
+                  var he = parseInt(hourEndHidden.value || '0', 10);
+                  hasSel = he > hs;
+                  cost = hasSel ? Math.round((he - hs) / 8.0 * 100) / 100 : 0;
+                  slot = hasSel ? 'hourly' : '';
+                } else {
+                  slot = slotHidden.value;
+                  cost = slotCost(slot);
+                  hasSel = !!slot;
+                }
                 var isPlan = radioPlan.checked;
 
-                if (costLabel) costLabel.textContent = slot
+                if (costLabel) costLabel.textContent = hasSel
                   ? 'Descuenta ' + cost.toFixed(1) + ' día' + (cost === 1 ? '' : 's')
-                  : 'Descuenta 0.5 ó 1 día';
+                  : (isHourly ? 'Según las horas reservadas' : 'Descuenta 0.5 ó 1 día');
 
-                var insuf = isPlan &amp;&amp; slot &amp;&amp; remaining &lt; cost;
+                var insuf = isPlan &amp;&amp; hasSel &amp;&amp; remaining &lt; cost;
 
                 // Auto-switch to Bold when plan can't cover this slot
                 if (insuf &amp;&amp; radioBold) {
@@ -737,6 +893,21 @@
                 if (btn) btn.addEventListener('click', function(){ onSlotClick(s); });
               });
 
+              if (isHourly) {
+                buildHourOptions();
+                if (hourStartSel) hourStartSel.addEventListener('change', onHourChange);
+                if (hourEndSel)   hourEndSel.addEventListener('change', onHourChange);
+              }
+
+              /* ── Recurrencia: mostrar 'hasta' cuando aplica ──────── */
+              var recurrenceSel = document.getElementById('spoot-recurrence');
+              var recurrenceEnd = document.getElementById('spoot-recurrence-end');
+              if (recurrenceSel &amp;&amp; recurrenceEnd) {
+                recurrenceSel.addEventListener('change', function(){
+                  recurrenceEnd.style.display = (recurrenceSel.value !== 'none') ? 'block' : 'none';
+                });
+              }
+
               if (resetBtn) resetBtn.addEventListener('click', reset);
               if (prevBtn)  prevBtn.addEventListener('click', function(){
                 if (curMonth === 0){ curYear--; curMonth = 11; } else curMonth--;
@@ -758,9 +929,9 @@
               // Mostrar sección cuando hay franja + modo Bold seleccionado
               function toggleDiscountSection() {
                 if (!discountSection) return;
-                var slot = slotHidden.value;
+                var hasSel = isHourly ? !!selectedSlot : !!slotHidden.value;
                 var isBold = !radioPlan || !radioPlan.checked;
-                discountSection.style.display = (slot &amp;&amp; isBold) ? 'block' : 'none';
+                discountSection.style.display = (hasSel &amp;&amp; isBold) ? 'block' : 'none';
               }
 
               if (radioPlan) radioPlan.addEventListener('change', toggleDiscountSection);
@@ -897,11 +1068,9 @@
                   <p class="fw-semibold mb-0"><t t-esc="booking.date"/></p>
                 </div>
                 <div class="col-6">
-                  <p class="text-muted small mb-1">Franja</p>
+                  <p class="text-muted small mb-1">Horario</p>
                   <p class="fw-semibold mb-0">
-                    <t t-if="booking.slot_type == 'morning'">Mañana (8:00 – 12:00)</t>
-                    <t t-elif="booking.slot_type == 'afternoon'">Tarde (14:00 – 18:00)</t>
-                    <t t-else="">Día completo (8:00 – 18:00)</t>
+                    <t t-esc="booking.slot_label"/>
                   </p>
                 </div>
                 <div class="col-6">
@@ -1016,6 +1185,13 @@
                         <div class="card border-0 h-100 rounded-4 p-4 text-center"
                              t-att-style="'box-shadow: 0 4px 24px rgba(0,0,0,.08);' + (' opacity:.65; filter:grayscale(.3);' if active_subscription else '')">
 
+                            <t t-if="plan.image_1920">
+                                <img t-att-src="image_data_uri(plan.image_1920)"
+                                     class="rounded-4 mb-3 mx-auto"
+                                     style="width:100%;max-height:170px;object-fit:cover;"
+                                     alt="Foto del plan"/>
+                            </t>
+
                             <h4 class="fw-bold mb-2">
                                 <t t-esc="plan.name"/>
                             </h4>
@@ -1036,8 +1212,28 @@
                             </p>
 
                             <t t-if="plan.description">
-                                <div class="mb-4 text-muted small">
+                                <div class="mb-3 text-muted small">
                                     <t t-esc="plan.description"/>
+                                </div>
+                            </t>
+
+                            <!-- Oficinas a las que aplica el plan -->
+                            <t t-if="plan.office_ids">
+                                <div class="mb-4">
+                                    <div class="text-muted small mb-1 fw-semibold">Válido en:</div>
+                                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                        <t t-foreach="plan.office_ids" t-as="po" t-key="po.id">
+                                            <span class="badge rounded-pill px-2"
+                                                  style="background:#eef2ff;color:#4338ca;font-weight:500;">
+                                                <t t-esc="po.name"/>
+                                            </span>
+                                        </t>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="mb-4 text-muted small">
+                                    Válido en <strong>todas</strong> las oficinas
                                 </div>
                             </t>
 
@@ -1491,10 +1687,16 @@
                           Tarde
                         </span>
                       </t>
-                      <t t-else="">
+                      <t t-elif="b.slot_type == 'full_day'">
                         <span class="badge rounded-pill px-3 py-1"
                               style="background:#f3f4f6; color:#374151;">
                           Día completo
+                        </span>
+                      </t>
+                      <t t-else="">
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background:#ede9fe; color:#5b21b6;">
+                          <t t-esc="b.slot_label or '—'"/>
                         </span>
                       </t>
                     </td>
@@ -1649,10 +1851,16 @@
                             Tarde
                           </span>
                         </t>
-                        <t t-else="">
+                        <t t-elif="pb.slot_type == 'full_day'">
                           <span class="badge rounded-pill px-2"
                                 style="background:#f3f4f6; color:#374151; font-size:.75rem;">
                             Día completo
+                          </span>
+                        </t>
+                        <t t-else="">
+                          <span class="badge rounded-pill px-2"
+                                style="background:#ede9fe; color:#5b21b6; font-size:.75rem;">
+                            <t t-esc="pb.slot_label or '—'"/>
                           </span>
                         </t>
                       </td>

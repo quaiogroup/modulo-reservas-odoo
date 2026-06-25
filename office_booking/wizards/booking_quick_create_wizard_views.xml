@@ -37,6 +37,19 @@
                    string="Plan activo del cliente"/>
           </group>
 
+          <group string="Días / Recurrencia">
+            <field name="recurrence_type" widget="radio"/>
+            <field name="recurrence_end_date"
+                   invisible="recurrence_type == 'none'"
+                   required="recurrence_type != 'none'"
+                   string="Repetir hasta"/>
+            <div class="text-muted" colspan="2"
+                 invisible="recurrence_type == 'none'">
+              Se crearán automáticamente todas las reservas (mismo día) hasta la fecha indicada.
+              Con pago por plan se descuentan los días de cada reserva.
+            </div>
+          </group>
+
           <div class="alert alert-info" role="alert"
                invisible="payment_mode != 'plan'">
             La reserva quedará <strong>confirmada</strong> y se descontarán los días del plan seleccionado.

@@ -68,15 +68,7 @@
 
                                             <!-- Franja amigable -->
                                             <td>
-                                                <t t-if="booking.slot_type == 'morning'">
-                                                    Mañana (8:00 – 12:00)
-                                                </t>
-                                                <t t-elif="booking.slot_type == 'afternoon'">
-                                                    Tarde (14:00 – 18:00)
-                                                </t>
-                                                <t t-else="">
-                                                    Día completo
-                                                </t>
+                                                <t t-esc="booking.slot_label"/>
                                             </td>
 
                                             <!-- Estado con badge -->
@@ -345,9 +337,7 @@
                 <div class="col-6 col-md-3">
                   <p class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;">Franja</p>
                   <p class="fw-semibold mb-0" style="font-size:.92rem;">
-                    <t t-if="booking.slot_type == 'morning'">Mañana<br/><span class="text-muted fw-normal" style="font-size:.78rem;">8:00 – 12:00</span></t>
-                    <t t-elif="booking.slot_type == 'afternoon'">Tarde<br/><span class="text-muted fw-normal" style="font-size:.78rem;">14:00 – 18:00</span></t>
-                    <t t-else="">Día completo<br/><span class="text-muted fw-normal" style="font-size:.78rem;">8:00 – 18:00</span></t>
+                    <t t-esc="booking.slot_label"/>
                   </p>
                 </div>
 
@@ -542,9 +532,7 @@
                 <span class="fw-semibold"><t t-esc="booking.date"/></span>
                 <span class="badge rounded-pill px-3"
                       style="background:#e0f2fe;color:#0369a1;">
-                  <t t-if="booking.slot_type == 'morning'">Mañana (8–12)</t>
-                  <t t-elif="booking.slot_type == 'afternoon'">Tarde (14–18)</t>
-                  <t t-else="">Día completo (8–18)</t>
+                  <t t-esc="booking.slot_label"/>
                 </span>
                 <t t-if="booking.office_id.modification_limit_hours">
                   <small class="text-muted">
@@ -580,12 +568,17 @@
 
                 <div t-att-data-office-id="booking.office_id.id"
                      t-att-data-exclude-id="booking.id"
+                     t-att-data-mode="booking.office_id.pricing_mode"
+                     t-att-data-pph="'%.2f' % (booking.office_id.price_per_hour or 0)"
+                     t-att-data-cur="booking.office_id.currency_id.symbol or ''"
                      id="spoot-rsc-container">
 
                   <form method="post" id="spoot-rsc-form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="date"      id="spoot-rsc-date"/>
-                    <input type="hidden" name="slot_type" id="spoot-rsc-slot"/>
+                    <input type="hidden" name="date"       id="spoot-rsc-date"/>
+                    <input type="hidden" name="slot_type"  id="spoot-rsc-slot"/>
+                    <input type="hidden" name="hour_start" id="spoot-rsc-hour-start"/>
+                    <input type="hidden" name="hour_end"   id="spoot-rsc-hour-end"/>
 
                     <!-- Calendar -->
                     <div class="spoot-bk-cal mb-3">
@@ -631,6 +624,24 @@
                       </div>
                     </div>
 
+                    <!-- Selector de horas (oficinas por horas) -->
+                    <div id="spoot-rsc-hours" class="d-none mb-3">
+                      <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
+                        Horario para <span id="spoot-rsc-sel-date-h" class="text-primary fw-bold"></span>:
+                      </div>
+                      <div class="d-flex gap-2 align-items-end">
+                        <div class="flex-fill">
+                          <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Desde</label>
+                          <select id="spoot-rsc-hour-start-sel" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                        </div>
+                        <div class="flex-fill">
+                          <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Hasta</label>
+                          <select id="spoot-rsc-hour-end-sel" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                        </div>
+                      </div>
+                      <div id="spoot-rsc-hours-feedback" class="form-text mt-1" style="display:none;"></div>
+                    </div>
+
                     <!-- Resumen seleccionado -->
                     <div id="spoot-rsc-summary" class="d-none rounded-4 p-3 mb-3"
                          style="background:#f0fdf4;border:1px solid #86efac;">
@@ -659,13 +670,23 @@
               var cont      = document.getElementById('spoot-rsc-container');
               var officeId  = parseInt(cont.dataset.officeId || '0');
               var excludeId = parseInt(cont.dataset.excludeId || '0');
+              var isHourly  = (cont.dataset.mode || 'jornada') === 'hourly';
+              var pricePerHour = parseFloat(cont.dataset.pph || '0') || 0;
+              var currency  = cont.dataset.cur || '';
 
               var dateHidden   = document.getElementById('spoot-rsc-date');
               var slotHidden   = document.getElementById('spoot-rsc-slot');
+              var hourStartHidden = document.getElementById('spoot-rsc-hour-start');
+              var hourEndHidden   = document.getElementById('spoot-rsc-hour-end');
               var submitBtn    = document.getElementById('spoot-rsc-submit');
               var grid         = document.getElementById('spoot-rsc-grid');
               var monthTitle   = document.getElementById('spoot-rsc-month-title');
               var slotsPanel   = document.getElementById('spoot-rsc-slots');
+              var hoursPanel   = document.getElementById('spoot-rsc-hours');
+              var selDateHEl   = document.getElementById('spoot-rsc-sel-date-h');
+              var hourStartSel = document.getElementById('spoot-rsc-hour-start-sel');
+              var hourEndSel   = document.getElementById('spoot-rsc-hour-end-sel');
+              var hoursFeedback= document.getElementById('spoot-rsc-hours-feedback');
               var summaryPanel = document.getElementById('spoot-rsc-summary');
               var selDateEl    = document.getElementById('spoot-rsc-sel-date');
               var summaryText  = document.getElementById('spoot-rsc-summary-text');
@@ -754,9 +775,20 @@
                 selectedDate=ds; selectedSlot=null;
                 dateHidden.value=''; slotHidden.value='';
                 submitBtn.disabled=true;
+                summaryPanel.classList.add('d-none');
+
+                if (isHourly) {
+                  dateHidden.value = ds;
+                  if (selDateHEl) selDateHEl.textContent = fmtDate(ds);
+                  if (hoursPanel) hoursPanel.classList.remove('d-none');
+                  onHourChange();
+                  renderCalendar();
+                  if (hoursPanel) hoursPanel.scrollIntoView({behavior:'smooth',block:'nearest'});
+                  return;
+                }
+
                 selDateEl.textContent=fmtDate(ds);
                 slotsPanel.classList.remove('d-none');
-                summaryPanel.classList.add('d-none');
                 SLOT_IDS.forEach(function(s){
                   var btn=document.getElementById('spoot-rsc-btn-'+s);
                   if (!btn) return;
@@ -783,10 +815,53 @@
                 submitBtn.disabled=false;
               }
 
+              /* ── Hourly ─────────────────────────────────────────── */
+              var HOUR_MIN=6, HOUR_MAX=22;
+              function hourLabel(h){ return pad(h)+':00'; }
+              function buildHourOptions() {
+                if (!hourStartSel || !hourEndSel) return;
+                hourStartSel.innerHTML=''; hourEndSel.innerHTML='';
+                for (var h=HOUR_MIN; h&lt;HOUR_MAX; h++) {
+                  var o=document.createElement('option'); o.value=h; o.textContent=hourLabel(h);
+                  hourStartSel.appendChild(o);
+                }
+                for (var h2=HOUR_MIN+1; h2&lt;=HOUR_MAX; h2++) {
+                  var o2=document.createElement('option'); o2.value=h2; o2.textContent=hourLabel(h2);
+                  hourEndSel.appendChild(o2);
+                }
+                hourStartSel.value='8'; hourEndSel.value='9';
+              }
+              function onHourChange() {
+                if (!isHourly || !selectedDate) return;
+                var hs=parseInt(hourStartSel.value||'0',10);
+                var he=parseInt(hourEndSel.value||'0',10);
+                var valid = he &gt; hs;
+                if (hoursFeedback) {
+                  if (!valid) {
+                    hoursFeedback.style.display='block'; hoursFeedback.style.color='#dc2626';
+                    hoursFeedback.textContent='La hora final debe ser mayor que la inicial.';
+                  } else { hoursFeedback.style.display='none'; }
+                }
+                if (!valid) {
+                  selectedSlot=null; hourStartHidden.value=''; hourEndHidden.value='';
+                  summaryPanel.classList.add('d-none'); submitBtn.disabled=true; return;
+                }
+                selectedSlot='hourly';
+                hourStartHidden.value=hs; hourEndHidden.value=he;
+                var dur=he-hs, price=pricePerHour*dur;
+                summaryText.textContent = fmtDate(selectedDate)+' · '+hourLabel(hs)+' – '+hourLabel(he)+' ('+dur+' h)'
+                  + (price>0 ? ' · '+currency+' '+Math.round(price).toLocaleString('es-CO') : '');
+                summaryPanel.classList.remove('d-none');
+                submitBtn.disabled=false;
+              }
+
               function reset() {
                 selectedDate=null; selectedSlot=null;
                 dateHidden.value=''; slotHidden.value='';
+                if (hourStartHidden) hourStartHidden.value='';
+                if (hourEndHidden) hourEndHidden.value='';
                 slotsPanel.classList.add('d-none');
+                if (hoursPanel) hoursPanel.classList.add('d-none');
                 summaryPanel.classList.add('d-none');
                 submitBtn.disabled=true;
                 renderCalendar();
@@ -796,6 +871,11 @@
                 var btn=document.getElementById('spoot-rsc-btn-'+s);
                 if (btn) btn.addEventListener('click',function(){ onSlotClick(s); });
               });
+              if (isHourly) {
+                buildHourOptions();
+                if (hourStartSel) hourStartSel.addEventListener('change', onHourChange);
+                if (hourEndSel)   hourEndSel.addEventListener('change', onHourChange);
+              }
               if (resetBtn) resetBtn.addEventListener('click', reset);
               if (prevBtn) prevBtn.addEventListener('click', function(){
                 if (curMonth===0){curYear--;curMonth=11;} else curMonth--;
