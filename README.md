@@ -38,18 +38,20 @@ Datos por entorno:
 
 ### 2.1 Producción (servidor con Docker)
 
-1. Conéctate al servidor por **Putty (SSH)** y confirma que los contenedores corren:
+1. Conéctate al servidor por **Putty (SSH)** y confirma que el contenedor corre:
    ```bash
-   docker ps
+   docker exec -it odoo-app bash   # o: docker ps
    ```
 
-2. Clona el repositorio y coloca `office_booking` en el *addons path* de Odoo:
+2. Clona el repo (rama `19.0`) y extrae la carpeta `office_booking`.
+   > Ejecuta esto en la carpeta que Odoo lee como *addons* (la que está montada
+   > en `odoo-app`); ahí es donde debe quedar `office_booking`.
    ```bash
-   git clone https://github.com/quaiogroup/modulo-reservas-odoo.git -b 19.0
-   sudo mv modulo-reservas-odoo/office_booking /ruta/al/addons/    # p. ej. la carpeta montada en /mnt/extra-addons
+   sudo git clone https://github.com/quaiogroup/modulo-reservas-odoo.git -b 19.0
+   sudo mv modulo-reservas-odoo/office_booking .
    ```
 
-3. Instala el módulo dentro del contenedor:
+3. Instala el módulo dentro del contenedor `odoo-app`:
    ```bash
    docker exec -it odoo-app odoo -i office_booking -d sppot.co \
      --db_host=db --db_user=xxx --db_password=xxx --no-http --stop-after-init
@@ -61,6 +63,10 @@ Datos por entorno:
    ```
 
 5. Verifica en https://sppot.co que el módulo aparece instalado y el sitio carga.
+
+> **Nota:** `--db_user=xxx --db_password=xxx` son placeholders (igual que en el
+> doc original). Las credenciales reales están en el `odoo.conf` / variables de
+> entorno del contenedor `odoo-app`; no se guardan en el repo por seguridad.
 
 ### 2.2 Desarrollo (local)
 
@@ -87,13 +93,13 @@ docker restart odoo19
    docker exec db pg_dump -U xxx sppot.co > sppot_backup_$(date +%F_%H%M).sql
    ```
 
-2. Trae la última versión del código y sincroniza la carpeta `office_booking`:
+2. Trae la última versión y reemplaza `office_booking` (mismo proceso que la
+   instalación). Ejecútalo en la carpeta donde vive `office_booking`:
    ```bash
-   cd modulo-reservas-odoo
-   git pull origin 19.0
-   sudo rsync -a --delete office_booking/ /ruta/al/addons/office_booking/
+   sudo rm -rf modulo-reservas-odoo office_booking       # limpia lo anterior
+   sudo git clone https://github.com/quaiogroup/modulo-reservas-odoo.git -b 19.0
+   sudo mv modulo-reservas-odoo/office_booking .
    ```
-   *(o vuelve a copiar la carpeta como en la instalación: `sudo cp -r office_booking /ruta/al/addons/`)*
 
 3. Actualiza el módulo (esto dispara la migración automática):
    ```bash
