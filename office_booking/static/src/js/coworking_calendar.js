@@ -1,5 +1,5 @@
 /**
- * SpootCoworkingCalendar
+ * SppotCoworkingCalendar
  * Lightweight, self-contained month-view calendar for the /my/coworking portal page.
  * Pure vanilla JS — no external library dependencies.
  * Reads booking data embedded in the page as JSON.
@@ -37,7 +37,7 @@
 
     // ── Calendar factory ─────────────────────────────────────────────────────
 
-    function SpootCalendar(container, events) {
+    function SppotCalendar(container, events) {
         var today = new Date();
         var curYear = today.getFullYear();
         var curMonth = today.getMonth(); // 0-indexed
@@ -70,31 +70,31 @@
             var buf = [];
 
             // ── Calendar header ───────────────────────────────────────────
-            buf.push('<div class="spoot-cal-header">');
+            buf.push('<div class="sppot-cal-header">');
             buf.push(
-                '<button class="spoot-cal-nav spoot-cal-prev" type="button" aria-label="Mes anterior">' +
+                '<button class="sppot-cal-nav sppot-cal-prev" type="button" aria-label="Mes anterior">' +
                 '<span aria-hidden="true">&#8249;</span></button>'
             );
-            buf.push('<h6 class="spoot-cal-month-title mb-0">' + MONTHS[m] + ' ' + y + '</h6>');
+            buf.push('<h6 class="sppot-cal-month-title mb-0">' + MONTHS[m] + ' ' + y + '</h6>');
             buf.push(
-                '<button class="spoot-cal-nav spoot-cal-next" type="button" aria-label="Mes siguiente">' +
+                '<button class="sppot-cal-nav sppot-cal-next" type="button" aria-label="Mes siguiente">' +
                 '<span aria-hidden="true">&#8250;</span></button>'
             );
             buf.push('</div>');
 
             // ── Day-of-week labels ────────────────────────────────────────
-            buf.push('<div class="spoot-cal-grid spoot-cal-dow-row">');
+            buf.push('<div class="sppot-cal-grid sppot-cal-dow-row">');
             DAYS.forEach(function (d) {
-                buf.push('<div class="spoot-cal-dow">' + d + '</div>');
+                buf.push('<div class="sppot-cal-dow">' + d + '</div>');
             });
             buf.push('</div>');
 
             // ── Day cells ─────────────────────────────────────────────────
-            buf.push('<div class="spoot-cal-grid spoot-cal-body">');
+            buf.push('<div class="sppot-cal-grid sppot-cal-body">');
 
             // Leading blanks
             for (var b = 0; b < firstDow; b++) {
-                buf.push('<div class="spoot-cal-cell spoot-cal-blank"></div>');
+                buf.push('<div class="sppot-cal-cell sppot-cal-blank"></div>');
             }
 
             for (var day = 1; day <= daysInMonth; day++) {
@@ -106,7 +106,7 @@
                 var isBlocked = dayEvs.some(function(ev) { return ev.type === 'blocked'; });
                 var bookingEvs = dayEvs.filter(function(ev) { return ev.type !== 'blocked'; });
 
-                var cls = 'spoot-cal-cell';
+                var cls = 'sppot-cal-cell';
                 if (isToday)   cls += ' sc-today';
                 if (isBlocked) cls += ' sc-blocked';
                 else if (bookingEvs.length > 0) cls += ' sc-has-events';
@@ -115,16 +115,16 @@
 
                 // Day number
                 if (isToday) {
-                    buf.push('<span class="spoot-cal-num sc-today-num">' + day + '</span>');
+                    buf.push('<span class="sppot-cal-num sc-today-num">' + day + '</span>');
                 } else {
-                    buf.push('<span class="spoot-cal-num">' + day + '</span>');
+                    buf.push('<span class="sppot-cal-num">' + day + '</span>');
                 }
 
                 // Blocked: show a single indicator instead of pills
                 if (isBlocked) {
                     var blockNote = dayEvs.find(function(ev) { return ev.type === 'blocked'; });
                     buf.push(
-                        '<span class="spoot-cal-blocked-label" title="' +
+                        '<span class="sppot-cal-blocked-label" title="' +
                         esc(blockNote ? blockNote.slot_label : 'Bloqueado') + '">' +
                         'No disponible' +
                         '</span>'
@@ -141,7 +141,7 @@
                         var tooltip = esc(ev.title) + ' \u2014 ' + esc(ev.slot_label);
                         buf.push(
                             '<a href="' + esc(ev.url) + '" ' +
-                            'class="spoot-cal-pill" ' +
+                            'class="sppot-cal-pill" ' +
                             'style="background:' + bg + ';color:' + esc(ev.color) + ';border-color:' + border + ';" ' +
                             'title="' + tooltip + '">' +
                             esc(pillLabel) +
@@ -150,29 +150,29 @@
                     }
                     if (bookingEvs.length > max) {
                         buf.push(
-                            '<a href="/my/office-bookings" class="spoot-cal-more">+' +
+                            '<a href="/my/office-bookings" class="sppot-cal-more">+' +
                             (bookingEvs.length - max) + ' m\u00e1s</a>'
                         );
                     }
                 }
 
-                buf.push('</div>'); // .spoot-cal-cell
+                buf.push('</div>'); // .sppot-cal-cell
             }
 
             // Trailing blanks to complete the last row
             var total = firstDow + daysInMonth;
             var trail = (7 - (total % 7)) % 7;
             for (var t = 0; t < trail; t++) {
-                buf.push('<div class="spoot-cal-cell spoot-cal-blank"></div>');
+                buf.push('<div class="sppot-cal-cell sppot-cal-blank"></div>');
             }
 
-            buf.push('</div>'); // .spoot-cal-body
+            buf.push('</div>'); // .sppot-cal-body
 
             container.innerHTML = buf.join('');
 
             // Navigation
-            var prevBtn = container.querySelector('.spoot-cal-prev');
-            var nextBtn = container.querySelector('.spoot-cal-next');
+            var prevBtn = container.querySelector('.sppot-cal-prev');
+            var nextBtn = container.querySelector('.sppot-cal-next');
             if (prevBtn) {
                 prevBtn.addEventListener('click', function () {
                     curMonth--;
@@ -195,20 +195,20 @@
     // ── Boot on DOM ready ─────────────────────────────────────────────────────
 
     function boot() {
-        var container = document.getElementById('spoot-coworking-calendar');
+        var container = document.getElementById('sppot-coworking-calendar');
         if (!container) return;
 
         var events = [];
         try {
-            var dataEl = document.getElementById('spoot-calendar-data');
+            var dataEl = document.getElementById('sppot-calendar-data');
             if (dataEl) {
                 events = JSON.parse(dataEl.textContent || '[]');
             }
         } catch (e) {
-            console.error('[SpootCalendar] error parsing event data:', e);
+            console.error('[SppotCalendar] error parsing event data:', e);
         }
 
-        SpootCalendar(container, events);
+        SppotCalendar(container, events);
     }
 
     if (document.readyState === 'loading') {

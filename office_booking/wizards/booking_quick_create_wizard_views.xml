@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <record id="view_spoot_booking_quick_create_wizard_form" model="ir.ui.view">
+  <record id="view_sppot_booking_quick_create_wizard_form" model="ir.ui.view">
     <field name="name">office.booking.wizard.form</field>
     <field name="model">office.booking.wizard</field>
     <field name="arch" type="xml">

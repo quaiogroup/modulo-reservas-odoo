@@ -7,7 +7,7 @@ class OfficeResPartner(models.Model):
     _inherit = "res.partner"
 
     # ── Identificación ────────────────────────────────────────────────
-    spoot_document_type = fields.Selection([
+    sppot_document_type = fields.Selection([
         ("cc",  "Cédula de ciudadanía"),
         ("nit", "NIT / RUT"),
         ("ce",  "Cédula de extranjería"),
@@ -17,10 +17,10 @@ class OfficeResPartner(models.Model):
         ("otro","Otro"),
     ], string="Tipo de documento")
 
-    spoot_document_number = fields.Char(string="Número de documento")
+    sppot_document_number = fields.Char(string="Número de documento")
 
     # ── Facturación ────────────────────────────────────────────────────
-    spoot_billing_name = fields.Char(
+    sppot_billing_name = fields.Char(
         string="Razón social / Nombre facturación",
         help="Nombre o razón social que aparece en la factura. "
              "Si está vacío se usa el nombre del cliente.",
@@ -36,27 +36,27 @@ class OfficeResPartner(models.Model):
         compute="_compute_whatsapp_url",
     )
 
-    spoot_booking_ids = fields.One2many(
+    sppot_booking_ids = fields.One2many(
         "office.booking",
         "partner_id",
-        string="Reservas Spoot",
+        string="Reservas Sppot",
     )
 
-    spoot_booking_count = fields.Integer(
+    sppot_booking_count = fields.Integer(
         string="Reservas",
-        compute="_compute_spoot_booking_count",
+        compute="_compute_sppot_booking_count",
         store=True,
     )
 
-    spoot_active_subscription_id = fields.Many2one(
+    sppot_active_subscription_id = fields.Many2one(
         "office.subscription",
         string="Plan activo",
-        compute="_compute_spoot_live",
+        compute="_compute_sppot_live",
     )
 
-    spoot_last_booking_date = fields.Date(
+    sppot_last_booking_date = fields.Date(
         string="Última reserva",
-        compute="_compute_spoot_live",
+        compute="_compute_sppot_live",
     )
 
     @api.depends("whatsapp", "phone")
@@ -75,7 +75,7 @@ class OfficeResPartner(models.Model):
             "target": "new",
         }
 
-    def action_spoot_bookings(self):
+    def action_sppot_bookings(self):
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
@@ -86,23 +86,23 @@ class OfficeResPartner(models.Model):
             "context": {"default_partner_id": self.id},
         }
 
-    @api.depends("spoot_booking_ids", "spoot_booking_ids.state")
-    def _compute_spoot_booking_count(self):
+    @api.depends("sppot_booking_ids", "sppot_booking_ids.state")
+    def _compute_sppot_booking_count(self):
         for rec in self:
-            rec.spoot_booking_count = len(
-                rec.spoot_booking_ids.filtered(lambda b: b.state != "cancelled")
+            rec.sppot_booking_count = len(
+                rec.sppot_booking_ids.filtered(lambda b: b.state != "cancelled")
             )
 
-    def _compute_spoot_live(self):
+    def _compute_sppot_live(self):
         Sub = self.env["office.subscription"].sudo()
         for rec in self:
-            bookings = rec.spoot_booking_ids.filtered(
+            bookings = rec.sppot_booking_ids.filtered(
                 lambda b: b.state != "cancelled" and b.date
             )
             dates = bookings.mapped("date")
-            rec.spoot_last_booking_date = max(dates) if dates else False
+            rec.sppot_last_booking_date = max(dates) if dates else False
             active_sub = Sub.search([
                 ("partner_id", "=", rec.id),
                 ("state", "=", "active"),
             ], limit=1)
-            rec.spoot_active_subscription_id = active_sub.id if active_sub else False
+            rec.sppot_active_subscription_id = active_sub.id if active_sub else False

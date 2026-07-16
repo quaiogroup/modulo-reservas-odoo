@@ -226,20 +226,20 @@ class OfficeWebsite(http.Controller):
     def _save_partner_doc_from_post(self, partner, post):
         """Guarda tipo y número de documento del POST si el partner aún no los tiene."""
         doc_number = (post.get("doc_number") or "").strip()
-        if not doc_number or partner.spoot_document_number:
+        if not doc_number or partner.sppot_document_number:
             return
         doc_type = (post.get("doc_type") or "").strip() or False
         try:
             partner.sudo().write({
-                "spoot_document_type":   doc_type,
-                "spoot_document_number": doc_number,
+                "sppot_document_type":   doc_type,
+                "sppot_document_number": doc_number,
             })
             _logger.info("[DOC] saved doc type=%s number=%s for partner %s", doc_type, doc_number, partner.id)
         except Exception as exc:
             _logger.warning("[DOC] could not save document data: %s", exc)
 
     # ── JSON: validar código de descuento ──────────────────────────────────
-    @http.route("/spoot/discount/validate", type="jsonrpc", auth="user", website=True)
+    @http.route("/sppot/discount/validate", type="jsonrpc", auth="user", website=True)
     def validate_discount_code(self, code=None, office_id=None, slot_type=None, **kw):
         if not code:
             return {"ok": False, "error": "Código vacío."}
@@ -275,7 +275,7 @@ class OfficeWebsite(http.Controller):
         }
 
     # ── JSON: disponibilidad mensual para el calendario de reserva ──────────
-    @http.route("/spoot/office/month-availability", type="jsonrpc", auth="public", website=True)
+    @http.route("/sppot/office/month-availability", type="jsonrpc", auth="public", website=True)
     def office_month_availability(self, office_id=None, year=None, month=None, exclude_id=None, **kw):
         import calendar as _cal
         from datetime import date as _date, timedelta as _td
@@ -377,7 +377,7 @@ class OfficeWebsite(http.Controller):
         return result
 
     # ── JSON: disponibilidad de slots (usado por office_booking.js) ──────────
-    @http.route("/spoot/office/availability", type="jsonrpc", auth="user", website=True)
+    @http.route("/sppot/office/availability", type="jsonrpc", auth="user", website=True)
     def office_slot_availability(self, office_id=None, day=None, exclude_id=None, **kw):
         if not office_id or not day:
             return {"available": [], "taken": []}
@@ -386,8 +386,8 @@ class OfficeWebsite(http.Controller):
         )
 
     # ── JSON: eventos de calendario FullCalendar (usado por office_calendar.js) ─
-    @http.route("/spoot/calendar/events", type="jsonrpc", auth="user", website=True)
-    def spoot_calendar_events(self, office_id=None, start=None, end=None, **kw):
+    @http.route("/sppot/calendar/events", type="jsonrpc", auth="user", website=True)
+    def sppot_calendar_events(self, office_id=None, start=None, end=None, **kw):
         if not office_id or not start or not end:
             return []
 
@@ -1197,8 +1197,8 @@ class OfficePortal(CustomerPortal):
         if request.httprequest.method == "POST":
             vals = {}
             _STR_FIELDS = [
-                "spoot_document_type", "spoot_document_number",
-                "spoot_billing_name", "vat",
+                "sppot_document_type", "sppot_document_number",
+                "sppot_billing_name", "vat",
                 "street", "street2", "city", "zip",
             ]
             for f in _STR_FIELDS:
@@ -1252,7 +1252,7 @@ class OfficeExportController(http.Controller):
         'cancelled':       'Cancelada',
     }
 
-    @http.route('/spoot/export/bookings', type='http', auth='user', methods=['GET'])
+    @http.route('/sppot/export/bookings', type='http', auth='user', methods=['GET'])
     def export_bookings(self, date_from=None, date_to=None, state=None, **kw):
         """Descarga todas las reservas como CSV. Solo para usuarios internos."""
         env = request.env
@@ -1304,7 +1304,7 @@ class OfficeExportController(http.Controller):
             ])
 
         csv_content = '\ufeff' + output.getvalue()  # BOM para Excel
-        filename = 'reservas_spoot.csv'
+        filename = 'reservas_sppot.csv'
 
         return request.make_response(
             csv_content,
@@ -1314,7 +1314,7 @@ class OfficeExportController(http.Controller):
             ]
         )
 
-    @http.route('/spoot/export/occupancy', type='http', auth='user', methods=['GET'])
+    @http.route('/sppot/export/occupancy', type='http', auth='user', methods=['GET'])
     def export_occupancy(self, date_from=None, date_to=None, office_id=None, **kw):
         """Reporte de ocupación por oficina y mes. Solo para usuarios internos."""
         import calendar as _cal
@@ -1392,6 +1392,6 @@ class OfficeExportController(http.Controller):
             csv_content,
             headers=[
                 ('Content-Type', 'text/csv; charset=utf-8'),
-                ('Content-Disposition', 'attachment; filename="ocupacion_spoot.csv"'),
+                ('Content-Disposition', 'attachment; filename="ocupacion_sppot.csv"'),
             ]
         )

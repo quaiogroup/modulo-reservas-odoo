@@ -2,7 +2,7 @@
     "name": "Office Booking",
     "summary": "Complete office & coworking space booking system with website, portal, payments and email notifications",
     "description": "See static/description/index.html",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "author": "Office Booking",
     "website": "",
     "license": "LGPL-3",

@@ -296,95 +296,95 @@
                 </t>
                 <!-- ─────────────────────────────────────────────── -->
 
-                <div class="js_spoot_office_detail"
+                <div class="js_sppot_office_detail"
                      t-att-data-office-id="office.id"
                      t-att-data-pm="'%.2f|%.2f|%.2f' % (office.price_morning or 0, office.price_afternoon or 0, office.price_full_day or 0)"
                      t-att-data-mode="office.pricing_mode"
                      t-att-data-pph="'%.2f' % (office.price_per_hour or 0)"
                      t-att-data-cur="office.currency_id.symbol or ''">
-                <form method="post" id="spoot-booking-form">
+                <form method="post" id="sppot-booking-form">
                   <input type="hidden" name="csrf_token" t-att-value="request.csrf_token"/>
-                  <input type="hidden" name="date"       id="spoot_date"/>
-                  <input type="hidden" name="slot_type"  id="spoot_slot"/>
-                  <input type="hidden" name="hour_start" id="spoot_hour_start"/>
-                  <input type="hidden" name="hour_end"   id="spoot_hour_end"/>
+                  <input type="hidden" name="date"       id="sppot_date"/>
+                  <input type="hidden" name="slot_type"  id="sppot_slot"/>
+                  <input type="hidden" name="hour_start" id="sppot_hour_start"/>
+                  <input type="hidden" name="hour_end"   id="sppot_hour_end"/>
 
                   <!-- ── CALENDAR PICKER ─────────────────────────────── -->
-                  <div class="spoot-bk-cal mb-3">
-                    <div class="spoot-bk-hdr">
-                      <button type="button" class="spoot-bk-nav" id="spoot-bk-prev">&#8249;</button>
-                      <span class="spoot-bk-month-title" id="spoot-bk-month-title"></span>
-                      <button type="button" class="spoot-bk-nav" id="spoot-bk-next">&#8250;</button>
+                  <div class="sppot-bk-cal mb-3">
+                    <div class="sppot-bk-hdr">
+                      <button type="button" class="sppot-bk-nav" id="sppot-bk-prev">&#8249;</button>
+                      <span class="sppot-bk-month-title" id="sppot-bk-month-title"></span>
+                      <button type="button" class="sppot-bk-nav" id="sppot-bk-next">&#8250;</button>
                     </div>
-                    <div class="spoot-bk-dow-row">
+                    <div class="sppot-bk-dow-row">
                       <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
                     </div>
-                    <div class="spoot-bk-grid" id="spoot-bk-grid">
+                    <div class="sppot-bk-grid" id="sppot-bk-grid">
                       <div class="text-center py-3 text-muted" style="grid-column:1/-1;font-size:.8rem;">Cargando…</div>
                     </div>
-                    <div class="spoot-bk-legend mt-2">
-                      <span><span class="spoot-bk-dot dot-free"></span>Libre</span>
-                      <span><span class="spoot-bk-dot dot-partial"></span>Parcial</span>
-                      <span><span class="spoot-bk-dot dot-taken"></span>Lleno</span>
-                      <span><span class="spoot-bk-dot dot-blocked"></span>Bloqueado</span>
+                    <div class="sppot-bk-legend mt-2">
+                      <span><span class="sppot-bk-dot dot-free"></span>Libre</span>
+                      <span><span class="sppot-bk-dot dot-partial"></span>Parcial</span>
+                      <span><span class="sppot-bk-dot dot-taken"></span>Lleno</span>
+                      <span><span class="sppot-bk-dot dot-blocked"></span>Bloqueado</span>
                     </div>
                   </div>
                   <!-- ─────────────────────────────────────────────────── -->
 
                   <!-- ── SLOT SELECTOR ───────────────────────────────── -->
-                  <div id="spoot-bk-slots" class="d-none mb-3">
+                  <div id="sppot-bk-slots" class="d-none mb-3">
                     <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
-                      Franja para <span id="spoot-bk-sel-date" class="text-primary fw-bold"></span>:
+                      Franja para <span id="sppot-bk-sel-date" class="text-primary fw-bold"></span>:
                     </div>
-                    <div class="spoot-bk-slot-row">
-                      <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-morning">
+                    <div class="sppot-bk-slot-row">
+                      <button type="button" class="sppot-bk-slot-btn" id="sppot-bk-btn-morning">
                         <div class="slot-time">8:00 – 12:00</div>
                         <div class="slot-name">Mañana</div>
-                        <div class="slot-avail" id="spoot-bk-avail-morning"></div>
+                        <div class="slot-avail" id="sppot-bk-avail-morning"></div>
                       </button>
-                      <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-afternoon">
+                      <button type="button" class="sppot-bk-slot-btn" id="sppot-bk-btn-afternoon">
                         <div class="slot-time">14:00 – 18:00</div>
                         <div class="slot-name">Tarde</div>
-                        <div class="slot-avail" id="spoot-bk-avail-afternoon"></div>
+                        <div class="slot-avail" id="sppot-bk-avail-afternoon"></div>
                       </button>
-                      <button type="button" class="spoot-bk-slot-btn" id="spoot-bk-btn-full_day">
+                      <button type="button" class="sppot-bk-slot-btn" id="sppot-bk-btn-full_day">
                         <div class="slot-time">8:00 – 18:00</div>
                         <div class="slot-name">Día completo</div>
-                        <div class="slot-avail" id="spoot-bk-avail-full_day"></div>
+                        <div class="slot-avail" id="sppot-bk-avail-full_day"></div>
                       </button>
                     </div>
                   </div>
                   <!-- ─────────────────────────────────────────────────── -->
 
                   <!-- ── HOUR SELECTOR (solo oficinas por horas) ──────── -->
-                  <div id="spoot-bk-hours" class="d-none mb-3">
+                  <div id="sppot-bk-hours" class="d-none mb-3">
                     <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
-                      Horario para <span id="spoot-bk-sel-date-h" class="text-primary fw-bold"></span>:
+                      Horario para <span id="sppot-bk-sel-date-h" class="text-primary fw-bold"></span>:
                     </div>
                     <div class="d-flex gap-2 align-items-end">
                       <div class="flex-fill">
                         <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Desde</label>
-                        <select id="spoot-bk-hour-start" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                        <select id="sppot-bk-hour-start" class="form-select form-select-sm" style="border-radius:8px;"></select>
                       </div>
                       <div class="flex-fill">
                         <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Hasta</label>
-                        <select id="spoot-bk-hour-end" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                        <select id="sppot-bk-hour-end" class="form-select form-select-sm" style="border-radius:8px;"></select>
                       </div>
                     </div>
-                    <div id="spoot-bk-hours-feedback" class="form-text mt-1" style="display:none;"></div>
+                    <div id="sppot-bk-hours-feedback" class="form-text mt-1" style="display:none;"></div>
                   </div>
                   <!-- ─────────────────────────────────────────────────── -->
 
                   <!-- ── SELECTED SUMMARY ────────────────────────────── -->
-                  <div id="spoot-bk-summary" class="d-none rounded-4 p-3 mb-3"
+                  <div id="sppot-bk-summary" class="d-none rounded-4 p-3 mb-3"
                        style="background:#f0fdf4;border:1px solid #86efac;">
                     <div class="d-flex justify-content-between align-items-center">
                       <div>
-                        <div class="fw-bold text-success" id="spoot-bk-summary-text"></div>
-                        <div class="text-muted" style="font-size:.78rem;" id="spoot-bk-summary-price"></div>
+                        <div class="fw-bold text-success" id="sppot-bk-summary-text"></div>
+                        <div class="text-muted" style="font-size:.78rem;" id="sppot-bk-summary-price"></div>
                       </div>
                       <button type="button" class="btn btn-sm btn-outline-secondary"
-                              id="spoot-bk-reset-btn">Cambiar</button>
+                              id="sppot-bk-reset-btn">Cambiar</button>
                     </div>
                   </div>
                   <!-- ─────────────────────────────────────────────────── -->
@@ -455,16 +455,16 @@
                     <label class="form-label fw-semibold" style="font-size:.85rem;">
                       ¿Vas a ir varios días?
                     </label>
-                    <select name="recurrence_type" id="spoot-recurrence"
+                    <select name="recurrence_type" id="sppot-recurrence"
                             class="form-select form-select-sm" style="border-radius:8px;">
                       <option value="none">Solo este día</option>
                       <option value="weekly">Cada semana (este mismo día)</option>
                       <option value="biweekly">Cada 2 semanas</option>
                       <option value="monthly">Cada mes</option>
                     </select>
-                    <div id="spoot-recurrence-end" class="mt-2" style="display:none;">
+                    <div id="sppot-recurrence-end" class="mt-2" style="display:none;">
                       <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Repetir hasta</label>
-                      <input type="date" name="recurrence_end_date" id="spoot-recurrence-end-date"
+                      <input type="date" name="recurrence_end_date" id="sppot-recurrence-end-date"
                              class="form-control form-control-sm" style="border-radius:8px;"/>
                       <div class="form-text" style="font-size:.72rem;">
                         Crearemos una reserva por cada día (la misma franja/horario) hasta esa fecha.
@@ -474,7 +474,7 @@
                   <!-- ─────────────────────────────────────────────── -->
 
                   <!-- ── DATOS DE DOCUMENTO (solo si el cliente no los tiene) ── -->
-                  <t t-if="not request.env.user.partner_id.spoot_document_number">
+                  <t t-if="not request.env.user.partner_id.sppot_document_number">
                     <div class="rounded-4 p-3 mb-3"
                          style="background:#fffbeb;border:1px solid #fcd34d;">
                       <div class="fw-semibold mb-2" style="font-size:.82rem;color:#92400e;">
@@ -506,7 +506,7 @@
                   </t>
                   <!-- ─────────────────────────────────────────────────────── -->
 
-                  <button type="submit" id="spoot_submit_btn" disabled="disabled"
+                  <button type="submit" id="sppot_submit_btn" disabled="disabled"
                           class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
                     Confirmar reserva
                   </button>
@@ -523,7 +523,7 @@
             <!-- Booking calendar + payment mode JS -->
             <script>
             (function () {
-              var container = document.querySelector('.js_spoot_office_detail');
+              var container = document.querySelector('.js_sppot_office_detail');
               if (!container) return;
 
               var officeId  = parseInt(container.dataset.officeId || '0');
@@ -534,26 +534,26 @@
               var isHourly  = pricingMode === 'hourly';
               var pricePerHour = parseFloat(container.dataset.pph || '0') || 0;
 
-              var dateHidden   = document.getElementById('spoot_date');
-              var slotHidden   = document.getElementById('spoot_slot');
-              var hourStartHidden = document.getElementById('spoot_hour_start');
-              var hourEndHidden   = document.getElementById('spoot_hour_end');
-              var hoursPanel   = document.getElementById('spoot-bk-hours');
-              var selDateHEl   = document.getElementById('spoot-bk-sel-date-h');
-              var hourStartSel = document.getElementById('spoot-bk-hour-start');
-              var hourEndSel   = document.getElementById('spoot-bk-hour-end');
-              var hoursFeedback= document.getElementById('spoot-bk-hours-feedback');
-              var submitBtn    = document.getElementById('spoot_submit_btn');
-              var grid         = document.getElementById('spoot-bk-grid');
-              var monthTitle   = document.getElementById('spoot-bk-month-title');
-              var slotsPanel   = document.getElementById('spoot-bk-slots');
-              var summaryPanel = document.getElementById('spoot-bk-summary');
-              var selDateEl    = document.getElementById('spoot-bk-sel-date');
-              var summaryText  = document.getElementById('spoot-bk-summary-text');
-              var summaryPrice = document.getElementById('spoot-bk-summary-price');
-              var resetBtn     = document.getElementById('spoot-bk-reset-btn');
-              var prevBtn      = document.getElementById('spoot-bk-prev');
-              var nextBtn      = document.getElementById('spoot-bk-next');
+              var dateHidden   = document.getElementById('sppot_date');
+              var slotHidden   = document.getElementById('sppot_slot');
+              var hourStartHidden = document.getElementById('sppot_hour_start');
+              var hourEndHidden   = document.getElementById('sppot_hour_end');
+              var hoursPanel   = document.getElementById('sppot-bk-hours');
+              var selDateHEl   = document.getElementById('sppot-bk-sel-date-h');
+              var hourStartSel = document.getElementById('sppot-bk-hour-start');
+              var hourEndSel   = document.getElementById('sppot-bk-hour-end');
+              var hoursFeedback= document.getElementById('sppot-bk-hours-feedback');
+              var submitBtn    = document.getElementById('sppot_submit_btn');
+              var grid         = document.getElementById('sppot-bk-grid');
+              var monthTitle   = document.getElementById('sppot-bk-month-title');
+              var slotsPanel   = document.getElementById('sppot-bk-slots');
+              var summaryPanel = document.getElementById('sppot-bk-summary');
+              var selDateEl    = document.getElementById('sppot-bk-sel-date');
+              var summaryText  = document.getElementById('sppot-bk-summary-text');
+              var summaryPrice = document.getElementById('sppot-bk-summary-price');
+              var resetBtn     = document.getElementById('sppot-bk-reset-btn');
+              var prevBtn      = document.getElementById('sppot-bk-prev');
+              var nextBtn      = document.getElementById('sppot-bk-next');
 
               var radioPlan  = document.getElementById('radio_plan');
               var radioBold  = document.getElementById('radio_bold');
@@ -592,7 +592,7 @@
 
               /* ── Fetch month data ──────────────────────────────────── */
               function fetchMonth(yr, mo1) {
-                return fetch('/spoot/office/month-availability', {
+                return fetch('/sppot/office/month-availability', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
                   body: JSON.stringify({jsonrpc:'2.0', method:'call', id:1,
@@ -618,7 +618,7 @@
                 grid.innerHTML = '';
 
                 for (var i = 0; i &lt; firstDow; i++) {
-                  grid.appendChild(makeEl('div', 'spoot-bk-cell blank'));
+                  grid.appendChild(makeEl('div', 'sppot-bk-cell blank'));
                 }
 
                 for (var dn = 1; dn &lt;= dim; dn++) {
@@ -629,9 +629,9 @@
                   var isToday = cd.getTime() === today.getTime();
 
                   var cell = document.createElement('div');
-                  cell.className = 'spoot-bk-cell';
+                  cell.className = 'sppot-bk-cell';
 
-                  var numCls = 'spoot-bk-num' + (isToday ? ' today-num' : '');
+                  var numCls = 'sppot-bk-num' + (isToday ? ' today-num' : '');
                   cell.appendChild(makeEl('span', numCls, dn));
 
                   if (isPast) {
@@ -641,16 +641,16 @@
                   } else if (info.blocked) {
                     cell.classList.add('blocked');
                     cell.title = info.block_reason || 'Bloqueado';
-                    cell.appendChild(makeEl('span', 'spoot-bk-cell-lbl', info.block_reason || 'Bloqueado'));
+                    cell.appendChild(makeEl('span', 'sppot-bk-cell-lbl', info.block_reason || 'Bloqueado'));
                   } else if (!info.available.length) {
                     cell.classList.add('taken');
-                    cell.appendChild(makeEl('span', 'spoot-bk-cell-lbl', 'Sin disponibilidad'));
+                    cell.appendChild(makeEl('span', 'sppot-bk-cell-lbl', 'Sin disponibilidad'));
                   } else {
                     cell.classList.add(info.available.length === 3 ? 'free' : 'partial');
                     var pips = document.createElement('div');
-                    pips.className = 'spoot-bk-pips';
+                    pips.className = 'sppot-bk-pips';
                     [{s:'morning',l:'M'},{s:'afternoon',l:'T'},{s:'full_day',l:'D'}].forEach(function(x){
-                      pips.appendChild(makeEl('span','spoot-bk-pip '+(info.available.indexOf(x.s)>=0?'avail':'unavail'),x.l));
+                      pips.appendChild(makeEl('span','sppot-bk-pip '+(info.available.indexOf(x.s)>=0?'avail':'unavail'),x.l));
                     });
                     cell.appendChild(pips);
                     (function(d2, inf){ cell.addEventListener('click', function(){ onDayClick(d2, inf); }); })(ds, info);
@@ -688,7 +688,7 @@
                 var rem      = info.remaining || {};
 
                 SLOT_IDS.forEach(function(s){
-                  var btn = document.getElementById('spoot-bk-btn-' + s);
+                  var btn = document.getElementById('sppot-bk-btn-' + s);
                   if (!btn) return;
                   var avail = info.available.indexOf(s) >= 0;
                   btn.disabled = !avail;
@@ -696,7 +696,7 @@
                   btn.classList.remove('active');
 
                   // Mostrar cupos solo cuando hay más de 1 unidad
-                  var availEl = document.getElementById('spoot-bk-avail-' + s);
+                  var availEl = document.getElementById('sppot-bk-avail-' + s);
                   if (availEl) {
                     if (qty > 1) {
                       var left = rem[s] !== undefined ? rem[s] : (avail ? qty : 0);
@@ -727,7 +727,7 @@
                 slotHidden.value = slot;
 
                 SLOT_IDS.forEach(function(s){
-                  var btn = document.getElementById('spoot-bk-btn-' + s);
+                  var btn = document.getElementById('sppot-bk-btn-' + s);
                   if (btn) btn.classList.toggle('active', s === slot);
                 });
 
@@ -889,7 +889,7 @@
 
               /* ── Wire events ───────────────────────────────────────── */
               SLOT_IDS.forEach(function(s){
-                var btn = document.getElementById('spoot-bk-btn-' + s);
+                var btn = document.getElementById('sppot-bk-btn-' + s);
                 if (btn) btn.addEventListener('click', function(){ onSlotClick(s); });
               });
 
@@ -900,8 +900,8 @@
               }
 
               /* ── Recurrencia: mostrar 'hasta' cuando aplica ──────── */
-              var recurrenceSel = document.getElementById('spoot-recurrence');
-              var recurrenceEnd = document.getElementById('spoot-recurrence-end');
+              var recurrenceSel = document.getElementById('sppot-recurrence');
+              var recurrenceEnd = document.getElementById('sppot-recurrence-end');
               if (recurrenceSel &amp;&amp; recurrenceEnd) {
                 recurrenceSel.addEventListener('change', function(){
                   recurrenceEnd.style.display = (recurrenceSel.value !== 'none') ? 'block' : 'none';
@@ -960,7 +960,7 @@
                   });
 
                   // Llamada al endpoint propio
-                  fetch('/spoot/discount/validate', {
+                  fetch('/sppot/discount/validate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -1568,7 +1568,7 @@
       <!-- ── CALENDAR SECTION ──────────────────────────────────────── -->
 
       <!-- JSON data for the JS calendar widget (not rendered visually) -->
-      <script type="application/json" id="spoot-calendar-data"><t t-out="calendar_events_json"/></script>
+      <script type="application/json" id="sppot-calendar-data"><t t-out="calendar_events_json"/></script>
 
       <div class="card border-0 shadow-sm rounded-4 mb-5">
         <div class="card-body p-4">
@@ -1576,28 +1576,28 @@
           <!-- Card header: title + legend -->
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
             <h5 class="fw-bold mb-0">Calendario de reservas</h5>
-            <div class="spoot-cal-legend">
-              <span class="spoot-cal-legend-item">
-                <span class="spoot-cal-legend-dot" style="background:#3b82f6;"/>
+            <div class="sppot-cal-legend">
+              <span class="sppot-cal-legend-item">
+                <span class="sppot-cal-legend-dot" style="background:#3b82f6;"/>
                 Confirmada (Bold)
               </span>
-              <span class="spoot-cal-legend-item">
-                <span class="spoot-cal-legend-dot" style="background:#10b981;"/>
+              <span class="sppot-cal-legend-item">
+                <span class="sppot-cal-legend-dot" style="background:#10b981;"/>
                 Confirmada (Plan)
               </span>
-              <span class="spoot-cal-legend-item">
-                <span class="spoot-cal-legend-dot" style="background:#f59e0b;"/>
+              <span class="sppot-cal-legend-item">
+                <span class="sppot-cal-legend-dot" style="background:#f59e0b;"/>
                 Pend. pago
               </span>
-              <span class="spoot-cal-legend-item">
-                <span class="spoot-cal-legend-dot" style="background:#9ca3af;"/>
+              <span class="sppot-cal-legend-item">
+                <span class="sppot-cal-legend-dot" style="background:#9ca3af;"/>
                 Cancelada
               </span>
             </div>
           </div>
 
           <!-- Calendar mount point — filled by coworking_calendar.js -->
-          <div id="spoot-coworking-calendar"/>
+          <div id="sppot-coworking-calendar"/>
 
           <!-- Empty state (shown only if there are no bookings at all) -->
           <t t-if="not bookings">

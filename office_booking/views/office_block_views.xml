@@ -2,7 +2,7 @@
 <odoo>
 
     <!-- ── LIST VIEW ──────────────────────────────────────────────────── -->
-    <record id="view_spoot_office_block_list" model="ir.ui.view">
+    <record id="view_sppot_office_block_list" model="ir.ui.view">
         <field name="name">office.block.list</field>
         <field name="model">office.block</field>
         <field name="arch" type="xml">
@@ -23,7 +23,7 @@
     </record>
 
     <!-- ── FORM VIEW ──────────────────────────────────────────────────── -->
-    <record id="view_spoot_office_block_form" model="ir.ui.view">
+    <record id="view_sppot_office_block_form" model="ir.ui.view">
         <field name="name">office.block.form</field>
         <field name="model">office.block</field>
         <field name="arch" type="xml">
@@ -67,7 +67,7 @@
     </record>
 
     <!-- ── ACTION ─────────────────────────────────────────────────────── -->
-    <record id="action_spoot_office_block" model="ir.actions.act_window">
+    <record id="action_sppot_office_block" model="ir.actions.act_window">
         <field name="name">Bloqueos de fechas</field>
         <field name="res_model">office.block</field>
         <field name="view_mode">list,form</field>

@@ -4,7 +4,7 @@
 
     <!-- Secuencia para referencias de reserva: SPT000001, SPT000002, … -->
     <record id="seq_office_booking" model="ir.sequence">
-        <field name="name">Referencia de Reserva Spoot</field>
+        <field name="name">Referencia de Reserva Sppot</field>
         <field name="code">office.booking</field>
         <field name="prefix">SPT</field>
         <field name="padding" eval="6"/>
@@ -18,7 +18,7 @@
         office.booking to guarantee exactly-once delivery.
     -->
     <record id="ir_cron_booking_reminder" model="ir.cron">
-        <field name="name">Spoot: Recordatorios de reservas próximas</field>
+        <field name="name">Sppot: Recordatorios de reservas próximas</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="state">code</field>
         <field name="code">model._cron_send_booking_reminders()</field>
@@ -34,7 +34,7 @@
         - have a start_datetime that has already passed.
     -->
     <record id="ir_cron_cancel_expired_bookings" model="ir.cron">
-        <field name="name">Spoot: Cancelar reservas vencidas/sin pago</field>
+        <field name="name">Sppot: Cancelar reservas vencidas/sin pago</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
         <field name="state">code</field>
         <field name="code">model._cron_cancel_expired_bookings()</field>

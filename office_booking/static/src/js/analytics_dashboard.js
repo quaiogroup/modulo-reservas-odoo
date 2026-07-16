@@ -3,7 +3,7 @@ import { registry }    from "@web/core/registry";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { useService }  from "@web/core/utils/hooks";
 
-class SpootAnalyticsDashboard extends Component {
+class SppotAnalyticsDashboard extends Component {
   setup() {
     this.orm           = useService("orm");
     this.actionService = useService("action");
@@ -64,14 +64,14 @@ class SpootAnalyticsDashboard extends Component {
     if (this.state.exportFrom)  p.set("date_from", this.state.exportFrom);
     if (this.state.exportTo)    p.set("date_to",   this.state.exportTo);
     if (this.state.exportState) p.set("state",     this.state.exportState);
-    return "/spoot/export/bookings?" + p.toString();
+    return "/sppot/export/bookings?" + p.toString();
   }
 
   occupancyUrl() {
     const p = new URLSearchParams();
     if (this.state.exportFrom) p.set("date_from", this.state.exportFrom);
     if (this.state.exportTo)   p.set("date_to",   this.state.exportTo);
-    return "/spoot/export/occupancy?" + p.toString();
+    return "/sppot/export/occupancy?" + p.toString();
   }
 
   /* ── open bookings list ─────────────────────────────────────────── */
@@ -94,14 +94,14 @@ class SpootAnalyticsDashboard extends Component {
       res_id: partnerId,
       views: [[false, "form"]],
       target: "current",
-      context: { form_view_ref: "office_booking.view_spoot_client_form" },
+      context: { form_view_ref: "office_booking.view_sppot_client_form" },
     });
   }
 }
 
-SpootAnalyticsDashboard.template =
-  "office_booking.SpootAnalyticsDashboard";
+SppotAnalyticsDashboard.template =
+  "office_booking.SppotAnalyticsDashboard";
 
 registry
   .category("actions")
-  .add("office_booking.analytics_dashboard", SpootAnalyticsDashboard);
+  .add("office_booking.analytics_dashboard", SppotAnalyticsDashboard);

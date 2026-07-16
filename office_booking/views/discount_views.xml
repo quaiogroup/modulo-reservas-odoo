@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-    <record id="view_spoot_discount_code_list" model="ir.ui.view">
+    <record id="view_sppot_discount_code_list" model="ir.ui.view">
         <field name="name">office.discount.list</field>
         <field name="model">office.discount</field>
         <field name="arch" type="xml">
@@ -23,7 +23,7 @@
         </field>
     </record>
 
-    <record id="view_spoot_discount_code_form" model="ir.ui.view">
+    <record id="view_sppot_discount_code_form" model="ir.ui.view">
         <field name="name">office.discount.form</field>
         <field name="model">office.discount</field>
         <field name="arch" type="xml">
@@ -87,7 +87,7 @@
         </field>
     </record>
 
-    <record id="action_spoot_discount_codes" model="ir.actions.act_window">
+    <record id="action_sppot_discount_codes" model="ir.actions.act_window">
         <field name="name">Códigos de descuento</field>
         <field name="res_model">office.discount</field>
         <field name="view_mode">list,form</field>

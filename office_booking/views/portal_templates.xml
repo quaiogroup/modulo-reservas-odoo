@@ -571,53 +571,53 @@
                      t-att-data-mode="booking.office_id.pricing_mode"
                      t-att-data-pph="'%.2f' % (booking.office_id.price_per_hour or 0)"
                      t-att-data-cur="booking.office_id.currency_id.symbol or ''"
-                     id="spoot-rsc-container">
+                     id="sppot-rsc-container">
 
-                  <form method="post" id="spoot-rsc-form">
+                  <form method="post" id="sppot-rsc-form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                    <input type="hidden" name="date"       id="spoot-rsc-date"/>
-                    <input type="hidden" name="slot_type"  id="spoot-rsc-slot"/>
-                    <input type="hidden" name="hour_start" id="spoot-rsc-hour-start"/>
-                    <input type="hidden" name="hour_end"   id="spoot-rsc-hour-end"/>
+                    <input type="hidden" name="date"       id="sppot-rsc-date"/>
+                    <input type="hidden" name="slot_type"  id="sppot-rsc-slot"/>
+                    <input type="hidden" name="hour_start" id="sppot-rsc-hour-start"/>
+                    <input type="hidden" name="hour_end"   id="sppot-rsc-hour-end"/>
 
                     <!-- Calendar -->
-                    <div class="spoot-bk-cal mb-3">
-                      <div class="spoot-bk-hdr">
-                        <button type="button" class="spoot-bk-nav" id="spoot-rsc-prev">&#8249;</button>
-                        <span class="spoot-bk-month-title" id="spoot-rsc-month-title"></span>
-                        <button type="button" class="spoot-bk-nav" id="spoot-rsc-next">&#8250;</button>
+                    <div class="sppot-bk-cal mb-3">
+                      <div class="sppot-bk-hdr">
+                        <button type="button" class="sppot-bk-nav" id="sppot-rsc-prev">&#8249;</button>
+                        <span class="sppot-bk-month-title" id="sppot-rsc-month-title"></span>
+                        <button type="button" class="sppot-bk-nav" id="sppot-rsc-next">&#8250;</button>
                       </div>
-                      <div class="spoot-bk-dow-row">
+                      <div class="sppot-bk-dow-row">
                         <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span>
                         <span>Vi</span><span>Sá</span><span>Do</span>
                       </div>
-                      <div class="spoot-bk-grid" id="spoot-rsc-grid">
+                      <div class="sppot-bk-grid" id="sppot-rsc-grid">
                         <div class="text-center py-3 text-muted"
                              style="grid-column:1/-1;font-size:.8rem;">Cargando…</div>
                       </div>
-                      <div class="spoot-bk-legend mt-2">
-                        <span><span class="spoot-bk-dot dot-free"></span>Libre</span>
-                        <span><span class="spoot-bk-dot dot-partial"></span>Parcial</span>
-                        <span><span class="spoot-bk-dot dot-taken"></span>Lleno</span>
-                        <span><span class="spoot-bk-dot dot-blocked"></span>Bloqueado</span>
+                      <div class="sppot-bk-legend mt-2">
+                        <span><span class="sppot-bk-dot dot-free"></span>Libre</span>
+                        <span><span class="sppot-bk-dot dot-partial"></span>Parcial</span>
+                        <span><span class="sppot-bk-dot dot-taken"></span>Lleno</span>
+                        <span><span class="sppot-bk-dot dot-blocked"></span>Bloqueado</span>
                       </div>
                     </div>
 
                     <!-- Slot selector -->
-                    <div id="spoot-rsc-slots" class="d-none mb-3">
+                    <div id="sppot-rsc-slots" class="d-none mb-3">
                       <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
-                        Franja para <span id="spoot-rsc-sel-date" class="text-primary fw-bold"></span>:
+                        Franja para <span id="sppot-rsc-sel-date" class="text-primary fw-bold"></span>:
                       </div>
-                      <div class="spoot-bk-slot-row">
-                        <button type="button" class="spoot-bk-slot-btn" id="spoot-rsc-btn-morning">
+                      <div class="sppot-bk-slot-row">
+                        <button type="button" class="sppot-bk-slot-btn" id="sppot-rsc-btn-morning">
                           <div class="slot-time">8:00 – 12:00</div>
                           <div class="slot-name">Mañana</div>
                         </button>
-                        <button type="button" class="spoot-bk-slot-btn" id="spoot-rsc-btn-afternoon">
+                        <button type="button" class="sppot-bk-slot-btn" id="sppot-rsc-btn-afternoon">
                           <div class="slot-time">14:00 – 18:00</div>
                           <div class="slot-name">Tarde</div>
                         </button>
-                        <button type="button" class="spoot-bk-slot-btn" id="spoot-rsc-btn-full_day">
+                        <button type="button" class="sppot-bk-slot-btn" id="sppot-rsc-btn-full_day">
                           <div class="slot-time">8:00 – 18:00</div>
                           <div class="slot-name">Día completo</div>
                         </button>
@@ -625,37 +625,37 @@
                     </div>
 
                     <!-- Selector de horas (oficinas por horas) -->
-                    <div id="spoot-rsc-hours" class="d-none mb-3">
+                    <div id="sppot-rsc-hours" class="d-none mb-3">
                       <div class="fw-semibold mb-2" style="font-size:.82rem;color:#374151;">
-                        Horario para <span id="spoot-rsc-sel-date-h" class="text-primary fw-bold"></span>:
+                        Horario para <span id="sppot-rsc-sel-date-h" class="text-primary fw-bold"></span>:
                       </div>
                       <div class="d-flex gap-2 align-items-end">
                         <div class="flex-fill">
                           <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Desde</label>
-                          <select id="spoot-rsc-hour-start-sel" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                          <select id="sppot-rsc-hour-start-sel" class="form-select form-select-sm" style="border-radius:8px;"></select>
                         </div>
                         <div class="flex-fill">
                           <label class="form-label mb-1" style="font-size:.78rem;color:#6b7280;">Hasta</label>
-                          <select id="spoot-rsc-hour-end-sel" class="form-select form-select-sm" style="border-radius:8px;"></select>
+                          <select id="sppot-rsc-hour-end-sel" class="form-select form-select-sm" style="border-radius:8px;"></select>
                         </div>
                       </div>
-                      <div id="spoot-rsc-hours-feedback" class="form-text mt-1" style="display:none;"></div>
+                      <div id="sppot-rsc-hours-feedback" class="form-text mt-1" style="display:none;"></div>
                     </div>
 
                     <!-- Resumen seleccionado -->
-                    <div id="spoot-rsc-summary" class="d-none rounded-4 p-3 mb-3"
+                    <div id="sppot-rsc-summary" class="d-none rounded-4 p-3 mb-3"
                          style="background:#f0fdf4;border:1px solid #86efac;">
                       <div class="d-flex justify-content-between align-items-center">
                         <div>
-                          <div class="fw-bold text-success" id="spoot-rsc-summary-text"></div>
+                          <div class="fw-bold text-success" id="sppot-rsc-summary-text"></div>
                           <div class="text-muted" style="font-size:.78rem;">Nueva fecha y franja seleccionadas</div>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-secondary"
-                                id="spoot-rsc-reset-btn">Cambiar</button>
+                                id="sppot-rsc-reset-btn">Cambiar</button>
                       </div>
                     </div>
 
-                    <button type="submit" id="spoot-rsc-submit" disabled="disabled"
+                    <button type="submit" id="sppot-rsc-submit" disabled="disabled"
                             class="btn btn-primary w-100 rounded-pill py-2 fw-semibold">
                       Confirmar cambio
                     </button>
@@ -667,32 +667,32 @@
 
             <script>
             (function () {
-              var cont      = document.getElementById('spoot-rsc-container');
+              var cont      = document.getElementById('sppot-rsc-container');
               var officeId  = parseInt(cont.dataset.officeId || '0');
               var excludeId = parseInt(cont.dataset.excludeId || '0');
               var isHourly  = (cont.dataset.mode || 'jornada') === 'hourly';
               var pricePerHour = parseFloat(cont.dataset.pph || '0') || 0;
               var currency  = cont.dataset.cur || '';
 
-              var dateHidden   = document.getElementById('spoot-rsc-date');
-              var slotHidden   = document.getElementById('spoot-rsc-slot');
-              var hourStartHidden = document.getElementById('spoot-rsc-hour-start');
-              var hourEndHidden   = document.getElementById('spoot-rsc-hour-end');
-              var submitBtn    = document.getElementById('spoot-rsc-submit');
-              var grid         = document.getElementById('spoot-rsc-grid');
-              var monthTitle   = document.getElementById('spoot-rsc-month-title');
-              var slotsPanel   = document.getElementById('spoot-rsc-slots');
-              var hoursPanel   = document.getElementById('spoot-rsc-hours');
-              var selDateHEl   = document.getElementById('spoot-rsc-sel-date-h');
-              var hourStartSel = document.getElementById('spoot-rsc-hour-start-sel');
-              var hourEndSel   = document.getElementById('spoot-rsc-hour-end-sel');
-              var hoursFeedback= document.getElementById('spoot-rsc-hours-feedback');
-              var summaryPanel = document.getElementById('spoot-rsc-summary');
-              var selDateEl    = document.getElementById('spoot-rsc-sel-date');
-              var summaryText  = document.getElementById('spoot-rsc-summary-text');
-              var resetBtn     = document.getElementById('spoot-rsc-reset-btn');
-              var prevBtn      = document.getElementById('spoot-rsc-prev');
-              var nextBtn      = document.getElementById('spoot-rsc-next');
+              var dateHidden   = document.getElementById('sppot-rsc-date');
+              var slotHidden   = document.getElementById('sppot-rsc-slot');
+              var hourStartHidden = document.getElementById('sppot-rsc-hour-start');
+              var hourEndHidden   = document.getElementById('sppot-rsc-hour-end');
+              var submitBtn    = document.getElementById('sppot-rsc-submit');
+              var grid         = document.getElementById('sppot-rsc-grid');
+              var monthTitle   = document.getElementById('sppot-rsc-month-title');
+              var slotsPanel   = document.getElementById('sppot-rsc-slots');
+              var hoursPanel   = document.getElementById('sppot-rsc-hours');
+              var selDateHEl   = document.getElementById('sppot-rsc-sel-date-h');
+              var hourStartSel = document.getElementById('sppot-rsc-hour-start-sel');
+              var hourEndSel   = document.getElementById('sppot-rsc-hour-end-sel');
+              var hoursFeedback= document.getElementById('sppot-rsc-hours-feedback');
+              var summaryPanel = document.getElementById('sppot-rsc-summary');
+              var selDateEl    = document.getElementById('sppot-rsc-sel-date');
+              var summaryText  = document.getElementById('sppot-rsc-summary-text');
+              var resetBtn     = document.getElementById('sppot-rsc-reset-btn');
+              var prevBtn      = document.getElementById('sppot-rsc-prev');
+              var nextBtn      = document.getElementById('sppot-rsc-next');
 
               var MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
                             'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -718,7 +718,7 @@
               }
 
               function fetchMonth(yr, mo1) {
-                return fetch('/spoot/office/month-availability', {
+                return fetch('/sppot/office/month-availability', {
                   method:'POST',
                   headers:{'Content-Type':'application/json'},
                   body: JSON.stringify({jsonrpc:'2.0',method:'call',id:1,
@@ -737,15 +737,15 @@
                 var firstDow = (new Date(yr,mo0,1).getDay()+6)%7;
                 var dim = new Date(yr,mo0+1,0).getDate();
                 grid.innerHTML = '';
-                for (var i=0;i&lt;firstDow;i++) grid.appendChild(makeEl('div','spoot-bk-cell blank'));
+                for (var i=0;i&lt;firstDow;i++) grid.appendChild(makeEl('div','sppot-bk-cell blank'));
                 for (var dn=1;dn&lt;=dim;dn++) {
                   var ds = yr+'-'+pad(mo1)+'-'+pad(dn);
                   var info = monthData[ds];
                   var cd = new Date(yr,mo0,dn); cd.setHours(0,0,0,0);
                   var isPast = cd &lt; today, isToday = cd.getTime()===today.getTime();
                   var cell = document.createElement('div');
-                  cell.className = 'spoot-bk-cell';
-                  cell.appendChild(makeEl('span','spoot-bk-num'+(isToday?' today-num':''), dn));
+                  cell.className = 'sppot-bk-cell';
+                  cell.appendChild(makeEl('span','sppot-bk-num'+(isToday?' today-num':''), dn));
                   if (isPast) {
                     cell.classList.add('past');
                   } else if (!info) {
@@ -753,15 +753,15 @@
                   } else if (info.blocked) {
                     cell.classList.add('blocked');
                     cell.title = info.block_reason||'Bloqueado';
-                    cell.appendChild(makeEl('span','spoot-bk-cell-lbl',info.block_reason||'Bloqueado'));
+                    cell.appendChild(makeEl('span','sppot-bk-cell-lbl',info.block_reason||'Bloqueado'));
                   } else if (!info.available.length) {
                     cell.classList.add('taken');
-                    cell.appendChild(makeEl('span','spoot-bk-cell-lbl','Sin disponibilidad'));
+                    cell.appendChild(makeEl('span','sppot-bk-cell-lbl','Sin disponibilidad'));
                   } else {
                     cell.classList.add(info.available.length===3?'free':'partial');
-                    var pips=document.createElement('div'); pips.className='spoot-bk-pips';
+                    var pips=document.createElement('div'); pips.className='sppot-bk-pips';
                     [{s:'morning',l:'M'},{s:'afternoon',l:'T'},{s:'full_day',l:'D'}].forEach(function(x){
-                      pips.appendChild(makeEl('span','spoot-bk-pip '+(info.available.indexOf(x.s)>=0?'avail':'unavail'),x.l));
+                      pips.appendChild(makeEl('span','sppot-bk-pip '+(info.available.indexOf(x.s)>=0?'avail':'unavail'),x.l));
                     });
                     cell.appendChild(pips);
                     (function(d2,inf){ cell.addEventListener('click',function(){ onDayClick(d2,inf); }); })(ds,info);
@@ -790,7 +790,7 @@
                 selDateEl.textContent=fmtDate(ds);
                 slotsPanel.classList.remove('d-none');
                 SLOT_IDS.forEach(function(s){
-                  var btn=document.getElementById('spoot-rsc-btn-'+s);
+                  var btn=document.getElementById('sppot-rsc-btn-'+s);
                   if (!btn) return;
                   var avail=info.available.indexOf(s)>=0;
                   btn.disabled=!avail;
@@ -807,7 +807,7 @@
                 dateHidden.value=selectedDate;
                 slotHidden.value=slot;
                 SLOT_IDS.forEach(function(s){
-                  var btn=document.getElementById('spoot-rsc-btn-'+s);
+                  var btn=document.getElementById('sppot-rsc-btn-'+s);
                   if (btn) btn.classList.toggle('active',s===slot);
                 });
                 summaryText.textContent = fmtDate(selectedDate)+' · '+SLOT_LABELS[slot];
@@ -868,7 +868,7 @@
               }
 
               SLOT_IDS.forEach(function(s){
-                var btn=document.getElementById('spoot-rsc-btn-'+s);
+                var btn=document.getElementById('sppot-rsc-btn-'+s);
                 if (btn) btn.addEventListener('click',function(){ onSlotClick(s); });
               });
               if (isHourly) {
@@ -950,22 +950,22 @@
               <div class="row g-3">
                 <div class="col-12 col-sm-5">
                   <label class="form-label small fw-semibold">Tipo de documento</label>
-                  <select name="spoot_document_type" class="form-select">
+                  <select name="sppot_document_type" class="form-select">
                     <option value="">— Selecciona —</option>
-                    <option value="cc"   t-att-selected="'selected' if partner.spoot_document_type == 'cc'   else None">Cédula de ciudadanía (CC)</option>
-                    <option value="nit"  t-att-selected="'selected' if partner.spoot_document_type == 'nit'  else None">NIT / RUT</option>
-                    <option value="ce"   t-att-selected="'selected' if partner.spoot_document_type == 'ce'   else None">Cédula de extranjería (CE)</option>
-                    <option value="pas"  t-att-selected="'selected' if partner.spoot_document_type == 'pas'  else None">Pasaporte</option>
-                    <option value="ti"   t-att-selected="'selected' if partner.spoot_document_type == 'ti'   else None">Tarjeta de identidad</option>
-                    <option value="rc"   t-att-selected="'selected' if partner.spoot_document_type == 'rc'   else None">Registro civil</option>
-                    <option value="otro" t-att-selected="'selected' if partner.spoot_document_type == 'otro' else None">Otro</option>
+                    <option value="cc"   t-att-selected="'selected' if partner.sppot_document_type == 'cc'   else None">Cédula de ciudadanía (CC)</option>
+                    <option value="nit"  t-att-selected="'selected' if partner.sppot_document_type == 'nit'  else None">NIT / RUT</option>
+                    <option value="ce"   t-att-selected="'selected' if partner.sppot_document_type == 'ce'   else None">Cédula de extranjería (CE)</option>
+                    <option value="pas"  t-att-selected="'selected' if partner.sppot_document_type == 'pas'  else None">Pasaporte</option>
+                    <option value="ti"   t-att-selected="'selected' if partner.sppot_document_type == 'ti'   else None">Tarjeta de identidad</option>
+                    <option value="rc"   t-att-selected="'selected' if partner.sppot_document_type == 'rc'   else None">Registro civil</option>
+                    <option value="otro" t-att-selected="'selected' if partner.sppot_document_type == 'otro' else None">Otro</option>
                   </select>
                 </div>
                 <div class="col-12 col-sm-7">
                   <label class="form-label small fw-semibold">Número de documento</label>
-                  <input type="text" name="spoot_document_number" class="form-control"
+                  <input type="text" name="sppot_document_number" class="form-control"
                          placeholder="Ej: 1234567890"
-                         t-att-value="partner.spoot_document_number or ''"/>
+                         t-att-value="partner.sppot_document_number or ''"/>
                 </div>
                 <div class="col-12">
                   <label class="form-label small fw-semibold">NIT / RUT <span class="text-muted fw-normal">(si aplica)</span></label>
@@ -991,9 +991,9 @@
                     Razón social / Nombre en factura
                     <span class="text-muted fw-normal">(si difiere de tu nombre de usuario)</span>
                   </label>
-                  <input type="text" name="spoot_billing_name" class="form-control"
+                  <input type="text" name="sppot_billing_name" class="form-control"
                          placeholder="Ej: Empresa S.A.S."
-                         t-att-value="partner.spoot_billing_name or ''"/>
+                         t-att-value="partner.sppot_billing_name or ''"/>
                 </div>
                 <div class="col-12">
                   <label class="form-label small fw-semibold">Dirección</label>

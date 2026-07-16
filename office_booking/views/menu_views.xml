@@ -2,13 +2,13 @@
 <odoo>
 
     <!-- ── Acción: Dashboard de disponibilidad ─────────────────────── -->
-    <record id="action_spoot_availability_dashboard" model="ir.actions.client">
+    <record id="action_sppot_availability_dashboard" model="ir.actions.client">
         <field name="name">Disponibilidad</field>
         <field name="tag">office_booking.availability_dashboard</field>
     </record>
 
     <!-- ── Acción: Oficinas ─────────────────────────────────────────── -->
-    <record id="action_spoot_office" model="ir.actions.act_window">
+    <record id="action_sppot_office" model="ir.actions.act_window">
         <field name="name">Oficinas</field>
         <field name="res_model">office.space</field>
         <field name="view_mode">list,form</field>
@@ -32,7 +32,7 @@
     </record>
 
     <!-- ── Acción: Suscripciones ────────────────────────────────────── -->
-    <record id="action_spoot_coworking_subscription" model="ir.actions.act_window">
+    <record id="action_sppot_coworking_subscription" model="ir.actions.act_window">
         <field name="name">Suscripciones</field>
         <field name="res_model">office.subscription</field>
         <field name="view_mode">list,form</field>
@@ -42,91 +42,91 @@
     <!-- ══════════════════════════════════════════════════════════════
          MENÚ RAÍZ
          ══════════════════════════════════════════════════════════════ -->
-    <menuitem id="menu_spoot_office_root"
+    <menuitem id="menu_sppot_office_root"
               name="Reservas de oficinas"
               sequence="10"/>
 
     <!-- Oficinas -->
-    <menuitem id="menu_spoot_office"
+    <menuitem id="menu_sppot_office"
               name="Oficinas"
-              parent="menu_spoot_office_root"
-              action="action_spoot_office"
+              parent="menu_sppot_office_root"
+              action="action_sppot_office"
               sequence="10"/>
 
     <!-- Códigos de descuento -->
-    <menuitem id="menu_spoot_discount_codes"
+    <menuitem id="menu_sppot_discount_codes"
               name="Descuentos"
-              parent="menu_spoot_office_root"
-              action="office_booking.action_spoot_discount_codes"
+              parent="menu_sppot_office_root"
+              action="office_booking.action_sppot_discount_codes"
               sequence="13"/>
 
     <!-- Servicios -->
-    <menuitem id="menu_spoot_office_service"
+    <menuitem id="menu_sppot_office_service"
               name="Servicios"
-              parent="menu_spoot_office_root"
-              action="office_booking.action_spoot_office_service"
+              parent="menu_sppot_office_root"
+              action="office_booking.action_sppot_office_service"
               sequence="12"/>
 
     <!-- Clientes -->
-    <menuitem id="menu_spoot_clients"
+    <menuitem id="menu_sppot_clients"
               name="Clientes"
-              parent="menu_spoot_office_root"
-              action="office_booking.action_spoot_clients"
+              parent="menu_sppot_office_root"
+              action="office_booking.action_sppot_clients"
               sequence="11"/>
 
     <!-- Planes -->
-    <menuitem id="menu_spoot_coworking_plan"
+    <menuitem id="menu_sppot_coworking_plan"
               name="Planes"
-              parent="menu_spoot_office_root"
+              parent="menu_sppot_office_root"
               action="office_booking.action_coworking_plan"
               sequence="15"/>
 
     <!-- Reservas -->
     <menuitem id="menu_office_booking"
               name="Reservas"
-              parent="menu_spoot_office_root"
+              parent="menu_sppot_office_root"
               action="action_office_booking"
               sequence="20"/>
 
     <!-- Suscripciones -->
-    <menuitem id="menu_spoot_coworking_subscription"
+    <menuitem id="menu_sppot_coworking_subscription"
               name="Suscripciones"
-              parent="menu_spoot_office_root"
-              action="office_booking.action_spoot_coworking_subscription"
+              parent="menu_sppot_office_root"
+              action="office_booking.action_sppot_coworking_subscription"
               sequence="30"/>
 
     <!-- Bloqueos de fechas -->
-    <menuitem id="menu_spoot_office_block"
+    <menuitem id="menu_sppot_office_block"
               name="Bloqueos de fechas"
-              parent="menu_spoot_office_root"
-              action="office_booking.action_spoot_office_block"
+              parent="menu_sppot_office_root"
+              action="office_booking.action_sppot_office_block"
               sequence="35"/>
 
     <!-- Disponibilidad (dashboard OWL) -->
-    <menuitem id="menu_spoot_office_availability_dashboard"
+    <menuitem id="menu_sppot_office_availability_dashboard"
               name="Disponibilidad"
-              parent="menu_spoot_office_root"
-              action="action_spoot_availability_dashboard"
+              parent="menu_sppot_office_root"
+              action="action_sppot_availability_dashboard"
               sequence="40"/>
 
     <!-- Configuración (solo admin del sistema) -->
-    <menuitem id="menu_spoot_settings"
+    <menuitem id="menu_sppot_settings"
               name="Configuración"
-              parent="menu_spoot_office_root"
-              action="office_booking.action_spoot_office_settings"
+              parent="menu_sppot_office_root"
+              action="office_booking.action_sppot_office_settings"
               groups="base.group_system"
               sequence="99"/>
 
     <!-- Analíticas -->
-    <record id="action_spoot_analytics_dashboard" model="ir.actions.client">
+    <record id="action_sppot_analytics_dashboard" model="ir.actions.client">
         <field name="name">Analíticas</field>
         <field name="tag">office_booking.analytics_dashboard</field>
     </record>
 
-    <menuitem id="menu_spoot_analytics"
+    <menuitem id="menu_sppot_analytics"
               name="Analíticas"
-              parent="menu_spoot_office_root"
-              action="action_spoot_analytics_dashboard"
+              parent="menu_sppot_office_root"
+              action="action_sppot_analytics_dashboard"
               sequence="50"/>
 
 </odoo>
