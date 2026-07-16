@@ -4,7 +4,7 @@ import { registry } from "@web/core/registry";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 
-class SpootAvailabilityDashboard extends Component {
+class SppotAvailabilityDashboard extends Component {
   setup() {
     this.orm = useService("orm");
     this.actionService = useService("action");
@@ -272,9 +272,9 @@ class SpootAvailabilityDashboard extends Component {
   }
 }
 
-SpootAvailabilityDashboard.template =
-  "office_booking.SpootAvailabilityDashboard";
+SppotAvailabilityDashboard.template =
+  "office_booking.SppotAvailabilityDashboard";
 
 registry
   .category("actions")
-  .add("office_booking.availability_dashboard", SpootAvailabilityDashboard);
+  .add("office_booking.availability_dashboard", SppotAvailabilityDashboard);

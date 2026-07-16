@@ -42,9 +42,10 @@ class OfficeDiscount(models.Model):
         string="Reservas con este código",
     )
 
-    _sql_constraints = [
-        ("code_unique", "UNIQUE(code)", "Ya existe un código con ese valor."),
-    ]
+    _code_unique = models.Constraint(
+        "UNIQUE(code)",
+        "Ya existe un código con ese valor.",
+    )
 
     def validate_for_booking(self, amount):
         """Verifica que el código sea usable. Retorna el monto de descuento o lanza ValidationError."""

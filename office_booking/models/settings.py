@@ -29,11 +29,15 @@ class OfficeSettings(models.TransientModel):
         )
         return res
 
-    def action_save(self):
+    def _persist_admin_email(self):
+        """Guarda el correo admin en ir.config_parameter (idempotente)."""
         self.env["ir.config_parameter"].sudo().set_param(
             "office_booking.admin_email",
             (self.admin_email or "").strip(),
         )
+
+    def action_save(self):
+        self._persist_admin_email()
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -82,6 +86,8 @@ class OfficeSettings(models.TransientModel):
     # ── Diagnóstico de email ───────────────────────────────────────────
     def action_diagnose_email(self):
         """Verifica la configuración de email y devuelve un resumen."""
+        # Guardar el correo admin escrito antes de diagnosticar para que no se pierda.
+        self._persist_admin_email()
         param = self.env["ir.config_parameter"].sudo()
         smtp_servers = self.env["ir.mail_server"].sudo().search([])
         company = self.env.company
@@ -129,6 +135,8 @@ class OfficeSettings(models.TransientModel):
 
     def action_send_test_email(self):
         """Envía un correo de prueba al correo admin configurado."""
+        # Guardar el correo admin escrito antes de enviar la prueba.
+        self._persist_admin_email()
         param = self.env["ir.config_parameter"].sudo()
         dest = (self.admin_email or "").strip() or param.get_param("office_booking.admin_email", "")
         if not dest:

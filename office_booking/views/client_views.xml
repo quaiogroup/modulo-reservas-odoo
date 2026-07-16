@@ -2,26 +2,26 @@
 <odoo>
 
     <!-- ══════════════════════════════════════════════════════════════
-         LIST VIEW — Clientes Spoot
+         LIST VIEW — Clientes Sppot
          ══════════════════════════════════════════════════════════════ -->
-    <record id="view_spoot_client_list" model="ir.ui.view">
+    <record id="view_sppot_client_list" model="ir.ui.view">
         <field name="name">office.client.list</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <list string="Clientes"
                   default_order="name asc"
-                  decoration-success="spoot_active_subscription_id != False">
+                  decoration-success="sppot_active_subscription_id != False">
 
                 <field name="name"                      string="Cliente"/>
-                <field name="spoot_document_type"       string="Tipo doc." widget="badge" optional="show"/>
-                <field name="spoot_document_number"     string="Nro. documento" optional="show"/>
+                <field name="sppot_document_type"       string="Tipo doc." widget="badge" optional="show"/>
+                <field name="sppot_document_number"     string="Nro. documento" optional="show"/>
                 <field name="email"                     string="Correo"/>
                 <field name="phone"                     string="Teléfono"/>
                 <field name="whatsapp"                  string="WhatsApp"/>
                 <field name="city"                      string="Ciudad" optional="show"/>
-                <field name="spoot_booking_count"       string="Reservas" readonly="1"/>
-                <field name="spoot_last_booking_date"   string="Última reserva" readonly="1"/>
-                <field name="spoot_active_subscription_id" string="Plan activo" readonly="1"/>
+                <field name="sppot_booking_count"       string="Reservas" readonly="1"/>
+                <field name="sppot_last_booking_date"   string="Última reserva" readonly="1"/>
+                <field name="sppot_active_subscription_id" string="Plan activo" readonly="1"/>
 
                 <!-- Botón WhatsApp inline -->
                 <button name="action_open_whatsapp"
@@ -37,9 +37,9 @@
 
 
     <!-- ══════════════════════════════════════════════════════════════
-         FORM VIEW — Cliente Spoot
+         FORM VIEW — Cliente Sppot
          ══════════════════════════════════════════════════════════════ -->
-    <record id="view_spoot_client_form" model="ir.ui.view">
+    <record id="view_sppot_client_form" model="ir.ui.view">
         <field name="name">office.client.form</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
@@ -60,12 +60,12 @@
                         </button>
 
                         <button type="object"
-                                name="action_spoot_bookings"
+                                name="action_sppot_bookings"
                                 class="oe_stat_button"
                                 icon="fa-calendar">
                             <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_value">
-                                    <field name="spoot_booking_count" nolabel="1"/>
+                                    <field name="sppot_booking_count" nolabel="1"/>
                                 </span>
                                 <span class="o_stat_text">Reservas</span>
                             </div>
@@ -82,8 +82,8 @@
                     <!-- Identificación -->
                     <group string="Identificación" col="2">
                         <group>
-                            <field name="spoot_document_type" string="Tipo de documento"/>
-                            <field name="spoot_document_number" string="Número de documento"
+                            <field name="sppot_document_type" string="Tipo de documento"/>
+                            <field name="sppot_document_number" string="Número de documento"
                                    placeholder="Ej: 1234567890"/>
                         </group>
                         <group>
@@ -101,9 +101,9 @@
                             <field name="whatsapp" placeholder="+573001234567"/>
                         </group>
                         <group>
-                            <field name="spoot_active_subscription_id"
+                            <field name="sppot_active_subscription_id"
                                    string="Plan activo" readonly="1"/>
-                            <field name="spoot_last_booking_date"
+                            <field name="sppot_last_booking_date"
                                    string="Última reserva" readonly="1"/>
                         </group>
                     </group>
@@ -111,7 +111,7 @@
                     <!-- Datos de facturación -->
                     <group string="Datos de facturación" col="2">
                         <group>
-                            <field name="spoot_billing_name"
+                            <field name="sppot_billing_name"
                                    placeholder="Solo si difiere del nombre del cliente"/>
                             <field name="street"   string="Dirección" placeholder="Calle 123 # 45-67"/>
                             <field name="street2"  string="Complemento" placeholder="Apto 301, Torre B"/>
@@ -129,7 +129,7 @@
                     <!-- Historial de reservas -->
                     <notebook>
                         <page string="Reservas" name="page_bookings">
-                            <field name="spoot_booking_ids"
+                            <field name="sppot_booking_ids"
                                    domain="[('state', '!=', 'cancelled')]"
                                    readonly="1">
                                 <list default_order="date desc"
@@ -161,7 +161,7 @@
                         </page>
 
                         <page string="Todas (incluye canceladas)" name="page_all_bookings">
-                            <field name="spoot_booking_ids" readonly="1">
+                            <field name="sppot_booking_ids" readonly="1">
                                 <list default_order="date desc"
                                       decoration-muted="state == 'cancelled'"
                                       decoration-success="state == 'confirmed'"
@@ -192,7 +192,7 @@
     <!-- ══════════════════════════════════════════════════════════════
          SEARCH VIEW
          ══════════════════════════════════════════════════════════════ -->
-    <record id="view_spoot_client_search" model="ir.ui.view">
+    <record id="view_sppot_client_search" model="ir.ui.view">
         <field name="name">office.client.search</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
@@ -201,19 +201,19 @@
                 <field name="email"                 string="Correo"/>
                 <field name="phone"                 string="Teléfono"/>
                 <field name="whatsapp"              string="WhatsApp"/>
-                <field name="spoot_document_number" string="Nro. documento"/>
+                <field name="sppot_document_number" string="Nro. documento"/>
                 <field name="vat"                   string="NIT / RUT"/>
                 <field name="city"                  string="Ciudad"/>
                 <separator/>
                 <filter string="Con documento" name="filter_document"
-                        domain="[('spoot_document_number', '!=', False)]"/>
+                        domain="[('sppot_document_number', '!=', False)]"/>
                 <filter string="Con WhatsApp" name="filter_whatsapp"
                         domain="[('whatsapp', '!=', False)]"/>
                 <filter string="Con datos de facturación" name="filter_billing"
                         domain="[('street', '!=', False)]"/>
                 <group>
                     <filter string="Tipo de documento" name="group_doc_type"
-                            context="{'group_by': 'spoot_document_type'}"/>
+                            context="{'group_by': 'sppot_document_type'}"/>
                     <filter string="Ciudad" name="group_city"
                             context="{'group_by': 'city'}"/>
                 </group>
@@ -225,17 +225,17 @@
     <!-- ══════════════════════════════════════════════════════════════
          ACTION
          ══════════════════════════════════════════════════════════════ -->
-    <record id="action_spoot_clients" model="ir.actions.act_window">
+    <record id="action_sppot_clients" model="ir.actions.act_window">
         <field name="name">Clientes</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('spoot_booking_count', '>', 0)]</field>
+        <field name="domain">[('sppot_booking_count', '>', 0)]</field>
         <field name="view_ids" eval="[
             (5, 0, 0),
-            (0, 0, {'view_mode': 'list', 'view_id': ref('view_spoot_client_list')}),
-            (0, 0, {'view_mode': 'form', 'view_id': ref('view_spoot_client_form')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_sppot_client_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_sppot_client_form')}),
         ]"/>
-        <field name="search_view_id" ref="view_spoot_client_search"/>
+        <field name="search_view_id" ref="view_sppot_client_search"/>
         <field name="context">{'default_customer_rank': 1}</field>
     </record>
 

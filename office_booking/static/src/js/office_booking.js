@@ -9,11 +9,11 @@ function label(slot) {
 }
 
 async function refreshAvailability(officeId, day) {
-  const data = await rpc("/spoot/office/availability", { office_id: officeId, day });
+  const data = await rpc("/sppot/office/availability", { office_id: officeId, day });
   if (data.error) return;
 
-  const select = document.getElementById("spoot_slot");
-  const hint   = document.getElementById("spoot_slot_hint");
+  const select = document.getElementById("sppot_slot");
+  const hint   = document.getElementById("sppot_slot_hint");
 
   // Fecha bloqueada por el administrador
   if (data.blocked) {
@@ -51,9 +51,9 @@ async function refreshAvailability(officeId, day) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const calendarWrap = document.querySelector(".js_spoot_office_calendar");
+  const calendarWrap = document.querySelector(".js_sppot_office_calendar");
   const officeId = calendarWrap?.dataset?.officeId;
-  const dateInput = document.getElementById("spoot_date");
+  const dateInput = document.getElementById("sppot_date");
 
   if (!officeId || !dateInput) return;
 

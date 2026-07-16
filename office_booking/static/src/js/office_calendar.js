@@ -5,11 +5,11 @@ odoo.define("office_booking.office_calendar", function (require) {
     const rpc = require("web.rpc");
 
     publicWidget.registry.OfficeSpaceCalendar = publicWidget.Widget.extend({
-        selector: ".js_spoot_office_calendar",
+        selector: ".js_sppot_office_calendar",
 
         start: function () {
             this.officeId = this.$el.data("officeId");
-            this.$calEl = this.$("#spootCalendar");
+            this.$calEl = this.$("#sppotCalendar");
 
             if (!this.officeId || !this.$calEl.length) {
                 return this._super.apply(this, arguments);
@@ -36,7 +36,7 @@ odoo.define("office_booking.office_calendar", function (require) {
                 },
                 events: (info, success, failure) => {
                     rpc.query({
-                        route: "/spoot/calendar/events",
+                        route: "/sppot/calendar/events",
                         params: {
                             office_id: this.officeId,
                             start: info.startStr,

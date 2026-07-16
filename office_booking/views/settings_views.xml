@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-    <record id="view_spoot_office_settings_form" model="ir.ui.view">
+    <record id="view_sppot_office_settings_form" model="ir.ui.view">
         <field name="name">office.settings.form</field>
         <field name="model">office.settings</field>
         <field name="arch" type="xml">
@@ -233,12 +233,12 @@
     </record>
 
 
-    <record id="action_spoot_office_settings" model="ir.actions.act_window">
+    <record id="action_sppot_office_settings" model="ir.actions.act_window">
         <field name="name">Configuración</field>
         <field name="res_model">office.settings</field>
         <field name="view_mode">form</field>
         <field name="target">current</field>
-        <field name="view_id" ref="view_spoot_office_settings_form"/>
+        <field name="view_id" ref="view_sppot_office_settings_form"/>
     </record>
 
 </odoo>

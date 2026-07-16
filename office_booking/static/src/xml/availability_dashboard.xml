@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
 
-<t t-name="office_booking.SpootAvailabilityDashboard">
+<t t-name="office_booking.SppotAvailabilityDashboard">
 <div class="sd-root">
 
   <!-- ══ HEADER ════════════════════════════════════════════════════ -->

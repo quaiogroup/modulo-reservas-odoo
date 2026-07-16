@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-  <record id="spoot_service_wifi" model="office.service">
+  <record id="sppot_service_wifi" model="office.service">
     <field name="name">WIFI de alta velocidad</field>
     <field name="icon">fa-wifi</field>
     <field name="description">Conexión estable para videollamadas</field>
@@ -9,20 +9,44 @@
     <field name="sequence">10</field>
   </record>
 
-  <record id="spoot_service_hot_drinks" model="office.service">
+  <record id="sppot_service_hot_drinks" model="office.service">
     <field name="name">Bebidas calientes</field>
-    <field name="icon">fa-mug-hot</field>
+    <field name="icon">fa-coffee</field>
     <field name="description">Café / aromática / té</field>
     <field name="is_default">1</field>
     <field name="sequence">20</field>
   </record>
 
-  <record id="spoot_service_video_beams" model="office.service">
+  <record id="sppot_service_video_beams" model="office.service">
     <field name="name">Video Beams</field>
-    <field name="icon">fa-video</field>
+    <field name="icon">fa-video-camera</field>
     <field name="description">Proyector para reuniones</field>
     <field name="is_default">0</field>
     <field name="sequence">30</field>
+  </record>
+
+  <record id="sppot_service_terraza" model="office.service">
+    <field name="name">⛱️ Terraza</field>
+    <field name="icon">fa-umbrella</field>
+    <field name="description">Espacio al aire libre</field>
+    <field name="is_default">0</field>
+    <field name="sequence">40</field>
+  </record>
+
+  <record id="sppot_service_plantas" model="office.service">
+    <field name="name">🪴 Plantas / Zona verde</field>
+    <field name="icon">fa-leaf</field>
+    <field name="description">Ambiente natural</field>
+    <field name="is_default">0</field>
+    <field name="sequence">50</field>
+  </record>
+
+  <record id="sppot_service_aseo" model="office.service">
+    <field name="name">🧼 Aseo incluido</field>
+    <field name="icon">fa-magic</field>
+    <field name="description">Limpieza y desinfección diaria</field>
+    <field name="is_default">0</field>
+    <field name="sequence">60</field>
   </record>
 
 </odoo>

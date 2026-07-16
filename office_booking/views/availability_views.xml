@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-  <record id="view_spoot_office_availability_tree" model="ir.ui.view">
+  <record id="view_sppot_office_availability_tree" model="ir.ui.view">
     <field name="name">office.availability.tree</field>
     <field name="model">office.availability</field>
     <field name="arch" type="xml">
@@ -39,7 +39,7 @@
     </field>
   </record>
 
-  <record id="action_spoot_availability" model="ir.actions.act_window">
+  <record id="action_sppot_availability" model="ir.actions.act_window">
     <field name="name">Disponibilidadd</field>
     <field name="res_model">office.availability</field>
     <field name="view_mode">list</field>

@@ -20,14 +20,21 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <field name="image_1920" widget="image" class="oe_avatar"/>
                     <group>
-                        <field name="name"/>
-                        <field name="description"/>
-                        <field name="days_included"/>
-                        <field name="price"/>
-                        <field name="currency_id"/>
-                        <field name="validity_days"/>
-                        <field name="active"/>
+                        <group>
+                            <field name="name"/>
+                            <field name="description"/>
+                            <field name="days_included"/>
+                            <field name="price"/>
+                            <field name="currency_id"/>
+                            <field name="validity_days"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="office_ids" widget="many2many_tags"
+                                   placeholder="Vacío = aplica a todas las oficinas"/>
+                        </group>
                     </group>
                 </sheet>
             </form>

@@ -33,27 +33,27 @@ button.btn {
 }
 
 /* Card de reserva más pro */
-.spoot-booking-card {
+.sppot-booking-card {
   border-radius: 18px;
   border: 1px solid rgba(0,0,0,.06);
 }
 
 /* Títulos */
-.spoot-office-title {
+.sppot-office-title {
   font-size: 2.2rem;
   font-weight: 700;
 }
 
 /* Lista precios */
-.spoot-price-list li {
+.sppot-price-list li {
   margin-bottom: .25rem;
 }
 
-.spootMonth {
+.sppotMonth {
   padding: 12px;
 }
 
-.spootMonth__head {
+.sppotMonth__head {
   display: grid;
   grid-template-columns: 220px repeat(7, 1fr);
   gap: 8px;
@@ -63,19 +63,19 @@ button.btn {
   margin-bottom: 10px;
 }
 
-.spootMonth__corner {
+.sppotMonth__corner {
   font-weight: 600;
   color: rgba(0,0,0,.65);
 }
 
-.spootMonth__dow {
+.sppotMonth__dow {
   text-align: center;
   font-size: 12px;
   font-weight: 600;
   color: rgba(0,0,0,.55);
 }
 
-.spootMonth__row {
+.sppotMonth__row {
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 8px;
@@ -83,18 +83,18 @@ button.btn {
   border-bottom: 1px solid rgba(0,0,0,.06);
 }
 
-.spootMonth__office {
+.sppotMonth__office {
   font-weight: 600;
   padding-top: 6px;
 }
 
-.spootMonth__grid {
+.sppotMonth__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
 }
 
-.spootMonth__cell {
+.sppotMonth__cell {
   background: rgba(0,0,0,.02);
   border: 1px solid rgba(0,0,0,.06);
   border-radius: 10px;
@@ -103,11 +103,11 @@ button.btn {
   position: relative;
 }
 
-.spootMonth__cell.is-out {
+.sppotMonth__cell.is-out {
   opacity: .45;
 }
 
-.spootMonth__num {
+.sppotMonth__num {
   font-size: 12px;
   font-weight: 700;
   color: rgba(0,0,0,.55);
@@ -116,22 +116,22 @@ button.btn {
   right: 8px;
 }
 
-.spootPill--sm {
+.sppotPill--sm {
   margin-top: 18px;
   transform: scale(.92);
   transform-origin: left top;
 }
 
-.spootServices { margin-top: 18px; }
-.spootServices__title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.sppotServices { margin-top: 18px; }
+.sppotServices__title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
 
-.spootServices__grid{
+.sppotServices__grid{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.spootServices__item{
+.sppotServices__item{
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -141,24 +141,24 @@ button.btn {
   background: #fff;
 }
 
-.spootServices__icon{
+.sppotServices__icon{
   font-size: 18px;
   margin-top: 2px;
   opacity: .8;
 }
 
-.spootServices__name{ font-weight: 600; }
-.spootServices__desc{ font-size: 12px; opacity: .7; }
+.sppotServices__name{ font-weight: 600; }
+.sppotServices__desc{ font-size: 12px; opacity: .7; }
 @media (max-width: 768px){
-  .spootServices__grid{ grid-template-columns: 1fr; }
+  .sppotServices__grid{ grid-template-columns: 1fr; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SpootCoworkingCalendar  –  /my/coworking portal calendar widget
+   SppotCoworkingCalendar  –  /my/coworking portal calendar widget
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Header (month title + nav buttons) ─────────────────────────── */
-.spoot-cal-header {
+.sppot-cal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -166,14 +166,14 @@ button.btn {
   padding: 0 2px;
 }
 
-.spoot-cal-month-title {
+.sppot-cal-month-title {
   font-size: .95rem;
   font-weight: 700;
   color: #1e293b;
   letter-spacing: -.01em;
 }
 
-.spoot-cal-nav {
+.sppot-cal-nav {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -191,25 +191,25 @@ button.btn {
   flex-shrink: 0;
 }
 
-.spoot-cal-nav:hover {
+.sppot-cal-nav:hover {
   background: #f1f5f9;
   border-color: #94a3b8;
   color: #1e293b;
 }
 
 /* ── Grid layout ─────────────────────────────────────────────────── */
-.spoot-cal-grid {
+.sppot-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
 }
 
 /* ── Day-of-week header row ──────────────────────────────────────── */
-.spoot-cal-dow-row {
+.sppot-cal-dow-row {
   margin-bottom: 4px;
 }
 
-.spoot-cal-dow {
+.sppot-cal-dow {
   text-align: center;
   font-size: .66rem;
   font-weight: 700;
@@ -220,7 +220,7 @@ button.btn {
 }
 
 /* ── Day cells ───────────────────────────────────────────────────── */
-.spoot-cal-cell {
+.sppot-cal-cell {
   min-height: 76px;
   border-radius: 10px;
   padding: 6px 5px 4px;
@@ -231,31 +231,31 @@ button.btn {
   position: relative;
 }
 
-.spoot-cal-cell:not(.spoot-cal-blank):hover {
+.sppot-cal-cell:not(.sppot-cal-blank):hover {
   background: #f1f5f9;
   border-color: #e2e8f0;
 }
 
-.spoot-cal-blank {
+.sppot-cal-blank {
   background: transparent !important;
   border-color: transparent !important;
   min-height: 0;
 }
 
 /* Today highlight */
-.spoot-cal-cell.sc-today {
+.sppot-cal-cell.sc-today {
   background: #eff6ff !important;
   border-color: #bfdbfe !important;
 }
 
 /* Cells that have events get a white bg so pills stand out */
-.spoot-cal-cell.sc-has-events {
+.sppot-cal-cell.sc-has-events {
   background: #fff;
   border-color: #e9ecef;
 }
 
 /* ── Day number ──────────────────────────────────────────────────── */
-.spoot-cal-num {
+.sppot-cal-num {
   display: inline-block;
   font-size: .72rem;
   font-weight: 600;
@@ -265,7 +265,7 @@ button.btn {
 }
 
 /* Today circle */
-.spoot-cal-num.sc-today-num {
+.sppot-cal-num.sc-today-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -279,7 +279,7 @@ button.btn {
 }
 
 /* ── Event pills ─────────────────────────────────────────────────── */
-.spoot-cal-pill {
+.sppot-cal-pill {
   display: block;
   width: 100%;
   padding: 2px 6px;
@@ -296,13 +296,13 @@ button.btn {
   transition: opacity .12s, filter .12s;
 }
 
-.spoot-cal-pill:hover {
+.sppot-cal-pill:hover {
   opacity: .85;
   filter: brightness(.95);
 }
 
 /* Overflow "+N más" link */
-.spoot-cal-more {
+.sppot-cal-more {
   display: block;
   font-size: .58rem;
   font-weight: 600;
@@ -314,13 +314,13 @@ button.btn {
   transition: color .12s;
 }
 
-.spoot-cal-more:hover {
+.sppot-cal-more:hover {
   color: #3b82f6;
   text-decoration: underline;
 }
 
 /* ── Legend ──────────────────────────────────────────────────────── */
-.spoot-cal-legend {
+.sppot-cal-legend {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem 1rem;
@@ -328,13 +328,13 @@ button.btn {
   color: #64748b;
 }
 
-.spoot-cal-legend-item {
+.sppot-cal-legend-item {
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-.spoot-cal-legend-dot {
+.sppot-cal-legend-dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -343,19 +343,19 @@ button.btn {
 
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 575.98px) {
-  .spoot-cal-cell {
+  .sppot-cal-cell {
     min-height: 44px;
     padding: 4px 3px 3px;
     border-radius: 7px;
   }
 
   /* Hide pills on mobile, just show a colored dot on the number */
-  .spoot-cal-pill,
-  .spoot-cal-more {
+  .sppot-cal-pill,
+  .sppot-cal-more {
     display: none;
   }
 
-  .spoot-cal-cell.sc-has-events .spoot-cal-num::after {
+  .sppot-cal-cell.sc-has-events .sppot-cal-num::after {
     content: '';
     display: inline-block;
     width: 5px;
@@ -368,23 +368,23 @@ button.btn {
     top: -1px;
   }
 
-  .spoot-cal-dow {
+  .sppot-cal-dow {
     font-size: .58rem;
     padding-bottom: 4px;
   }
 
-  .spoot-cal-num {
+  .sppot-cal-num {
     font-size: .65rem;
   }
 
-  .spoot-cal-legend {
+  .sppot-cal-legend {
     gap: .35rem .75rem;
     font-size: .68rem;
   }
 }
 
 /* ── Días bloqueados en el calendario coworking ────────────────────────── */
-.spoot-cal-cell.sc-blocked {
+.sppot-cal-cell.sc-blocked {
   background: repeating-linear-gradient(
     135deg,
     #f3f4f6,
@@ -396,11 +396,11 @@ button.btn {
   cursor: not-allowed;
 }
 
-.spoot-cal-cell.sc-blocked .spoot-cal-num {
+.sppot-cal-cell.sc-blocked .sppot-cal-num {
   color: #9ca3af;
 }
 
-.spoot-cal-blocked-label {
+.sppot-cal-blocked-label {
   display: block;
   font-size: .65rem;
   color: #9ca3af;
@@ -416,28 +416,28 @@ button.btn {
    Booking Calendar — office detail page
    ═══════════════════════════════════════════════════════════ */
 
-.spoot-bk-cal {
+.sppot-bk-cal {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 14px 12px;
   background: #fff;
 }
 
-.spoot-bk-hdr {
+.sppot-bk-hdr {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
 }
 
-.spoot-bk-month-title {
+.sppot-bk-month-title {
   font-size: .95rem;
   font-weight: 700;
   color: #111827;
   letter-spacing: -.01em;
 }
 
-.spoot-bk-nav {
+.sppot-bk-nav {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -455,19 +455,19 @@ button.btn {
   flex-shrink: 0;
 }
 
-.spoot-bk-nav:hover {
+.sppot-bk-nav:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.spoot-bk-dow-row {
+.sppot-bk-dow-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 3px;
   margin-bottom: 4px;
 }
 
-.spoot-bk-dow-row span {
+.sppot-bk-dow-row span {
   text-align: center;
   font-size: .62rem;
   font-weight: 700;
@@ -477,13 +477,13 @@ button.btn {
   padding-bottom: 4px;
 }
 
-.spoot-bk-grid {
+.sppot-bk-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 3px;
 }
 
-.spoot-bk-cell {
+.sppot-bk-cell {
   min-height: 56px;
   border-radius: 8px;
   padding: 5px 4px 4px;
@@ -493,41 +493,41 @@ button.btn {
   overflow: hidden;
 }
 
-.spoot-bk-cell.blank {
+.sppot-bk-cell.blank {
   background: transparent !important;
   border: none !important;
   min-height: 0;
 }
 
-.spoot-bk-cell.free {
+.sppot-bk-cell.free {
   background: #f0fdf4;
   border-color: #bbf7d0;
   cursor: pointer;
 }
 
-.spoot-bk-cell.free:hover {
+.sppot-bk-cell.free:hover {
   background: #dcfce7;
   border-color: #86efac;
 }
 
-.spoot-bk-cell.partial {
+.sppot-bk-cell.partial {
   background: #fffbeb;
   border-color: #fde68a;
   cursor: pointer;
 }
 
-.spoot-bk-cell.partial:hover {
+.sppot-bk-cell.partial:hover {
   background: #fef3c7;
   border-color: #fcd34d;
 }
 
-.spoot-bk-cell.taken {
+.sppot-bk-cell.taken {
   background: #fef2f2;
   border-color: #fecaca;
   cursor: default;
 }
 
-.spoot-bk-cell.blocked {
+.sppot-bk-cell.blocked {
   background: repeating-linear-gradient(
     135deg,
     #f3f4f6,
@@ -539,19 +539,19 @@ button.btn {
   cursor: not-allowed;
 }
 
-.spoot-bk-cell.past {
+.sppot-bk-cell.past {
   background: #fafafa;
   border-color: #f3f4f6;
   cursor: default;
   opacity: .5;
 }
 
-.spoot-bk-cell.selected {
+.sppot-bk-cell.selected {
   border-color: #3b82f6 !important;
   box-shadow: 0 0 0 2px rgba(59,130,246,.25);
 }
 
-.spoot-bk-num {
+.sppot-bk-num {
   display: inline-block;
   font-size: .68rem;
   font-weight: 700;
@@ -560,7 +560,7 @@ button.btn {
   margin-bottom: 3px;
 }
 
-.spoot-bk-num.today-num {
+.sppot-bk-num.today-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -572,14 +572,14 @@ button.btn {
   font-size: .62rem;
 }
 
-.spoot-bk-pips {
+.sppot-bk-pips {
   display: flex;
   gap: 2px;
   flex-wrap: wrap;
   margin-top: 2px;
 }
 
-.spoot-bk-pip {
+.sppot-bk-pip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -590,18 +590,18 @@ button.btn {
   font-weight: 700;
 }
 
-.spoot-bk-pip.avail {
+.sppot-bk-pip.avail {
   background: #10b981;
   color: #fff;
 }
 
-.spoot-bk-pip.unavail {
+.sppot-bk-pip.unavail {
   background: #e5e7eb;
   color: #9ca3af;
   text-decoration: line-through;
 }
 
-.spoot-bk-cell-lbl {
+.sppot-bk-cell-lbl {
   display: block;
   font-size: .55rem;
   color: #9ca3af;
@@ -613,7 +613,7 @@ button.btn {
   text-overflow: ellipsis;
 }
 
-.spoot-bk-legend {
+.sppot-bk-legend {
   display: flex;
   flex-wrap: wrap;
   gap: .3rem .75rem;
@@ -622,7 +622,7 @@ button.btn {
   align-items: center;
 }
 
-.spoot-bk-dot {
+.sppot-bk-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -638,12 +638,12 @@ button.btn {
 
 /* ── Slot selector ─────────────────────────────────────── */
 
-.spoot-bk-slot-row {
+.sppot-bk-slot-row {
   display: flex;
   gap: 8px;
 }
 
-.spoot-bk-slot-btn {
+.sppot-bk-slot-btn {
   flex: 1;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
@@ -655,38 +655,38 @@ button.btn {
   line-height: 1.3;
 }
 
-.spoot-bk-slot-btn .slot-time {
+.sppot-bk-slot-btn .slot-time {
   font-size: .62rem;
   color: #6b7280;
   font-weight: 600;
 }
 
-.spoot-bk-slot-btn .slot-name {
+.sppot-bk-slot-btn .slot-name {
   font-size: .8rem;
   font-weight: 700;
   color: #111827;
   margin-top: 2px;
 }
 
-.spoot-bk-slot-btn .slot-avail {
+.sppot-bk-slot-btn .slot-avail {
   font-size: .62rem;
   margin-top: 3px;
   font-weight: 600;
   display: none;
 }
 
-.spoot-bk-slot-btn:hover:not(:disabled):not(.unavail) {
+.sppot-bk-slot-btn:hover:not(:disabled):not(.unavail) {
   border-color: #3b82f6;
   background: #eff6ff;
 }
 
-.spoot-bk-slot-btn.active {
+.sppot-bk-slot-btn.active {
   border-color: #3b82f6 !important;
   background: #eff6ff !important;
 }
 
-.spoot-bk-slot-btn:disabled,
-.spoot-bk-slot-btn.unavail {
+.sppot-bk-slot-btn:disabled,
+.sppot-bk-slot-btn.unavail {
   opacity: .4;
   cursor: not-allowed;
   border-color: #e5e7eb;
@@ -694,7 +694,7 @@ button.btn {
 }
 
 @media (max-width: 400px) {
-  .spoot-bk-slot-row { flex-direction: column; }
-  .spoot-bk-cell { min-height: 40px; }
-  .spoot-bk-pips { display: none; }
+  .sppot-bk-slot-row { flex-direction: column; }
+  .sppot-bk-cell { min-height: 40px; }
+  .sppot-bk-pips { display: none; }
 }

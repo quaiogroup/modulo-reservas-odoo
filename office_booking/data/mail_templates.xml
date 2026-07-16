@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <data noupdate="1">
+  <data noupdate="0">
 
     <!-- ══════════════════════════════════════════════════════════════
          BOOKING TEMPLATES — CUSTOMER
@@ -10,18 +10,17 @@
     <record id="mail_template_booking_pending_payment" model="mail.template">
         <field name="name">Reserva – Pendiente de pago (cliente)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">Tu reserva está pendiente de pago – ${object.office_id.name}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="subject">Tu reserva está pendiente de pago – {{ object.office_id.name }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.partner_id.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#1e293b;padding:28px 32px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:22px;letter-spacing:0.5px;">SPPOT Office Booking</h1>
   </div>
   <div style="padding:32px;">
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong>${object.partner_id.name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong t-out="object.partner_id.name">Cliente</strong>,</p>
     <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
       Hemos creado tu reserva de oficina. Para confirmarla, debes completar el pago a través del botón que encontrarás en el portal.
     </p>
@@ -29,28 +28,30 @@
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr style="background:#f8fafc;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;width:40%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}${ (' – ' + object.office_id.location) if object.office_id.location else '' }</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">
+          <t t-out="object.office_id.name">Oficina</t><t t-if="object.office_id.location"> – <t t-out="object.office_id.location"/></t>
+        </td>
       </tr>
       <tr style="background:#f8fafc;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.date">fecha</td>
       </tr>
       <tr>
-        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja horaria</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana (8:00 – 12:00)','afternoon':'Tarde (14:00 – 18:00)','full_day':'Día completo (8:00 – 18:00)'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr style="background:#f8fafc;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;">Valor</td>
-        <td style="padding:10px 14px;color:#111827;">${'{:,.0f}'.format(object.amount_total)} ${object.currency_id.name}</td>
+        <td style="padding:10px 14px;color:#111827;"><t t-out="'{:,.0f}'.format(object.amount_total)">0</t> <t t-out="object.currency_id.name">COP</t></td>
       </tr>
     </table>
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/office-bookings/${object.id}"
+      <a t-attf-href="{{ object.get_base_url() }}/my/office-bookings/{{ object.id }}"
          style="background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block;">
         Completar pago →
       </a>
@@ -58,14 +59,13 @@
 
     <p style="font-size:13px;color:#6b7280;line-height:1.5;">
       Tu reserva quedará confirmada automáticamente una vez que el pago sea procesado exitosamente.
-      Si tienes dudas, responde a este correo o visita <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/coworking" style="color:#2563eb;">tu portal de coworking</a>.
+      Si tienes dudas, responde a este correo o visita <a t-attf-href="{{ object.get_base_url() }}/my/coworking" style="color:#2563eb;">tu portal de coworking</a>.
     </p>
   </div>
   <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} · <a href="${object.env.company.website or ''}" style="color:#2563eb;">${object.env.company.website or ''}</a>
+    <t t-out="object.env.company.name">Empresa</t> · <a t-attf-href="{{ object.env.company.website or '' }}" style="color:#2563eb;"><t t-out="object.env.company.website or ''"/></a>
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -73,18 +73,17 @@
     <record id="mail_template_booking_confirmed_bold" model="mail.template">
         <field name="name">Reserva – Confirmada (pago Bold, cliente)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">✓ Reserva confirmada – ${object.office_id.name} · ${object.date}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="subject">✓ Reserva confirmada – {{ object.office_id.name }} · {{ object.date }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.partner_id.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#15803d;padding:28px 32px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:22px;">¡Reserva confirmada!</h1>
   </div>
   <div style="padding:32px;">
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong>${object.partner_id.name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong t-out="object.partner_id.name">Cliente</strong>,</p>
     <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
       Tu pago fue procesado exitosamente. Tu reserva de oficina está <strong>confirmada</strong>.
     </p>
@@ -92,19 +91,21 @@
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr style="background:#f0fdf4;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;width:40%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}${ (' – ' + object.office_id.location) if object.office_id.location else '' }</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">
+          <t t-out="object.office_id.name">Oficina</t><t t-if="object.office_id.location"> – <t t-out="object.office_id.location"/></t>
+        </td>
       </tr>
       <tr style="background:#f0fdf4;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.date">fecha</td>
       </tr>
       <tr>
-        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja horaria</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana (8:00 – 12:00)','afternoon':'Tarde (14:00 – 18:00)','full_day':'Día completo (8:00 – 18:00)'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr style="background:#f0fdf4;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Forma de pago</td>
@@ -112,12 +113,12 @@
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;">Valor pagado</td>
-        <td style="padding:10px 14px;color:#111827;">${'{:,.0f}'.format(object.amount_total)} ${object.currency_id.name}</td>
+        <td style="padding:10px 14px;color:#111827;"><t t-out="'{:,.0f}'.format(object.amount_total)">0</t> <t t-out="object.currency_id.name">COP</t></td>
       </tr>
     </table>
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/office-bookings/${object.id}"
+      <a t-attf-href="{{ object.get_base_url() }}/my/office-bookings/{{ object.id }}"
          style="background:#15803d;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block;">
         Ver reserva →
       </a>
@@ -125,14 +126,13 @@
 
     <p style="font-size:13px;color:#6b7280;line-height:1.5;">
       Recuerda presentarte puntualmente el día de tu reserva.
-      Si necesitas cancelarla, puedes hacerlo desde <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/office-bookings" style="color:#2563eb;">tu portal</a>.
+      Si necesitas cancelarla, puedes hacerlo desde <a t-attf-href="{{ object.get_base_url() }}/my/office-bookings" style="color:#2563eb;">tu portal</a>.
     </p>
   </div>
   <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} · <a href="${object.env.company.website or ''}" style="color:#2563eb;">${object.env.company.website or ''}</a>
+    <t t-out="object.env.company.name">Empresa</t> · <a t-attf-href="{{ object.env.company.website or '' }}" style="color:#2563eb;"><t t-out="object.env.company.website or ''"/></a>
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -140,18 +140,17 @@
     <record id="mail_template_booking_confirmed_plan" model="mail.template">
         <field name="name">Reserva – Confirmada (plan coworking, cliente)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">✓ Reserva confirmada con tu plan – ${object.office_id.name} · ${object.date}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="subject">✓ Reserva confirmada con tu plan – {{ object.office_id.name }} · {{ object.date }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.partner_id.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#0f766e;padding:28px 32px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:22px;">¡Reserva confirmada con tu plan!</h1>
   </div>
   <div style="padding:32px;">
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong>${object.partner_id.name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong t-out="object.partner_id.name">Cliente</strong>,</p>
     <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
       Tu reserva fue confirmada usando el saldo de tu plan de coworking. No se requiere ningún pago adicional.
     </p>
@@ -159,32 +158,34 @@
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr style="background:#f0fdfa;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;width:40%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}${ (' – ' + object.office_id.location) if object.office_id.location else '' }</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">
+          <t t-out="object.office_id.name">Oficina</t><t t-if="object.office_id.location"> – <t t-out="object.office_id.location"/></t>
+        </td>
       </tr>
       <tr style="background:#f0fdfa;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.date">fecha</td>
       </tr>
       <tr>
-        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja horaria</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana (8:00 – 12:00)','afternoon':'Tarde (14:00 – 18:00)','full_day':'Día completo (8:00 – 18:00)'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr style="background:#f0fdfa;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Forma de pago</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">Plan de coworking${ (' – ' + object.subscription_id.plan_id.name) if object.subscription_id else '' }</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">Plan de coworking<t t-if="object.subscription_id"> – <t t-out="object.subscription_id.plan_id.name"/></t></td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;">Días descontados del plan</td>
-        <td style="padding:10px 14px;color:#111827;">${object.plan_days_consumed} día(s)</td>
+        <td style="padding:10px 14px;color:#111827;"><t t-out="object.plan_days_consumed">0</t> día(s)</td>
       </tr>
     </table>
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/coworking"
+      <a t-attf-href="{{ object.get_base_url() }}/my/coworking"
          style="background:#0f766e;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block;">
         Ver mi plan →
       </a>
@@ -195,10 +196,9 @@
     </p>
   </div>
   <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} · <a href="${object.env.company.website or ''}" style="color:#2563eb;">${object.env.company.website or ''}</a>
+    <t t-out="object.env.company.name">Empresa</t> · <a t-attf-href="{{ object.env.company.website or '' }}" style="color:#2563eb;"><t t-out="object.env.company.website or ''"/></a>
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -206,18 +206,17 @@
     <record id="mail_template_booking_reminder" model="mail.template">
         <field name="name">Reserva – Recordatorio (cliente)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">Recordatorio: tu reserva en ${object.office_id.name} es mañana</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="subject">Recordatorio: tu reserva en {{ object.office_id.name }} es mañana</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.partner_id.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#7c3aed;padding:28px 32px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:22px;">📅 Recordatorio de reserva</h1>
   </div>
   <div style="padding:32px;">
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong>${object.partner_id.name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong t-out="object.partner_id.name">Cliente</strong>,</p>
     <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
       Te recordamos que mañana tienes una reserva de oficina confirmada. ¡No olvides llegar puntualmente!
     </p>
@@ -225,24 +224,26 @@
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr style="background:#faf5ff;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;width:40%;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}${ (' – ' + object.office_id.location) if object.office_id.location else '' }</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">
+          <t t-out="object.office_id.name">Oficina</t><t t-if="object.office_id.location"> – <t t-out="object.office_id.location"/></t>
+        </td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.date">fecha</td>
       </tr>
       <tr style="background:#faf5ff;">
-        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja horaria</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana (8:00 – 12:00)','afternoon':'Tarde (14:00 – 18:00)','full_day':'Día completo (8:00 – 18:00)'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;">Referencia</td>
-        <td style="padding:10px 14px;color:#111827;">${object.name}</td>
+        <td style="padding:10px 14px;color:#111827;" t-out="object.name">REF</td>
       </tr>
     </table>
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/office-bookings/${object.id}"
+      <a t-attf-href="{{ object.get_base_url() }}/my/office-bookings/{{ object.id }}"
          style="background:#7c3aed;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block;">
         Ver detalle →
       </a>
@@ -253,10 +254,9 @@
     </p>
   </div>
   <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} · <a href="${object.env.company.website or ''}" style="color:#2563eb;">${object.env.company.website or ''}</a>
+    <t t-out="object.env.company.name">Empresa</t> · <a t-attf-href="{{ object.env.company.website or '' }}" style="color:#2563eb;"><t t-out="object.env.company.website or ''"/></a>
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -264,18 +264,17 @@
     <record id="mail_template_booking_cancelled_user" model="mail.template">
         <field name="name">Reserva – Cancelada (cliente)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">Tu reserva de oficina ha sido cancelada – ${object.office_id.name}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="subject">Tu reserva de oficina ha sido cancelada – {{ object.office_id.name }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.partner_id.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#dc2626;padding:28px 32px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:22px;">Reserva cancelada</h1>
   </div>
   <div style="padding:32px;">
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong>${object.partner_id.name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong t-out="object.partner_id.name">Cliente</strong>,</p>
     <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
       Tu reserva de oficina ha sido cancelada. A continuación los detalles:
     </p>
@@ -283,40 +282,43 @@
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr style="background:#fef2f2;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;width:40%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.office_id.name">Oficina</td>
       </tr>
       <tr style="background:#fef2f2;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.date">fecha</td>
       </tr>
       <tr>
-        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja horaria</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana (8:00 – 12:00)','afternoon':'Tarde (14:00 – 18:00)','full_day':'Día completo (8:00 – 18:00)'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr style="background:#fef2f2;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;">Forma de pago</td>
-        <td style="padding:10px 14px;color:#111827;">${'Plan de coworking' if object.payment_mode == 'plan' else 'Pago en línea (Bold)'}</td>
+        <td style="padding:10px 14px;color:#111827;" t-out="'Plan de coworking' if object.payment_mode == 'plan' else 'Pago en línea (Bold)'">pago</td>
       </tr>
     </table>
 
-    ${ '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:14px 18px;margin-bottom:24px;font-size:14px;color:#92400e;">Los días de plan consumidos por esta reserva han sido devueltos a tu saldo de plan.</div>' if object.payment_mode == 'plan' and object.plan_days_consumed > 0 else '' }
+    <t t-if="object.payment_mode == 'plan' and object.plan_days_consumed &gt; 0">
+      <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:14px 18px;margin-bottom:24px;font-size:14px;color:#92400e;">
+        Los días de plan consumidos por esta reserva han sido devueltos a tu saldo de plan.
+      </div>
+    </t>
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/offices"
+      <a t-attf-href="{{ object.get_base_url() }}/offices"
          style="background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block;">
         Hacer nueva reserva →
       </a>
     </div>
   </div>
   <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} · <a href="${object.env.company.website or ''}" style="color:#2563eb;">${object.env.company.website or ''}</a>
+    <t t-out="object.env.company.name">Empresa</t> · <a t-attf-href="{{ object.env.company.website or '' }}" style="color:#2563eb;"><t t-out="object.env.company.website or ''"/></a>
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -329,12 +331,11 @@
     <record id="mail_template_booking_new_admin" model="mail.template">
         <field name="name">Reserva – Nueva reserva (admin)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">[Nueva reserva] ${object.partner_id.name} · ${object.office_id.name} · ${object.date}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
+        <field name="subject">[Nueva reserva] {{ object.partner_id.name }} · {{ object.office_id.name }} · {{ object.date }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#1e293b;padding:20px 28px;">
     <h2 style="color:#ffffff;margin:0;font-size:18px;">Nueva reserva recibida</h2>
@@ -343,50 +344,51 @@
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <tr style="background:#f8fafc;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;width:38%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Cliente</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.partner_id.name} (${object.partner_id.email or 'sin email'})</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.partner_id.name">Cliente</t> (<t t-out="object.partner_id.email or 'sin email'"/>)</td>
       </tr>
       <tr style="background:#f8fafc;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}${ (' – ' + object.office_id.location) if object.office_id.location else '' }</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">
+          <t t-out="object.office_id.name">Oficina</t><t t-if="object.office_id.location"> – <t t-out="object.office_id.location"/></t>
+        </td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.date">fecha</td>
       </tr>
       <tr style="background:#f8fafc;">
-        <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana (8:00-12:00)','afternoon':'Tarde (14:00-18:00)','full_day':'Día completo (8:00-18:00)'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Modo de pago</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${'Plan de coworking' if object.payment_mode == 'plan' else 'Pago en línea (Bold)'}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="'Plan de coworking' if object.payment_mode == 'plan' else 'Pago en línea (Bold)'">pago</td>
       </tr>
       <tr style="background:#f8fafc;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Estado</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'draft':'Borrador','pending_payment':'Pendiente de pago','confirmed':'Confirmada','cancelled':'Cancelada'}.get(object.state, object.state)}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="{'draft':'Borrador','pending_payment':'Pendiente de pago','confirmed':'Confirmada','cancelled':'Cancelada'}.get(object.state, object.state)">estado</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;">Valor</td>
-        <td style="padding:9px 14px;color:#111827;">${'{:,.0f}'.format(object.amount_total)} ${object.currency_id.name}</td>
+        <td style="padding:9px 14px;color:#111827;"><t t-out="'{:,.0f}'.format(object.amount_total)">0</t> <t t-out="object.currency_id.name">COP</t></td>
       </tr>
     </table>
 
     <div style="margin-top:20px;text-align:center;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/web#model=office.booking&amp;id=${object.id}&amp;view_type=form"
+      <a t-attf-href="{{ object.get_base_url() }}/web#model=office.booking&amp;id={{ object.id }}&amp;view_type=form"
          style="background:#1e293b;color:#ffffff;text-decoration:none;padding:11px 22px;border-radius:6px;font-size:14px;font-weight:bold;display:inline-block;">
         Abrir en backend →
       </a>
     </div>
   </div>
   <div style="background:#f1f5f9;padding:12px 28px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} – Notificación interna
+    <t t-out="object.env.company.name">Empresa</t> – Notificación interna
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -394,12 +396,11 @@
     <record id="mail_template_booking_confirmed_admin" model="mail.template">
         <field name="name">Reserva – Confirmada (admin)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">[Confirmada] ${object.partner_id.name} · ${object.office_id.name} · ${object.date}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
+        <field name="subject">[Confirmada] {{ object.partner_id.name }} · {{ object.office_id.name }} · {{ object.date }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#15803d;padding:20px 28px;">
     <h2 style="color:#ffffff;margin:0;font-size:18px;">Reserva confirmada</h2>
@@ -408,35 +409,34 @@
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <tr style="background:#f0fdf4;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;width:38%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Cliente</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.partner_id.name} (${object.partner_id.email or 'sin email'})</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.partner_id.name">Cliente</t> (<t t-out="object.partner_id.email or 'sin email'"/>)</td>
       </tr>
       <tr style="background:#f0fdf4;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.office_id.name">Oficina</td>
       </tr>
       <tr>
-        <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha / Franja</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.date} · ${ {'morning':'Mañana','afternoon':'Tarde','full_day':'Día completo'}.get(object.slot_type, object.slot_type) }</td>
+        <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha / Horario</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.date"/> · <t t-out="object.slot_label"/></td>
       </tr>
       <tr style="background:#f0fdf4;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Pago</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${'Plan de coworking' if object.payment_mode == 'plan' else 'Pago en línea (Bold)'}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="'Plan de coworking' if object.payment_mode == 'plan' else 'Pago en línea (Bold)'">pago</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;">Bold Tx ID</td>
-        <td style="padding:9px 14px;color:#6b7280;">${object.bold_tx_id or '—'}</td>
+        <td style="padding:9px 14px;color:#6b7280;" t-out="object.bold_tx_id or '—'">—</td>
       </tr>
     </table>
   </div>
   <div style="background:#f1f5f9;padding:12px 28px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} – Notificación interna
+    <t t-out="object.env.company.name">Empresa</t> – Notificación interna
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -444,12 +444,11 @@
     <record id="mail_template_booking_cancelled_admin" model="mail.template">
         <field name="name">Reserva – Cancelada (admin)</field>
         <field name="model_id" search="[('model','=','office.booking')]"/>
-        <field name="subject">[Cancelada] ${object.partner_id.name} · ${object.office_id.name} · ${object.date}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
+        <field name="subject">[Cancelada] {{ object.partner_id.name }} · {{ object.office_id.name }} · {{ object.date }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#b91c1c;padding:20px 28px;">
     <h2 style="color:#ffffff;margin:0;font-size:18px;">Reserva cancelada</h2>
@@ -458,31 +457,30 @@
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <tr style="background:#fef2f2;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;width:38%;border-bottom:1px solid #e5e7eb;">Referencia</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.name}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.name">REF</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Cliente</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.partner_id.name}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.partner_id.name">Cliente</td>
       </tr>
       <tr style="background:#fef2f2;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Oficina / Fecha</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.office_id.name} · ${object.date}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.office_id.name"/> · <t t-out="object.date"/></td>
       </tr>
       <tr>
-        <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Franja</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${{'morning':'Mañana','afternoon':'Tarde','full_day':'Día completo'}.get(object.slot_type, object.slot_type)}</td>
+        <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Horario</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.slot_label">horario</td>
       </tr>
       <tr style="background:#fef2f2;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;">Días plan restituidos</td>
-        <td style="padding:9px 14px;color:#111827;">${str(object.plan_days_consumed) + ' día(s)' if object.payment_mode == 'plan' and object.plan_days_consumed > 0 else '—'}</td>
+        <td style="padding:9px 14px;color:#111827;" t-out="(str(object.plan_days_consumed) + ' día(s)') if (object.payment_mode == 'plan' and object.plan_days_consumed &gt; 0) else '—'">—</td>
       </tr>
     </table>
   </div>
   <div style="background:#f1f5f9;padding:12px 28px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} – Notificación interna
+    <t t-out="object.env.company.name">Empresa</t> – Notificación interna
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -495,18 +493,17 @@
     <record id="mail_template_plan_confirmed_user" model="mail.template">
         <field name="name">Plan coworking – Activado (cliente)</field>
         <field name="model_id" search="[('model','=','office.subscription')]"/>
-        <field name="subject">✓ Tu plan de coworking está activo – ${object.plan_id.name}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.partner_id.email or ''}</field>
+        <field name="subject">✓ Tu plan de coworking está activo – {{ object.plan_id.name }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.partner_id.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#0f766e;padding:28px 32px;text-align:center;">
     <h1 style="color:#ffffff;margin:0;font-size:22px;">¡Tu plan está activo!</h1>
   </div>
   <div style="padding:32px;">
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong>${object.partner_id.name}</strong>,</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hola <strong t-out="object.partner_id.name">Cliente</strong>,</p>
     <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
       Tu plan de coworking ha sido activado exitosamente. Ya puedes usar tu saldo de días para reservar oficinas.
     </p>
@@ -514,28 +511,28 @@
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px;">
       <tr style="background:#f0fdfa;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;width:40%;border-bottom:1px solid #e5e7eb;">Plan</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.plan_id.name}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.plan_id.name">Plan</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Días incluidos</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.total_days} días</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.total_days">0</t> días</td>
       </tr>
       <tr style="background:#f0fdfa;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha de inicio</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.start_date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.start_date">inicio</td>
       </tr>
       <tr>
         <td style="padding:10px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Fecha de vencimiento</td>
-        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.end_date}</td>
+        <td style="padding:10px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.end_date">fin</td>
       </tr>
       <tr style="background:#f0fdfa;">
         <td style="padding:10px 14px;font-weight:bold;color:#374151;">Días disponibles</td>
-        <td style="padding:10px 14px;color:#0f766e;font-weight:bold;">${object.remaining_days} día(s)</td>
+        <td style="padding:10px 14px;color:#0f766e;font-weight:bold;"><t t-out="object.remaining_days">0</t> día(s)</td>
       </tr>
     </table>
 
     <div style="text-align:center;margin:28px 0;">
-      <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/offices"
+      <a t-attf-href="{{ object.get_base_url() }}/offices"
          style="background:#0f766e;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:6px;font-size:15px;font-weight:bold;display:inline-block;">
         Reservar oficina →
       </a>
@@ -543,14 +540,13 @@
 
     <p style="font-size:13px;color:#6b7280;line-height:1.5;">
       Media jornada (mañana o tarde) descuenta 0,5 días. Día completo descuenta 1 día.
-      Puedes consultar tu saldo en <a href="${object.env['ir.config_parameter'].sudo().get_param('web.base.url')}/my/coworking" style="color:#0f766e;">tu dashboard de coworking</a>.
+      Puedes consultar tu saldo en <a t-attf-href="{{ object.get_base_url() }}/my/coworking" style="color:#0f766e;">tu dashboard de coworking</a>.
     </p>
   </div>
   <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} · <a href="${object.env.company.website or ''}" style="color:#2563eb;">${object.env.company.website or ''}</a>
+    <t t-out="object.env.company.name">Empresa</t> · <a t-attf-href="{{ object.env.company.website or '' }}" style="color:#2563eb;"><t t-out="object.env.company.website or ''"/></a>
   </div>
 </div>
-]]>
         </field>
     </record>
 
@@ -558,12 +554,11 @@
     <record id="mail_template_plan_confirmed_admin" model="mail.template">
         <field name="name">Plan coworking – Activado (admin)</field>
         <field name="model_id" search="[('model','=','office.subscription')]"/>
-        <field name="subject">[Plan activado] ${object.partner_id.name} – ${object.plan_id.name}</field>
-        <field name="email_from">${object.env.company.email or ''}</field>
-        <field name="email_to">${object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or ''}</field>
+        <field name="subject">[Plan activado] {{ object.partner_id.name }} – {{ object.plan_id.name }}</field>
+        <field name="email_from">{{ object.env.company.email or '' }}</field>
+        <field name="email_to">{{ object.env['ir.config_parameter'].sudo().get_param('office_booking.admin_email') or object.env.company.email or '' }}</field>
         <field name="auto_delete" eval="True"/>
-        <field name="body_html">
-<![CDATA[
+        <field name="body_html" type="html">
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
   <div style="background:#0f766e;padding:20px 28px;">
     <h2 style="color:#ffffff;margin:0;font-size:18px;">Plan de coworking activado</h2>
@@ -572,35 +567,34 @@
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
       <tr style="background:#f0fdfa;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;width:38%;border-bottom:1px solid #e5e7eb;">Cliente</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.partner_id.name} (${object.partner_id.email or 'sin email'})</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.partner_id.name">Cliente</t> (<t t-out="object.partner_id.email or 'sin email'"/>)</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Plan</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.plan_id.name}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.plan_id.name">Plan</td>
       </tr>
       <tr style="background:#f0fdfa;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Días incluidos</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.total_days}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;" t-out="object.total_days">0</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Vigencia</td>
-        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;">${object.start_date} → ${object.end_date}</td>
+        <td style="padding:9px 14px;color:#111827;border-bottom:1px solid #e5e7eb;"><t t-out="object.start_date"/> → <t t-out="object.end_date"/></td>
       </tr>
       <tr style="background:#f0fdfa;">
         <td style="padding:9px 14px;font-weight:bold;color:#374151;border-bottom:1px solid #e5e7eb;">Bold Tx ID</td>
-        <td style="padding:9px 14px;color:#6b7280;">${object.bold_tx_id or '—'}</td>
+        <td style="padding:9px 14px;color:#6b7280;" t-out="object.bold_tx_id or '—'">—</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-weight:bold;color:#374151;">Precio plan</td>
-        <td style="padding:9px 14px;color:#111827;">${'{:,.0f}'.format(object.plan_id.price)} ${object.plan_id.currency_id.name}</td>
+        <td style="padding:9px 14px;color:#111827;"><t t-out="'{:,.0f}'.format(object.plan_id.price)">0</t> <t t-out="object.plan_id.currency_id.name">COP</t></td>
       </tr>
     </table>
   </div>
   <div style="background:#f1f5f9;padding:12px 28px;text-align:center;font-size:12px;color:#6b7280;">
-    ${object.env.company.name} – Notificación interna
+    <t t-out="object.env.company.name">Empresa</t> – Notificación interna
   </div>
 </div>
-]]>
         </field>
     </record>
 

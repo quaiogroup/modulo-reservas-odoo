@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <record id="view_spoot_booking_quick_create_wizard_form" model="ir.ui.view">
+  <record id="view_sppot_booking_quick_create_wizard_form" model="ir.ui.view">
     <field name="name">office.booking.wizard.form</field>
     <field name="model">office.booking.wizard</field>
     <field name="arch" type="xml">
@@ -35,6 +35,19 @@
                    invisible="payment_mode != 'plan'"
                    required="payment_mode == 'plan'"
                    string="Plan activo del cliente"/>
+          </group>
+
+          <group string="Días / Recurrencia">
+            <field name="recurrence_type" widget="radio"/>
+            <field name="recurrence_end_date"
+                   invisible="recurrence_type == 'none'"
+                   required="recurrence_type != 'none'"
+                   string="Repetir hasta"/>
+            <div class="text-muted" colspan="2"
+                 invisible="recurrence_type == 'none'">
+              Se crearán automáticamente todas las reservas (mismo día) hasta la fecha indicada.
+              Con pago por plan se descuentan los días de cada reserva.
+            </div>
           </group>
 
           <div class="alert alert-info" role="alert"

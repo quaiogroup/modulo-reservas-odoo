@@ -102,12 +102,17 @@
                 <field name="partner_id" string="Cliente"/>
                 <field name="date"       string="Fecha"/>
 
-                <!-- Slot — badge with per-value colour -->
+                <!-- Slot — badge with per-value colour (jornadas) -->
                 <field name="slot_type"  string="Franja"
                        widget="badge"
+                       invisible="office_pricing_mode == 'hourly'"
                        decoration-info="slot_type == 'morning'"
                        decoration-warning="slot_type == 'afternoon'"
                        decoration-primary="slot_type == 'full_day'"/>
+                <!-- Horario legible (sirve para jornadas y por horas) -->
+                <field name="office_pricing_mode" column_invisible="1"/>
+                <field name="slot_label" string="Horario"
+                       invisible="office_pricing_mode != 'hourly'"/>
 
                 <!-- State — badge -->
                 <field name="state" string="Estado"

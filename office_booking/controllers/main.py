@@ -23,56 +23,6 @@ _logger = logging.getLogger(__name__)
 
 class OfficeWebsite(http.Controller):
 
-    #GET -> type="http"
-    @http.route(
-        "/offices/<int:office_id>/events",
-        type="http",
-        auth="user",
-        website=True,
-        methods=["GET"],
-    )
-    def office_events(self, office_id, start=None, end=None, **kw):
-        if not start or not end:
-            return request.make_json_response([])
-
-        start_dt = Datetime.to_datetime(start)
-        end_dt = Datetime.to_datetime(end)
-
-        partner = request.env.user.partner_id
-
-        Booking = request.env["office.booking"].sudo()
-        bookings = Booking.search([
-            ("office_id", "=", int(office_id)),
-            ("state", "!=", "cancelled"),
-            ("start_datetime", "<", end_dt),
-            ("end_datetime", ">", start_dt),
-        ])
-
-        booking_events = [{
-            "id": f"booking_{b.id}",
-            "title": "Reservada",
-            "start": b.start_datetime,
-            "end": b.end_datetime,
-            "allDay": False,
-        } for b in bookings]
-
-        CalendarEvent = request.env["calendar.event"].sudo()
-        my_events = CalendarEvent.search([
-            ("partner_ids", "in", [partner.id]),
-            ("start", "<", end_dt),
-            ("stop", ">", start_dt),
-        ])
-
-        calendar_events = [{
-            "id": f"calendar_{e.id}",
-            "title": e.name or "Evento",
-            "start": e.start,
-            "end": e.stop,
-            "allDay": bool(getattr(e, "allday", False)),
-        } for e in my_events]
-
-        return request.make_json_response(booking_events + calendar_events)
-
     @http.route("/offices", type="http", auth="public", website=True)
     def offices_list(self, **kwargs):
         offices = request.env["office.space"].sudo().search([("active", "=", True)])
@@ -90,23 +40,52 @@ class OfficeWebsite(http.Controller):
         partner = request.env.user.partner_id
 
         # Look up active subscription once — used for both GET and POST
-        subscription = request.env["office.subscription"].sudo().search([
+        active_subscription = request.env["office.subscription"].sudo().search([
             ("partner_id", "=", partner.id),
             ("state", "=", "active"),
         ], limit=1) or False
+
+        # El plan solo es usable en esta oficina si la cubre (o no tiene restricción)
+        plan_covers = bool(active_subscription) and active_subscription.plan_id.covers_office(office)
+        subscription = active_subscription if plan_covers else False
+        # True si el cliente tiene plan pero NO aplica a esta oficina (para avisarle)
+        plan_other_office = bool(active_subscription) and not plan_covers
 
         def _render_detail(error=None):
             return request.render("office_booking.website_office_detail", {
                 "office": office,
                 "subscription": subscription,
+                "plan_other_office": plan_other_office,
                 "error": error,
             })
 
         if request.httprequest.method == "POST":
+            is_hourly = office.pricing_mode == "hourly"
             date = post.get("date")
             slot_type = post.get("slot_type")
             payment_mode = post.get("payment_mode", "bold")  # 'plan' or 'bold'
             discount_code_raw = (post.get("discount_code") or "").strip().upper()
+
+            # Parse hour range for hourly offices
+            def _to_float(v):
+                try:
+                    return float(v)
+                except (TypeError, ValueError):
+                    return 0.0
+            hour_start = _to_float(post.get("hour_start")) if is_hourly else 0.0
+            hour_end = _to_float(post.get("hour_end")) if is_hourly else 0.0
+
+            # Recurrencia (poner todos los días de una vez)
+            recurrence_type = post.get("recurrence_type") or "none"
+            if recurrence_type not in ("none", "weekly", "biweekly", "monthly"):
+                recurrence_type = "none"
+            recurrence_end_date = (post.get("recurrence_end_date") or "").strip() or False
+            recur_vals = {
+                "recurrence_type": recurrence_type,
+                "recurrence_end_date": recurrence_end_date,
+            }
+            if recurrence_type != "none" and not recurrence_end_date:
+                return _render_detail(_("Indica hasta qué fecha repetir la reserva."))
 
             # Resolve discount code
             discount_rec = False
@@ -116,7 +95,12 @@ class OfficeWebsite(http.Controller):
                     [("code", "=", discount_code_raw), ("active", "=", True)], limit=1
                 )
 
-            if not date or not slot_type:
+            if not date:
+                return _render_detail(_("Debes seleccionar una fecha."))
+            if is_hourly:
+                if hour_end <= hour_start:
+                    return _render_detail(_("Selecciona un rango de horas válido (la hora final debe ser mayor que la inicial)."))
+            elif not slot_type:
                 return _render_detail(_("Debes seleccionar una fecha y una franja horaria."))
 
             availability = request.env["office.booking"].sudo().get_availability(office.id, date)
@@ -127,20 +111,41 @@ class OfficeWebsite(http.Controller):
                 reason = availability.get("block_reason", "Fecha no disponible")
                 return _render_detail(_(f"Esta fecha no está disponible: {reason}"))
 
-            if slot_type not in availability["available"]:
+            # Para jornadas validamos la franja; para horas, el solapamiento lo valida el modelo.
+            if not is_hourly and slot_type not in availability["available"]:
                 return _render_detail(_("Esa franja ya no está disponible. Revisa el calendario y elige una opción libre."))
 
+            # Datos de horario según el modo de cobro de la oficina
+            if is_hourly:
+                slot_vals = {"hour_start": hour_start, "hour_end": hour_end}
+                base_amt = float(office.price_per_hour or 0.0) * (hour_end - hour_start)
+            else:
+                slot_vals = {"slot_type": slot_type}
+                base_amt = float(
+                    office.price_morning if slot_type == "morning"
+                    else office.price_afternoon if slot_type == "afternoon"
+                    else office.price_full_day or 0
+                )
+
             _logger.info(
-                "[BOOKING POST] date=%s slot_type=%s payment_mode=%s all_post=%s",
-                date, slot_type, payment_mode, dict(post),
+                "[BOOKING POST] date=%s hourly=%s slot_type=%s hours=%s-%s payment_mode=%s all_post=%s",
+                date, is_hourly, slot_type, hour_start, hour_end, payment_mode, dict(post),
             )
 
             # ── PLAN MODE ──────────────────────────────────────────────────
             if payment_mode == "plan":
                 if not subscription:
+                    if plan_other_office:
+                        return _render_detail(_(
+                            "Tu plan no aplica para esta oficina. Elige una oficina incluida "
+                            "en tu plan o paga esta reserva con Bold."
+                        ))
                     return _render_detail(_("No tienes un plan activo para usar como pago."))
 
-                cost = 1.0 if slot_type == "full_day" else 0.5
+                if is_hourly:
+                    cost = round((hour_end - hour_start) / 8.0, 2)
+                else:
+                    cost = 1.0 if slot_type == "full_day" else 0.5
                 if subscription.remaining_days < cost:
                     return _render_detail(_(
                         "Saldo de plan insuficiente. Tienes %.1f día(s) disponibles "
@@ -149,11 +154,10 @@ class OfficeWebsite(http.Controller):
 
                 new_remaining = subscription.remaining_days - cost
                 try:
-                    booking = request.env["office.booking"].sudo().create({
+                    booking = request.env["office.booking"].sudo().create(dict({
                         "office_id": office.id,
                         "partner_id": partner.id,
                         "date": date,
-                        "slot_type": slot_type,
                         "state": "confirmed",
                         "payment_mode": "plan",
                         "paid": True,
@@ -161,14 +165,17 @@ class OfficeWebsite(http.Controller):
                         "plan_days_consumed": cost,
                         "discount_code_id": discount_rec.id if discount_rec else False,
                         "discount_amount": discount_amount,
-                    })
+                    }, **slot_vals, **recur_vals))
                 except ValidationError as e:
                     return _render_detail(str(e))
                 subscription.sudo().write({"remaining_days": new_remaining})
+                # Generar el resto de la serie recurrente (descuenta plan por día)
+                if recurrence_type != "none":
+                    booking._generate_recurrence_siblings()
                 _logger.info(
-                    "[PLAN BOOKING] booking id=%s confirmed — slot=%s cost=%.1f "
-                    "remaining_after=%.1f subscription=%s",
-                    booking.id, slot_type, cost, new_remaining, subscription.id,
+                    "[PLAN BOOKING] booking id=%s confirmed — cost=%.2f "
+                    "remaining_after=%.2f subscription=%s",
+                    booking.id, cost, new_remaining, subscription.id,
                 )
                 # Save document data if provided and partner doesn't have it yet
                 self._save_partner_doc_from_post(partner, post)
@@ -186,28 +193,25 @@ class OfficeWebsite(http.Controller):
             # Apply discount if code provided
             if discount_rec:
                 try:
-                    base_amt = float(
-                        office.price_morning if slot_type == "morning"
-                        else office.price_afternoon if slot_type == "afternoon"
-                        else office.price_full_day or 0
-                    )
                     discount_amount = discount_rec.validate_for_booking(base_amt)
                 except ValidationError as e:
                     return _render_detail(str(e))
 
             try:
-                booking = request.env["office.booking"].sudo().create({
+                booking = request.env["office.booking"].sudo().create(dict({
                     "office_id": office.id,
                     "partner_id": partner.id,
                     "date": date,
-                    "slot_type": slot_type,
                     "state": "pending_payment",
                     "payment_mode": "bold",
                     "discount_code_id": discount_rec.id if discount_rec else False,
                     "discount_amount": discount_amount,
-                })
+                }, **slot_vals, **recur_vals))
             except ValidationError as e:
                 return _render_detail(str(e))
+            # Generar el resto de la serie recurrente (quedan pendientes de pago)
+            if recurrence_type != "none":
+                booking._generate_recurrence_siblings()
             if discount_rec:
                 discount_rec.apply_use()
             # Save document data if provided and partner doesn't have it yet
@@ -222,20 +226,20 @@ class OfficeWebsite(http.Controller):
     def _save_partner_doc_from_post(self, partner, post):
         """Guarda tipo y número de documento del POST si el partner aún no los tiene."""
         doc_number = (post.get("doc_number") or "").strip()
-        if not doc_number or partner.spoot_document_number:
+        if not doc_number or partner.sppot_document_number:
             return
         doc_type = (post.get("doc_type") or "").strip() or False
         try:
             partner.sudo().write({
-                "spoot_document_type":   doc_type,
-                "spoot_document_number": doc_number,
+                "sppot_document_type":   doc_type,
+                "sppot_document_number": doc_number,
             })
             _logger.info("[DOC] saved doc type=%s number=%s for partner %s", doc_type, doc_number, partner.id)
         except Exception as exc:
             _logger.warning("[DOC] could not save document data: %s", exc)
 
     # ── JSON: validar código de descuento ──────────────────────────────────
-    @http.route("/spoot/discount/validate", type="jsonrpc", auth="user", website=True)
+    @http.route("/sppot/discount/validate", type="jsonrpc", auth="user", website=True)
     def validate_discount_code(self, code=None, office_id=None, slot_type=None, **kw):
         if not code:
             return {"ok": False, "error": "Código vacío."}
@@ -271,7 +275,7 @@ class OfficeWebsite(http.Controller):
         }
 
     # ── JSON: disponibilidad mensual para el calendario de reserva ──────────
-    @http.route("/spoot/office/month-availability", type="jsonrpc", auth="public", website=True)
+    @http.route("/sppot/office/month-availability", type="jsonrpc", auth="public", website=True)
     def office_month_availability(self, office_id=None, year=None, month=None, exclude_id=None, **kw):
         import calendar as _cal
         from datetime import date as _date, timedelta as _td
@@ -373,7 +377,7 @@ class OfficeWebsite(http.Controller):
         return result
 
     # ── JSON: disponibilidad de slots (usado por office_booking.js) ──────────
-    @http.route("/spoot/office/availability", type="jsonrpc", auth="user", website=True)
+    @http.route("/sppot/office/availability", type="jsonrpc", auth="user", website=True)
     def office_slot_availability(self, office_id=None, day=None, exclude_id=None, **kw):
         if not office_id or not day:
             return {"available": [], "taken": []}
@@ -382,8 +386,8 @@ class OfficeWebsite(http.Controller):
         )
 
     # ── JSON: eventos de calendario FullCalendar (usado por office_calendar.js) ─
-    @http.route("/spoot/calendar/events", type="jsonrpc", auth="user", website=True)
-    def spoot_calendar_events(self, office_id=None, start=None, end=None, **kw):
+    @http.route("/sppot/calendar/events", type="jsonrpc", auth="user", website=True)
+    def sppot_calendar_events(self, office_id=None, start=None, end=None, **kw):
         if not office_id or not start or not end:
             return []
 
@@ -589,7 +593,7 @@ class OfficePortal(CustomerPortal):
                     "currency": currency,
                     "integrity": integrity,
                     "redirection_url": f"{base_url}/bold/retorno",
-                    "description": f"Reserva oficina {b.office_id.name} ({b.slot_type})",
+                    "description": f"Reserva oficina {b.office_id.name} ({b.slot_label or b.slot_type or ''})",
                 }
                 
 
@@ -649,7 +653,7 @@ class OfficePortal(CustomerPortal):
                     "bold_currency": currency,
                     "bold_integrity": integrity,
                     "bold_redirection_url": redirection_url,
-                    "bold_description": f"Reserva oficina {booking.office_id.name} ({booking.slot_type})",
+                    "bold_description": f"Reserva oficina {booking.office_id.name} ({booking.slot_label or booking.slot_type or ''})",
                 })
 
         return request.render("office_booking.portal_booking_detail", values)
@@ -709,16 +713,35 @@ class OfficePortal(CustomerPortal):
                 values["error"] = mod_reason
                 return request.render("office_booking.portal_booking_reschedule", values)
 
+            is_hourly = booking.office_id.pricing_mode == "hourly"
             new_date = (post.get("date") or "").strip()
             new_slot = (post.get("slot_type") or "").strip()
 
-            if not new_date or not new_slot:
-                values["error"] = _("Debes seleccionar fecha y franja horaria.")
-                return request.render("office_booking.portal_booking_reschedule", values)
+            def _to_float(v):
+                try:
+                    return float(v)
+                except (TypeError, ValueError):
+                    return 0.0
+            new_hs = _to_float(post.get("hour_start")) if is_hourly else 0.0
+            new_he = _to_float(post.get("hour_end")) if is_hourly else 0.0
 
-            if str(booking.date) == new_date and booking.slot_type == new_slot:
-                values["error"] = _("La nueva fecha y franja son iguales a las actuales.")
+            if not new_date:
+                values["error"] = _("Debes seleccionar una fecha.")
                 return request.render("office_booking.portal_booking_reschedule", values)
+            if is_hourly:
+                if new_he <= new_hs:
+                    values["error"] = _("Selecciona un rango de horas válido.")
+                    return request.render("office_booking.portal_booking_reschedule", values)
+                if str(booking.date) == new_date and booking.hour_start == new_hs and booking.hour_end == new_he:
+                    values["error"] = _("La nueva fecha y horario son iguales a los actuales.")
+                    return request.render("office_booking.portal_booking_reschedule", values)
+            else:
+                if not new_slot:
+                    values["error"] = _("Debes seleccionar fecha y franja horaria.")
+                    return request.render("office_booking.portal_booking_reschedule", values)
+                if str(booking.date) == new_date and booking.slot_type == new_slot:
+                    values["error"] = _("La nueva fecha y franja son iguales a las actuales.")
+                    return request.render("office_booking.portal_booking_reschedule", values)
 
             avail = request.env["office.booking"].sudo().get_availability(
                 booking.office_id.id, new_date, exclude_id=booking.id
@@ -727,14 +750,17 @@ class OfficePortal(CustomerPortal):
                 values["error"] = _("Esa fecha no está disponible: %s" % avail.get("block_reason", ""))
                 return request.render("office_booking.portal_booking_reschedule", values)
 
-            if new_slot not in avail.get("available", []):
+            if not is_hourly and new_slot not in avail.get("available", []):
                 values["error"] = _("Esa franja no está disponible para la fecha seleccionada.")
                 return request.render("office_booking.portal_booking_reschedule", values)
 
-            # Adjust plan balance if slot type changes
+            # Adjust plan balance if the cost changes
             if booking.payment_mode == 'plan' and booking.subscription_id:
                 old_cost = booking.plan_days_consumed
-                new_cost = 1.0 if new_slot == 'full_day' else 0.5
+                if is_hourly:
+                    new_cost = round((new_he - new_hs) / 8.0, 2)
+                else:
+                    new_cost = 1.0 if new_slot == 'full_day' else 0.5
                 diff = new_cost - old_cost
                 if diff > 0 and booking.subscription_id.remaining_days < diff:
                     values["error"] = _(
@@ -747,10 +773,18 @@ class OfficePortal(CustomerPortal):
                     })
                     booking.sudo().write({"plan_days_consumed": new_cost})
 
-            booking.sudo().write({"date": new_date, "slot_type": new_slot})
+            if is_hourly:
+                new_vals = {"date": new_date, "hour_start": new_hs, "hour_end": new_he}
+            else:
+                new_vals = {"date": new_date, "slot_type": new_slot}
+            try:
+                booking.sudo().write(new_vals)
+            except ValidationError as e:
+                values["error"] = str(e)
+                return request.render("office_booking.portal_booking_reschedule", values)
             _logger.info(
-                "[RESCHEDULE] booking id=%s → date=%s slot=%s by partner=%s",
-                booking.id, new_date, new_slot, request.env.user.partner_id.id,
+                "[RESCHEDULE] booking id=%s → %s by partner=%s",
+                booking.id, new_vals, request.env.user.partner_id.id,
             )
             return request.redirect("/my/office-bookings/%d" % booking.id)
 
@@ -1163,8 +1197,8 @@ class OfficePortal(CustomerPortal):
         if request.httprequest.method == "POST":
             vals = {}
             _STR_FIELDS = [
-                "spoot_document_type", "spoot_document_number",
-                "spoot_billing_name", "vat",
+                "sppot_document_type", "sppot_document_number",
+                "sppot_billing_name", "vat",
                 "street", "street2", "city", "zip",
             ]
             for f in _STR_FIELDS:
@@ -1218,7 +1252,7 @@ class OfficeExportController(http.Controller):
         'cancelled':       'Cancelada',
     }
 
-    @http.route('/spoot/export/bookings', type='http', auth='user', methods=['GET'])
+    @http.route('/sppot/export/bookings', type='http', auth='user', methods=['GET'])
     def export_bookings(self, date_from=None, date_to=None, state=None, **kw):
         """Descarga todas las reservas como CSV. Solo para usuarios internos."""
         env = request.env
@@ -1270,7 +1304,7 @@ class OfficeExportController(http.Controller):
             ])
 
         csv_content = '\ufeff' + output.getvalue()  # BOM para Excel
-        filename = 'reservas_spoot.csv'
+        filename = 'reservas_sppot.csv'
 
         return request.make_response(
             csv_content,
@@ -1280,7 +1314,7 @@ class OfficeExportController(http.Controller):
             ]
         )
 
-    @http.route('/spoot/export/occupancy', type='http', auth='user', methods=['GET'])
+    @http.route('/sppot/export/occupancy', type='http', auth='user', methods=['GET'])
     def export_occupancy(self, date_from=None, date_to=None, office_id=None, **kw):
         """Reporte de ocupación por oficina y mes. Solo para usuarios internos."""
         import calendar as _cal
@@ -1358,6 +1392,6 @@ class OfficeExportController(http.Controller):
             csv_content,
             headers=[
                 ('Content-Type', 'text/csv; charset=utf-8'),
-                ('Content-Disposition', 'attachment; filename="ocupacion_spoot.csv"'),
+                ('Content-Disposition', 'attachment; filename="ocupacion_sppot.csv"'),
             ]
         )

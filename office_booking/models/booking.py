@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import base64
 from datetime import datetime, time, timedelta
-import hashlib
 import logging
 import uuid
 
@@ -161,6 +159,39 @@ class OfficeBooking(models.Model):
             else:
                 rec.duration_hours = 0.0
 
+    slot_label = fields.Char(
+        string="Horario",
+        compute="_compute_slot_label",
+        store=True,
+        help="Etiqueta legible del horario, válida tanto para jornadas como para horas.",
+    )
+
+    @api.depends("slot_type", "hour_start", "hour_end", "duration_hours", "office_id.pricing_mode")
+    def _compute_slot_label(self):
+        def _fmt(h):
+            hh = int(h)
+            mm = int(round((h - hh) * 60))
+            return f"{hh:02d}:{mm:02d}"
+
+        labels = {
+            "morning":   "Mañana (8:00 – 12:00)",
+            "afternoon": "Tarde (14:00 – 18:00)",
+            "full_day":  "Día completo (8:00 – 18:00)",
+        }
+        for rec in self:
+            if rec.office_id.pricing_mode == "hourly":
+                if rec.hour_start or rec.hour_end:
+                    hrs = rec.duration_hours or max((rec.hour_end or 0.0) - (rec.hour_start or 0.0), 0.0)
+                    rec.slot_label = "%s – %s (%s h)" % (
+                        _fmt(rec.hour_start or 0.0),
+                        _fmt(rec.hour_end or 0.0),
+                        ("%g" % hrs),
+                    )
+                else:
+                    rec.slot_label = ""
+            else:
+                rec.slot_label = labels.get(rec.slot_type, rec.slot_type or "")
+
     state = fields.Selection(
         [
             ("draft", "Borrador"),
@@ -311,21 +342,30 @@ class OfficeBooking(models.Model):
             else:
                 rec.recurrence_count = 0
 
-    def action_create_recurrent_bookings(self):
-        """Genera las reservas futuras de la serie a partir de esta reserva."""
+    def _generate_recurrence_siblings(self):
+        """Crea las reservas recurrentes a partir de esta (la semilla).
+
+        - Repite el mismo día de la semana / del mes según ``recurrence_type``.
+        - Respeta disponibilidad (franja o solapamiento por horas) y bloqueos.
+        - Si la reserva se paga con plan, descuenta el coste de cada repetición
+          y detiene la serie cuando se agota el saldo.
+        Devuelve el número de reservas creadas.
+        """
         self.ensure_one()
         if self.recurrence_type == "none" or not self.recurrence_end_date:
-            raise UserError(_("Define el tipo de recurrencia y la fecha límite."))
+            return 0
         if self.recurrence_end_date <= self.date:
-            raise UserError(_("La fecha límite debe ser posterior a la fecha de esta reserva."))
+            return 0
 
         import uuid as _uuid
+        import calendar as _cal
         from datetime import timedelta as _td
 
         group_id = self.recurrence_group_id or _uuid.uuid4().hex
         self.sudo().write({"recurrence_group_id": group_id})
 
-        deltas = {"weekly": 7, "biweekly": 14, "monthly": 0}
+        is_hourly = self.office_id.pricing_mode == "hourly"
+        deltas = {"weekly": 7, "biweekly": 14}
         next_date = self.date
         created = 0
 
@@ -334,7 +374,6 @@ class OfficeBooking(models.Model):
                 m, y = next_date.month + 1, next_date.year
                 if m > 12:
                     m, y = 1, y + 1
-                import calendar as _cal
                 last_day = _cal.monthrange(y, m)[1]
                 next_date = next_date.replace(year=y, month=m, day=min(next_date.day, last_day))
             else:
@@ -343,22 +382,57 @@ class OfficeBooking(models.Model):
             if next_date > self.recurrence_end_date:
                 break
 
+            # Disponibilidad: bloqueos siempre; franja solo en modo jornadas
             avail = self.get_availability(self.office_id.id, str(next_date))
-            if self.slot_type not in avail.get("available", []):
-                continue  # slot ocupado ese día, se salta
+            if avail.get("blocked"):
+                continue
+            if not is_hourly and self.slot_type not in avail.get("available", []):
+                continue
 
-            self.sudo().copy({
-                "date":                next_date,
-                "state":               self.state,
-                "paid":                self.paid,
-                "payment_mode":        self.payment_mode,
-                "subscription_id":     self.subscription_id.id if self.subscription_id else False,
-                "plan_days_consumed":  self.plan_days_consumed,
-                "recurrence_type":     self.recurrence_type,
-                "recurrence_end_date": self.recurrence_end_date,
-                "recurrence_group_id": group_id,
-            })
-            created += 1
+            # Consumo de plan por repetición
+            plan_vals = {}
+            if self.payment_mode == "plan" and self.subscription_id:
+                cost = self._get_plan_days_cost()
+                if self.subscription_id.remaining_days < cost:
+                    break  # sin saldo → no se siguen creando repeticiones
+                self.subscription_id.sudo().write({
+                    "remaining_days": self.subscription_id.remaining_days - cost
+                })
+                plan_vals = {
+                    "subscription_id":    self.subscription_id.id,
+                    "plan_days_consumed": cost,
+                }
+
+            try:
+                self.sudo().copy(dict({
+                    "date":                next_date,
+                    "state":               self.state,
+                    "paid":                self.paid,
+                    "payment_mode":        self.payment_mode,
+                    "recurrence_type":     self.recurrence_type,
+                    "recurrence_end_date": self.recurrence_end_date,
+                    "recurrence_group_id": group_id,
+                }, **plan_vals))
+                created += 1
+            except ValidationError:
+                # Solapamiento (p. ej. por horas): revertir consumo y saltar día
+                if plan_vals:
+                    self.subscription_id.sudo().write({
+                        "remaining_days": self.subscription_id.remaining_days + plan_vals["plan_days_consumed"]
+                    })
+                continue
+
+        return created
+
+    def action_create_recurrent_bookings(self):
+        """Genera las reservas futuras de la serie a partir de esta reserva."""
+        self.ensure_one()
+        if self.recurrence_type == "none" or not self.recurrence_end_date:
+            raise UserError(_("Define el tipo de recurrencia y la fecha límite."))
+        if self.recurrence_end_date <= self.date:
+            raise UserError(_("La fecha límite debe ser posterior a la fecha de esta reserva."))
+
+        created = self._generate_recurrence_siblings()
 
         return {
             "type": "ir.actions.client",
@@ -455,6 +529,12 @@ class OfficeBooking(models.Model):
         if subscription.state != "active":
             raise ValidationError(_("Tu plan no está activo."))
 
+        if not subscription.plan_id.covers_office(self.office_id):
+            raise ValidationError(_(
+                "El plan '%s' no aplica para la oficina '%s'."
+                % (subscription.plan_id.name, self.office_id.name)
+            ))
+
         from odoo.fields import Date as FDate
         if subscription.end_date and subscription.end_date < FDate.today():
             raise ValidationError(_("Tu plan ha vencido."))
@@ -510,16 +590,6 @@ class OfficeBooking(models.Model):
         # Notify both parties of the cancellation
         self._notify_customer("office_booking.mail_template_booking_cancelled_user")
         self._notify_admin("office_booking.mail_template_booking_cancelled_admin")
-
-    def _get_bold_currency_code(self):
-        """Bold normalmente espera código ISO: COP, USD, etc."""
-        self.ensure_one()
-        return (self.currency_id and self.currency_id.name) or self.env.company.currency_id.name or "COP"
-
-    def _get_bold_amount(self):
-        """Monto según franja (usa tu lógica)."""
-        self.ensure_one()
-        return float(self._get_amount_to_pay() or 0.0)
 
     def _ensure_bold_order_id(self):
         self.ensure_one()
@@ -840,35 +910,6 @@ class OfficeBooking(models.Model):
             else:
                 if not rec.slot_type:
                     raise ValidationError(_("Debes seleccionar una franja horaria."))
-
-    def _get_booking_amount(self):
-        """Calcula el monto según la franja."""
-        self.ensure_one()
-        office = self.office_id
-
-        if self.slot_type == "morning":
-            return office.price_morning
-        if self.slot_type == "afternoon":
-            return office.price_afternoon
-        return office.price_full_day
-
-    
-    def action_pay_now(self):
-        self.ensure_one()
-
-        if self.state == "cancelled":
-            raise ValidationError("Esta reserva está cancelada.")
-
-        if self.paid:
-            raise ValidationError("Esta reserva ya está pagada.")
-
-        self._ensure_bold_order_id()
-
-    def _get_currency(self):
-        self.ensure_one()
-        # Si tu oficina no tiene company_id, usa la company actual
-        company = getattr(self.office_id, "company_id", False) or self.env.company
-        return company.currency_id
 
     def _get_base_amount(self):
         self.ensure_one()
@@ -1204,25 +1245,6 @@ END:VCALENDAR
         })
         return "https://calendar.google.com/calendar/render?{}".format(params)
 
-    def _create_ics_attachment(self):
-        self.ensure_one()
-        ics_content = self._generate_ics_content()
-        if not ics_content:
-            return False
-
-        data = base64.b64encode(ics_content.encode("utf-8"))
-        attachment = self.env["ir.attachment"].create(
-            {
-                "name": f"reserva_oficina_{self.id}.ics",
-                "type": "binary",
-                "datas": data,
-                "mimetype": "text/calendar",
-                "res_model": self._name,
-                "res_id": self.id,
-            }
-        )
-        return attachment
-
     def action_resend_emails(self):
         """Reenvía manualmente los correos de notificación de esta reserva."""
         self.ensure_one()
@@ -1276,37 +1298,3 @@ END:VCALENDAR
             },
         }
 
-    def action_send_emails(self):
-        """Envía correos a cliente y admin con ICS adjunto."""
-        for booking in self:
-            ics_attachment = booking._create_ics_attachment()
-
-            template_user = self.env.ref(
-                "office_booking.mail_template_booking_user",
-                raise_if_not_found=False,
-            )
-            template_admin = self.env.ref(
-                "office_booking.mail_template_booking_admin",
-                raise_if_not_found=False,
-            )
-
-            email_values = {}
-            if ics_attachment:
-                email_values["attachment_ids"] = [ics_attachment.id]
-
-            if template_user:
-                template_user.send_mail(
-                    booking.id,
-                    force_send=True,
-                    email_values=email_values,
-                )
-            if template_admin:
-                admin_email = booking._get_admin_email()
-                if admin_email:
-                    email_values_admin = dict(email_values)
-                    email_values_admin["email_to"] = admin_email
-                    template_admin.send_mail(
-                        booking.id,
-                        force_send=True,
-                        email_values=email_values_admin,
-                    )
