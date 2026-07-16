@@ -88,10 +88,14 @@ docker restart odoo19
 
 ### 3.1 Producción
 
-1. **Backup de la base de datos** (obligatorio antes de cualquier migración de esquema):
+1. **Backup de la base de datos** (obligatorio antes de cualquier migración de esquema).
+   Usa la variable `$POSTGRES_USER` del propio contenedor `db`, así no hay que escribir el usuario:
    ```bash
-   docker exec db pg_dump -U xxx sppot.co > sppot_backup_$(date +%F_%H%M).sql
+   docker exec db sh -c 'pg_dump -U "$POSTGRES_USER" sppot.co' > sppot_backup_$(date +%F_%H%M).sql
+   # Si pide contraseña, añade PGPASSWORD:
+   # docker exec db sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -U "$POSTGRES_USER" sppot.co' > sppot_backup_$(date +%F_%H%M).sql
    ```
+   Verifica que no quedó vacío: `ls -lh sppot_backup_*.sql` (debe empezar con `-- PostgreSQL database dump`).
 
 2. Trae la última versión y reemplaza `office_booking` (mismo proceso que la
    instalación). Ejecútalo en la carpeta donde vive `office_booking`:
@@ -173,7 +177,7 @@ docker exec odoo19 odoo -u office_booking -d reservas --db_host=odoo-postgres --
 
 **Producción — backup + actualizar + reiniciar:**
 ```bash
-docker exec db pg_dump -U xxx sppot.co > sppot_backup_$(date +%F_%H%M).sql
+docker exec db sh -c 'pg_dump -U "$POSTGRES_USER" sppot.co' > sppot_backup_$(date +%F_%H%M).sql
 docker exec -it odoo-app odoo -u office_booking -d sppot.co --db_host=db --db_user=xxx --db_password=xxx --no-http --stop-after-init
 docker restart odoo-app
 ```
